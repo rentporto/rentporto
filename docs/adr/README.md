@@ -22,3 +22,4 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-14](0014-montantes-e-arredondamento.md) | Montantes e arredondamento | Proposta |
 | [ADR-15](0015-estrutura-modular-do-booking-service.md) | Estrutura modular do booking-service | Aceite |
 | [ADR-16](0016-k3d-como-cluster-local.md) | k3d como cluster Kubernetes local | Aceite |
+| [ADR-17](0017-repositorio-publico.md) | Repositório público no GitHub | Aceite |
