@@ -46,10 +46,11 @@ jobs:
               - auth-service/**
             customer-service:
               - *build
+              - &events common-events/**
               - customer-service/**
             fleet-service:
               - *build
-              - &events common-events/**
+              - *events
               - fleet-service/**
             booking-service:
               - *build
