@@ -1,25 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.nuno</groupId>
-  <artifactId>RentPorto</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.2</version>
+        <relativePath/>
+    </parent>
 
-  <name>RentPorto</name>
-  <url>http://maven.apache.org</url>
+    <groupId>pt.rentporto</groupId>
+    <artifactId>rentporto-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+    <name>RentPorto</name>
+    <description>Parent POM: shared versions and build configuration</description>
 
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+    <modules>
+        <module>common-events</module>
+        <module>config-server</module>
+        <module>gateway</module>
+        <module>auth-service</module>
+        <module>customer-service</module>
+        <module>fleet-service</module>
+        <module>booking-service</module>
+        <module>rental-service</module>
+        <module>notification-service</module>
+    </modules>
+
+    <properties>
+        <java.version>25</java.version>
+
+        <spring-cloud.version>2025.1.4</spring-cloud.version>
+        <spring-modulith.version>2.1.2</spring-modulith.version>
+
+        <springdoc-openapi.version>3.2.0</springdoc-openapi.version>
+        <shedlock.version>7.11.0</shedlock.version>
+        <stripe-java.version>34.1.0</stripe-java.version>
+        <wiremock-spring-boot.version>4.4.3</wiremock-spring-boot.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>pt.rentporto</groupId>
+                <artifactId>common-events</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.modulith</groupId>
+                <artifactId>spring-modulith-bom</artifactId>
+                <version>${spring-modulith.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.javacrumbs.shedlock</groupId>
+                <artifactId>shedlock-bom</artifactId>
+                <version>${shedlock.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-openapi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.stripe</groupId>
+                <artifactId>stripe-java</artifactId>
+                <version>${stripe-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wiremock.integrations</groupId>
+                <artifactId>wiremock-spring-boot</artifactId>
+                <version>${wiremock-spring-boot.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-build-environment</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[25,26)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.9,)</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
