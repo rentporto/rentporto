@@ -5,7 +5,7 @@ package pt.rentporto.events;
  */
 public final class Exchanges {
 
-    /** Topic exchange for all events; routing key is {@code {context}.{event}}, e.g. {@code reservation.confirmed}. */
+    /** Topic exchange for all events; the routing keys are in {@link RoutingKeys}. */
     public static final String EVENTS = "rentporto.events";
 
     private Exchanges() {
