@@ -28,7 +28,7 @@ jobs:
         uses: dorny/paths-filter@v4
         with:
           # One filter per deployable module. &build lists the files that affect every module;
-          # &events adds common-events to the modules that depend on it.
+          # &events and &messaging add the shared libraries to the modules that depend on them.
           filters: |
             config-server:
               - &build
@@ -47,22 +47,27 @@ jobs:
             customer-service:
               - *build
               - &events common-events/**
+              - &messaging common-messaging/**
               - customer-service/**
             fleet-service:
               - *build
               - *events
+              - *messaging
               - fleet-service/**
             booking-service:
               - *build
               - *events
+              - *messaging
               - booking-service/**
             rental-service:
               - *build
               - *events
+              - *messaging
               - rental-service/**
             notification-service:
               - *build
               - *events
+              - *messaging
               - notification-service/**
 
   build:
