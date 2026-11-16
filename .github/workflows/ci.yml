@@ -87,7 +87,11 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           java-version-file: .sdkmanrc
-          cache: maven
+      - uses: actions/cache@v6
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
       - name: Build and test
         run: ./mvnw -B -ntp -pl ${{ matrix.service }} -am verify
       - uses: docker/setup-buildx-action@v4
