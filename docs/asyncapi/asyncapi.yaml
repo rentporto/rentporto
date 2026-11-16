@@ -1,0 +1,1293 @@
+asyncapi: "3.1.0"
+info:
+  title: RentPorto messages
+  version: "1.0.0"
+  description: "External commands and events exchanged through RabbitMQ. Every message travels in the common envelope. Events go to the rentporto.events topic exchange with the routing key {context}.{event}; commands go to their own queue through the default exchange. Messages between modules of the booking-service are internal and are not listed here."
+defaultContentType: application/json
+servers:
+  local:
+    host: "localhost:5672"
+    protocol: amqp
+    description: RabbitMQ of docker-compose
+channels:
+  customerRegistered:
+    address: customer.registered
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      customerRegistered:
+        $ref: "#/components/messages/CustomerRegistered"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  stationCapacityChanged:
+    address: fleet.station-capacity-changed
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      stationCapacityChanged:
+        $ref: "#/components/messages/StationCapacityChanged"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  vehicleCategoryChanged:
+    address: fleet.vehicle-category-changed
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      vehicleCategoryChanged:
+        $ref: "#/components/messages/VehicleCategoryChanged"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  reservationConfirmed:
+    address: reservation.confirmed
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      reservationConfirmed:
+        $ref: "#/components/messages/ReservationConfirmed"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  reservationCancelled:
+    address: reservation.cancelled
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      reservationCancelled:
+        $ref: "#/components/messages/ReservationCancelled"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  reservationExpired:
+    address: reservation.expired
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      reservationExpired:
+        $ref: "#/components/messages/ReservationExpired"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  reservationNoShow:
+    address: reservation.no-show
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      reservationNoShow:
+        $ref: "#/components/messages/ReservationNoShow"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  paymentFailed:
+    address: payment.failed
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      paymentFailed:
+        $ref: "#/components/messages/PaymentFailed"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  paymentRefunded:
+    address: payment.refunded
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      paymentRefunded:
+        $ref: "#/components/messages/PaymentRefunded"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  depositSettled:
+    address: payment.deposit-settled
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      depositSettled:
+        $ref: "#/components/messages/DepositSettled"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  rentalStarted:
+    address: rental.started
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      rentalStarted:
+        $ref: "#/components/messages/RentalStarted"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  vehicleReturned:
+    address: rental.vehicle-returned
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      vehicleReturned:
+        $ref: "#/components/messages/VehicleReturned"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  rentalClosed:
+    address: rental.closed
+    description: Routing key on the rentporto.events topic exchange.
+    messages:
+      rentalClosed:
+        $ref: "#/components/messages/RentalClosed"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: rentporto.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+  settleDeposit:
+    address: payment.settle-deposit
+    description: "Command queue, through the default exchange."
+    messages:
+      settleDeposit:
+        $ref: "#/components/messages/SettleDeposit"
+    bindings:
+      amqp:
+        is: queue
+        queue:
+          name: payment.settle-deposit
+          durable: true
+          exclusive: false
+          autoDelete: false
+          vhost: "/"
+        bindingVersion: "0.3.0"
+operations:
+  publishCustomerRegistered:
+    action: send
+    channel:
+      $ref: "#/channels/customerRegistered"
+    summary: "Sent by customer-service; consumed by notification-service."
+    messages:
+      - $ref: "#/channels/customerRegistered/messages/customerRegistered"
+  publishStationCapacityChanged:
+    action: send
+    channel:
+      $ref: "#/channels/stationCapacityChanged"
+    summary: "Sent by fleet-service; consumed by booking-service (reservation module)."
+    messages:
+      - $ref: "#/channels/stationCapacityChanged/messages/stationCapacityChanged"
+  publishVehicleCategoryChanged:
+    action: send
+    channel:
+      $ref: "#/channels/vehicleCategoryChanged"
+    summary: "Sent by fleet-service; consumed by booking-service (reservation and pricing modules)."
+    messages:
+      - $ref: "#/channels/vehicleCategoryChanged/messages/vehicleCategoryChanged"
+  publishReservationConfirmed:
+    action: send
+    channel:
+      $ref: "#/channels/reservationConfirmed"
+    summary: "Sent by booking-service (reservation module); consumed by rental-service, notification-service."
+    messages:
+      - $ref: "#/channels/reservationConfirmed/messages/reservationConfirmed"
+  publishReservationCancelled:
+    action: send
+    channel:
+      $ref: "#/channels/reservationCancelled"
+    summary: "Sent by booking-service (reservation module); consumed by rental-service, notification-service."
+    messages:
+      - $ref: "#/channels/reservationCancelled/messages/reservationCancelled"
+  publishReservationExpired:
+    action: send
+    channel:
+      $ref: "#/channels/reservationExpired"
+    summary: "Sent by booking-service (reservation module); consumed by notification-service."
+    messages:
+      - $ref: "#/channels/reservationExpired/messages/reservationExpired"
+  publishReservationNoShow:
+    action: send
+    channel:
+      $ref: "#/channels/reservationNoShow"
+    summary: "Sent by booking-service (reservation module); consumed by rental-service, notification-service."
+    messages:
+      - $ref: "#/channels/reservationNoShow/messages/reservationNoShow"
+  publishPaymentFailed:
+    action: send
+    channel:
+      $ref: "#/channels/paymentFailed"
+    summary: "Sent by booking-service (payment module); consumed by notification-service."
+    messages:
+      - $ref: "#/channels/paymentFailed/messages/paymentFailed"
+  publishPaymentRefunded:
+    action: send
+    channel:
+      $ref: "#/channels/paymentRefunded"
+    summary: "Sent by booking-service (payment module); consumed by notification-service."
+    messages:
+      - $ref: "#/channels/paymentRefunded/messages/paymentRefunded"
+  publishDepositSettled:
+    action: send
+    channel:
+      $ref: "#/channels/depositSettled"
+    summary: "Sent by booking-service (payment module); consumed by rental-service."
+    messages:
+      - $ref: "#/channels/depositSettled/messages/depositSettled"
+  publishRentalStarted:
+    action: send
+    channel:
+      $ref: "#/channels/rentalStarted"
+    summary: "Sent by rental-service; consumed by booking-service (reservation module), notification-service."
+    messages:
+      - $ref: "#/channels/rentalStarted/messages/rentalStarted"
+  publishVehicleReturned:
+    action: send
+    channel:
+      $ref: "#/channels/vehicleReturned"
+    summary: "Sent by rental-service; consumed by fleet-service, booking-service (reservation module)."
+    messages:
+      - $ref: "#/channels/vehicleReturned/messages/vehicleReturned"
+  publishRentalClosed:
+    action: send
+    channel:
+      $ref: "#/channels/rentalClosed"
+    summary: "Sent by rental-service; consumed by notification-service."
+    messages:
+      - $ref: "#/channels/rentalClosed/messages/rentalClosed"
+  sendSettleDeposit:
+    action: send
+    channel:
+      $ref: "#/channels/settleDeposit"
+    summary: "Sent by rental-service; consumed by booking-service (payment module)."
+    messages:
+      - $ref: "#/channels/settleDeposit/messages/settleDeposit"
+components:
+  messages:
+    CustomerRegistered:
+      name: CustomerRegistered
+      title: CustomerRegistered
+      summary: A customer created their profile.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/CustomerRegisteredEnvelope"
+      examples:
+        - name: CustomerRegistered
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: CustomerRegistered
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            payload:
+              customerId: "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+              fullName: Ana Ferreira
+              email: "ana.ferreira@example.com"
+    StationCapacityChanged:
+      name: StationCapacityChanged
+      title: StationCapacityChanged
+      summary: The number of vehicles of a category that a station can deliver changed.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/StationCapacityChangedEnvelope"
+      examples:
+        - name: StationCapacityChanged
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: StationCapacityChanged
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            payload:
+              stationCode: OPO
+              categoryCode: ECMR
+              capacity: 12
+    VehicleCategoryChanged:
+      name: VehicleCategoryChanged
+      title: VehicleCategoryChanged
+      summary: A vehicle category was created or its requirements changed.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/VehicleCategoryChangedEnvelope"
+      examples:
+        - name: VehicleCategoryChanged
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: VehicleCategoryChanged
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            payload:
+              categoryCode: ECMR
+              name: Group B - Economy
+              minimumAge: 21
+              minimumLicenseYears: 2
+    ReservationConfirmed:
+      name: ReservationConfirmed
+      title: ReservationConfirmed
+      summary: A reservation was paid and confirmed.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ReservationConfirmedEnvelope"
+      examples:
+        - name: ReservationConfirmed
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: ReservationConfirmed
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              reservationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+              customerId: "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+              pickupStation: OPO
+              returnStation: OPO
+              categoryCode: ECMR
+              rentalPeriod:
+                pickupAt: "2026-07-01T09:00:00Z"
+                returnAt: "2026-07-04T09:00:00Z"
+              contractTerms:
+                dailyRate:
+                  amountCents: 4500
+                  currency: EUR
+                extras:
+                  - code: CHILD_SEAT
+                    pricePerDay:
+                      amountCents: 500
+                      currency: EUR
+                    cap:
+                      amountCents: 2500
+                      currency: EUR
+                coverage: MEDIUM
+                excess:
+                  amountCents: 100000
+                  currency: EUR
+                deposit:
+                  amountCents: 60000
+                  currency: EUR
+                fuelPricePerLitre:
+                  amountCents: 215
+                  currency: EUR
+                refuellingFee:
+                  amountCents: 2500
+                  currency: EUR
+              total:
+                amountCents: 19680
+                currency: EUR
+    ReservationCancelled:
+      name: ReservationCancelled
+      title: ReservationCancelled
+      summary: A confirmed reservation was cancelled by the customer or an agent.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ReservationCancelledEnvelope"
+      examples:
+        - name: ReservationCancelled
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: ReservationCancelled
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              reservationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+              customerId: "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+              cancellationFee:
+                amountCents: 0
+                currency: EUR
+              refundAmount:
+                amountCents: 19680
+                currency: EUR
+    ReservationExpired:
+      name: ReservationExpired
+      title: ReservationExpired
+      summary: A reservation expired before its payment was completed.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ReservationExpiredEnvelope"
+      examples:
+        - name: ReservationExpired
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: ReservationExpired
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              reservationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+              customerId: "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+              reason: PAYMENT_TIMEOUT
+    ReservationNoShow:
+      name: ReservationNoShow
+      title: ReservationNoShow
+      summary: The customer did not pick up the vehicle within 2 hours of the pick-up time.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ReservationNoShowEnvelope"
+      examples:
+        - name: ReservationNoShow
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: ReservationNoShow
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              reservationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+              customerId: "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+              retainedAmount:
+                amountCents: 4500
+                currency: EUR
+    PaymentFailed:
+      name: PaymentFailed
+      title: PaymentFailed
+      summary: The advance payment of a reservation failed.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/PaymentFailedEnvelope"
+      examples:
+        - name: PaymentFailed
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: PaymentFailed
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              paymentId: "2e1d0c9b-8a79-4685-b4a3-92817f6e5d4c"
+              reservationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+              customerId: "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+              reason: CARD_DECLINED
+    PaymentRefunded:
+      name: PaymentRefunded
+      title: PaymentRefunded
+      summary: Part or all of the advance payment of a reservation was refunded.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/PaymentRefundedEnvelope"
+      examples:
+        - name: PaymentRefunded
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: PaymentRefunded
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              paymentId: "2e1d0c9b-8a79-4685-b4a3-92817f6e5d4c"
+              reservationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+              customerId: "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+              amount:
+                amountCents: 19680
+                currency: EUR
+    DepositSettled:
+      name: DepositSettled
+      title: DepositSettled
+      summary: The security deposit of a rental was settled.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/DepositSettledEnvelope"
+      examples:
+        - name: DepositSettled
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: DepositSettled
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              rentalId: "5c4b3a29-1807-4f6e-9d5c-4b3a29180706"
+              depositId: "8f7e6d5c-4b3a-4291-8f7e-6d5c4b3a2918"
+              captured:
+                amountCents: 20080
+                currency: EUR
+              released:
+                amountCents: 39920
+                currency: EUR
+              outstanding:
+                amountCents: 0
+                currency: EUR
+    RentalStarted:
+      name: RentalStarted
+      title: RentalStarted
+      summary: The customer picked up the vehicle and the rental agreement became active.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/RentalStartedEnvelope"
+      examples:
+        - name: RentalStarted
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: RentalStarted
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              rentalId: "5c4b3a29-1807-4f6e-9d5c-4b3a29180706"
+              reservationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+              customerId: "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+              licensePlate: AA-12-BB
+              pickedUpAt: "2026-07-01T09:05:00Z"
+    VehicleReturned:
+      name: VehicleReturned
+      title: VehicleReturned
+      summary: The customer returned the vehicle.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/VehicleReturnedEnvelope"
+      examples:
+        - name: VehicleReturned
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: VehicleReturned
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              rentalId: "5c4b3a29-1807-4f6e-9d5c-4b3a29180706"
+              reservationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+              licensePlate: AA-12-BB
+              returnStation: OPO
+              odometerKm: 48230
+              fuelLevelEighths: 6
+              damages:
+                - location: FRONT_BUMPER
+                  description: "10 cm scratch"
+    RentalClosed:
+      name: RentalClosed
+      title: RentalClosed
+      summary: The rental agreement was settled and closed.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/RentalClosedEnvelope"
+      examples:
+        - name: RentalClosed
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: RentalClosed
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              rentalId: "5c4b3a29-1807-4f6e-9d5c-4b3a29180706"
+              customerId: "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+              extraCharges:
+                - type: FUEL
+                  description: "12 litres missing"
+                  amount:
+                    amountCents: 2580
+                    currency: EUR
+                - type: FUEL
+                  description: Refuelling fee
+                  amount:
+                    amountCents: 2500
+                    currency: EUR
+                - type: DAMAGE
+                  description: "10 cm scratch on the front bumper"
+                  amount:
+                    amountCents: 15000
+                    currency: EUR
+              finalTotal:
+                amountCents: 39760
+                currency: EUR
+              outstanding:
+                amountCents: 0
+                currency: EUR
+    SettleDeposit:
+      name: SettleDeposit
+      title: SettleDeposit
+      summary: Command to settle the security deposit of a returned rental.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/SettleDepositEnvelope"
+      examples:
+        - name: SettleDeposit
+          payload:
+            eventId: "7d9f2c4e-1b3a-4c5d-8e6f-0a1b2c3d4e5f"
+            type: SettleDeposit
+            version: 1
+            occurredAt: "2026-07-01T09:00:00Z"
+            correlationId: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+            payload:
+              rentalId: "5c4b3a29-1807-4f6e-9d5c-4b3a29180706"
+              depositId: "8f7e6d5c-4b3a-4291-8f7e-6d5c4b3a2918"
+              amountDue:
+                amountCents: 20080
+                currency: EUR
+  schemas:
+    Envelope:
+      type: object
+      description: Common envelope of every message.
+      additionalProperties: false
+      required:
+        - eventId
+        - type
+        - version
+        - occurredAt
+        - correlationId
+        - payload
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: "unique identifier, used by consumers to discard duplicates"
+        type:
+          type: string
+          description: event or command name
+        version:
+          type: integer
+          minimum: 1
+          description: payload schema version
+        occurredAt:
+          type: string
+          format: date-time
+          description: instant at which the fact happened in the source service
+        correlationId:
+          type: string
+          description: "reservation id when there is one; otherwise the eventId"
+        payload:
+          type: object
+    Money:
+      type: object
+      description: Amount of money in euro cents.
+      additionalProperties: false
+      required:
+        - amountCents
+        - currency
+      properties:
+        amountCents:
+          type: integer
+          format: int64
+          minimum: 0
+          description: "amount in cents, e.g. 4500 for 45.00 EUR"
+        currency:
+          type: string
+          const: EUR
+          description: "ISO 4217 currency code; always EUR"
+    RentalPeriod:
+      type: object
+      description: "Pick-up and return date-times of a rental, in UTC."
+      additionalProperties: false
+      required:
+        - pickupAt
+        - returnAt
+      properties:
+        pickupAt:
+          type: string
+          format: date-time
+          description: pick-up date-time
+        returnAt:
+          type: string
+          format: date-time
+          description: "return date-time; after pickupAt"
+    ContractExtra:
+      type: object
+      description: "Extra booked with the reservation, at the price agreed at booking time."
+      additionalProperties: false
+      required:
+        - code
+        - pricePerDay
+        - cap
+      properties:
+        code:
+          type: string
+          description: "extra code, e.g. CHILD_SEAT"
+        pricePerDay:
+          $ref: "#/components/schemas/Money"
+        cap:
+          $ref: "#/components/schemas/Money"
+    ContractTerms:
+      type: object
+      description: Contract conditions frozen at booking time.
+      additionalProperties: false
+      required:
+        - dailyRate
+        - extras
+        - coverage
+        - excess
+        - deposit
+        - fuelPricePerLitre
+        - refuellingFee
+      properties:
+        dailyRate:
+          $ref: "#/components/schemas/Money"
+        extras:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractExtra"
+        coverage:
+          type: string
+          description: "code of the coverage chosen, e.g. FULL"
+        excess:
+          $ref: "#/components/schemas/Money"
+        deposit:
+          $ref: "#/components/schemas/Money"
+        fuelPricePerLitre:
+          $ref: "#/components/schemas/Money"
+        refuellingFee:
+          $ref: "#/components/schemas/Money"
+    Damage:
+      type: object
+      description: Damage found at the return inspection that was not recorded at pick-up.
+      additionalProperties: false
+      required:
+        - location
+        - description
+      properties:
+        location:
+          type: string
+          description: "part of the vehicle, e.g. FRONT_BUMPER"
+        description:
+          type: string
+          description: what the agent recorded
+    ExtraCharge:
+      type: object
+      description: Amount charged at settlement on top of the advance payment.
+      additionalProperties: false
+      required:
+        - type
+        - description
+        - amount
+      properties:
+        type:
+          type: string
+          enum:
+            - FUEL
+            - LATE_RETURN
+            - DAMAGE
+          description: what the charge is for
+        description:
+          type: string
+          description: detail shown to the customer
+        amount:
+          $ref: "#/components/schemas/Money"
+    CustomerRegisteredEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: CustomerRegistered
+            payload:
+              $ref: "#/components/schemas/CustomerRegistered"
+    CustomerRegistered:
+      type: object
+      description: A customer created their profile.
+      additionalProperties: false
+      required:
+        - customerId
+        - fullName
+        - email
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+          description: "customer's full name"
+        email:
+          type: string
+          description: address the notifications are sent to
+          format: email
+    StationCapacityChangedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: StationCapacityChanged
+            payload:
+              $ref: "#/components/schemas/StationCapacityChanged"
+    StationCapacityChanged:
+      type: object
+      description: The number of vehicles of a category that a station can deliver changed.
+      additionalProperties: false
+      required:
+        - stationCode
+        - categoryCode
+        - capacity
+      properties:
+        stationCode:
+          type: string
+          description: "station code, e.g. OPO"
+          pattern: "^[A-Z]{3}$"
+        categoryCode:
+          type: string
+          description: "ACRISS code of the vehicle category, e.g. ECMR"
+          pattern: "^[A-Z]{4}$"
+        capacity:
+          type: integer
+          minimum: 0
+          description: "new capacity; replaces the previous value"
+    VehicleCategoryChangedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: VehicleCategoryChanged
+            payload:
+              $ref: "#/components/schemas/VehicleCategoryChanged"
+    VehicleCategoryChanged:
+      type: object
+      description: A vehicle category was created or its requirements changed.
+      additionalProperties: false
+      required:
+        - categoryCode
+        - name
+        - minimumAge
+        - minimumLicenseYears
+      properties:
+        categoryCode:
+          type: string
+          description: "ACRISS code of the vehicle category, e.g. ECMR"
+          pattern: "^[A-Z]{4}$"
+        name:
+          type: string
+          description: category name
+        minimumAge:
+          type: integer
+          minimum: 0
+          description: minimum driver age
+        minimumLicenseYears:
+          type: integer
+          minimum: 0
+          description: minimum years since the driving licence was issued
+    ReservationConfirmedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: ReservationConfirmed
+            payload:
+              $ref: "#/components/schemas/ReservationConfirmed"
+    ReservationConfirmed:
+      type: object
+      description: A reservation was paid and confirmed.
+      additionalProperties: false
+      required:
+        - reservationId
+        - customerId
+        - pickupStation
+        - returnStation
+        - categoryCode
+        - rentalPeriod
+        - contractTerms
+        - total
+      properties:
+        reservationId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        pickupStation:
+          type: string
+          description: "station code, e.g. OPO"
+          pattern: "^[A-Z]{3}$"
+        returnStation:
+          type: string
+          description: "station code, e.g. OPO"
+          pattern: "^[A-Z]{3}$"
+        categoryCode:
+          type: string
+          description: "ACRISS code of the vehicle category, e.g. ECMR"
+          pattern: "^[A-Z]{4}$"
+        rentalPeriod:
+          $ref: "#/components/schemas/RentalPeriod"
+        contractTerms:
+          $ref: "#/components/schemas/ContractTerms"
+        total:
+          $ref: "#/components/schemas/Money"
+    ReservationCancelledEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: ReservationCancelled
+            payload:
+              $ref: "#/components/schemas/ReservationCancelled"
+    ReservationCancelled:
+      type: object
+      description: A confirmed reservation was cancelled by the customer or an agent.
+      additionalProperties: false
+      required:
+        - reservationId
+        - customerId
+        - cancellationFee
+        - refundAmount
+      properties:
+        reservationId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        cancellationFee:
+          $ref: "#/components/schemas/Money"
+        refundAmount:
+          $ref: "#/components/schemas/Money"
+    ReservationExpiredEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: ReservationExpired
+            payload:
+              $ref: "#/components/schemas/ReservationExpired"
+    ReservationExpired:
+      type: object
+      description: A reservation expired before its payment was completed.
+      additionalProperties: false
+      required:
+        - reservationId
+        - customerId
+        - reason
+      properties:
+        reservationId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          description: "why the reservation expired, e.g. PAYMENT_TIMEOUT"
+    ReservationNoShowEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: ReservationNoShow
+            payload:
+              $ref: "#/components/schemas/ReservationNoShow"
+    ReservationNoShow:
+      type: object
+      description: The customer did not pick up the vehicle within 2 hours of the pick-up time.
+      additionalProperties: false
+      required:
+        - reservationId
+        - customerId
+        - retainedAmount
+      properties:
+        reservationId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        retainedAmount:
+          $ref: "#/components/schemas/Money"
+    PaymentFailedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: PaymentFailed
+            payload:
+              $ref: "#/components/schemas/PaymentFailed"
+    PaymentFailed:
+      type: object
+      description: The advance payment of a reservation failed.
+      additionalProperties: false
+      required:
+        - paymentId
+        - reservationId
+        - customerId
+        - reason
+      properties:
+        paymentId:
+          type: string
+          format: uuid
+        reservationId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          description: "why the payment failed, e.g. CARD_DECLINED"
+    PaymentRefundedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: PaymentRefunded
+            payload:
+              $ref: "#/components/schemas/PaymentRefunded"
+    PaymentRefunded:
+      type: object
+      description: Part or all of the advance payment of a reservation was refunded.
+      additionalProperties: false
+      required:
+        - paymentId
+        - reservationId
+        - customerId
+        - amount
+      properties:
+        paymentId:
+          type: string
+          format: uuid
+        reservationId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        amount:
+          $ref: "#/components/schemas/Money"
+    DepositSettledEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: DepositSettled
+            payload:
+              $ref: "#/components/schemas/DepositSettled"
+    DepositSettled:
+      type: object
+      description: The security deposit of a rental was settled.
+      additionalProperties: false
+      required:
+        - rentalId
+        - depositId
+        - captured
+        - released
+        - outstanding
+      properties:
+        rentalId:
+          type: string
+          format: uuid
+        depositId:
+          type: string
+          format: uuid
+        captured:
+          $ref: "#/components/schemas/Money"
+        released:
+          $ref: "#/components/schemas/Money"
+        outstanding:
+          $ref: "#/components/schemas/Money"
+    RentalStartedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: RentalStarted
+            payload:
+              $ref: "#/components/schemas/RentalStarted"
+    RentalStarted:
+      type: object
+      description: The customer picked up the vehicle and the rental agreement became active.
+      additionalProperties: false
+      required:
+        - rentalId
+        - reservationId
+        - customerId
+        - licensePlate
+        - pickedUpAt
+      properties:
+        rentalId:
+          type: string
+          format: uuid
+        reservationId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        licensePlate:
+          type: string
+          description: licence plate of the vehicle assigned
+        pickedUpAt:
+          type: string
+          format: date-time
+          description: "pick-up date-time, in UTC"
+    VehicleReturnedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: VehicleReturned
+            payload:
+              $ref: "#/components/schemas/VehicleReturned"
+    VehicleReturned:
+      type: object
+      description: The customer returned the vehicle.
+      additionalProperties: false
+      required:
+        - rentalId
+        - reservationId
+        - licensePlate
+        - returnStation
+        - odometerKm
+        - fuelLevelEighths
+        - damages
+      properties:
+        rentalId:
+          type: string
+          format: uuid
+        reservationId:
+          type: string
+          format: uuid
+        licensePlate:
+          type: string
+          description: licence plate of the vehicle returned
+        returnStation:
+          type: string
+          description: "station code, e.g. OPO"
+          pattern: "^[A-Z]{3}$"
+        odometerKm:
+          type: integer
+          format: int64
+          minimum: 0
+          description: odometer reading in km
+        fuelLevelEighths:
+          type: integer
+          minimum: 0
+          maximum: 8
+          description: fuel level in eighths of a tank
+        damages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Damage"
+    RentalClosedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: RentalClosed
+            payload:
+              $ref: "#/components/schemas/RentalClosed"
+    RentalClosed:
+      type: object
+      description: The rental agreement was settled and closed.
+      additionalProperties: false
+      required:
+        - rentalId
+        - customerId
+        - extraCharges
+        - finalTotal
+        - outstanding
+      properties:
+        rentalId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        extraCharges:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExtraCharge"
+        finalTotal:
+          $ref: "#/components/schemas/Money"
+        outstanding:
+          $ref: "#/components/schemas/Money"
+    SettleDepositEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            type:
+              const: SettleDeposit
+            payload:
+              $ref: "#/components/schemas/SettleDeposit"
+    SettleDeposit:
+      type: object
+      description: Command to settle the security deposit of a returned rental.
+      additionalProperties: false
+      required:
+        - rentalId
+        - depositId
+        - amountDue
+      properties:
+        rentalId:
+          type: string
+          format: uuid
+        depositId:
+          type: string
+          format: uuid
+        amountDue:
+          $ref: "#/components/schemas/Money"

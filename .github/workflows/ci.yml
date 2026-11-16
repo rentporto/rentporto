@@ -22,13 +22,14 @@ jobs:
       pull-requests: read
     outputs:
       services: ${{ steps.filter.outputs.changes }}
+      asyncapi: ${{ steps.contracts.outputs.asyncapi }}
     steps:
       - uses: actions/checkout@v7
       - id: filter
         uses: dorny/paths-filter@v4
         with:
           # One filter per deployable module. &build lists the files that affect every module;
-          # &events and &messaging add the shared libraries to the modules that depend on them.
+          # &web, &events and &messaging add the shared libraries to the modules that depend on them.
           filters: |
             config-server:
               - &build
@@ -43,32 +44,52 @@ jobs:
               - gateway/**
             auth-service:
               - *build
+              - &web common-web/**
               - auth-service/**
+              - docs/openapi/auth-service.yaml
             customer-service:
               - *build
+              - *web
               - &events common-events/**
               - &messaging common-messaging/**
               - customer-service/**
+              - docs/openapi/customer-service.yaml
             fleet-service:
               - *build
+              - *web
               - *events
               - *messaging
               - fleet-service/**
+              - docs/openapi/fleet-service.yaml
             booking-service:
               - *build
+              - *web
               - *events
               - *messaging
               - booking-service/**
+              - docs/openapi/booking-service.yaml
             rental-service:
               - *build
+              - *web
               - *events
               - *messaging
               - rental-service/**
+              - docs/openapi/rental-service.yaml
             notification-service:
               - *build
+              - *web
               - *events
               - *messaging
               - notification-service/**
+              - docs/openapi/notification-service.yaml
+      - id: contracts
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            asyncapi:
+              - docs/asyncapi/**
+              - common-events/**
+              - .github/workflows/ci.yml
 
   build:
     name: Build ${{ matrix.service }}
@@ -92,6 +113,10 @@ jobs:
           path: ~/.m2/repository
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-${{ runner.os }}-
+      - uses: actions/cache@v6
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ runner.os }}-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
       - name: Build and test
         run: ./mvnw -B -ntp -pl ${{ matrix.service }} -am verify
       - uses: docker/setup-buildx-action@v4
@@ -113,11 +138,38 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  asyncapi:
+    name: AsyncAPI
+    needs: changes
+    if: needs.changes.outputs.asyncapi == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Lint
+        run: npx -y @asyncapi/cli@6.3.1 validate docs/asyncapi/asyncapi.yaml
+      - uses: actions/setup-java@v6
+        with:
+          java-version-file: .sdkmanrc
+      - uses: actions/cache@v6
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
+      - uses: actions/cache@v6
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ runner.os }}-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+      - name: Check the documented messages against common-events
+        run: ./mvnw -B -ntp -pl common-events verify
+
   # Single required status check for branch protection.
   ci-result:
     name: CI result
     if: always()
-    needs: [changes, build]
+    needs: [changes, build, asyncapi]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')

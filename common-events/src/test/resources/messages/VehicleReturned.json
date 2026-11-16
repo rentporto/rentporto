@@ -12,7 +12,7 @@
     "odometerKm": 48230,
     "fuelLevelEighths": 6,
     "damages": [
-      { "area": "FRONT_BUMPER", "description": "10 cm scratch" }
+      { "location": "FRONT_BUMPER", "description": "10 cm scratch" }
     ]
   }
 }

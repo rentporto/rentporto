@@ -1,0 +1,105 @@
+openapi: 3.1.0
+info:
+  title: notification-service
+  version: v1
+servers:
+- description: Generated server url
+  url: http://localhost
+security:
+- bearerAuth: []
+paths:
+  /notifications:
+    get:
+      description: "Lists the notifications sent to a customer. Roles: ADMIN."
+      operationId: notifications
+      parameters:
+      - description: customer whose notifications are listed
+        in: query
+        name: customerId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationResponse"
+          description: "the notifications, most recent first"
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Lists the notifications sent to a customer.
+      tags:
+      - Notifications
+components:
+  schemas:
+    NotificationResponse:
+      type: object
+      description: Notification sent to a customer.
+      properties:
+        customerId:
+          type: string
+          format: uuid
+          description: customer the notification was sent to
+        notificationId:
+          type: string
+          format: uuid
+          description: notification identifier
+        sentAt:
+          type: string
+          format: date-time
+          description: date-time the notification was sent
+        status:
+          type: string
+          description: outcome of the sending
+          enum:
+          - SENT
+          - FAILED
+        subject:
+          type: string
+          description: subject of the email
+        type:
+          type: string
+          description: "event that triggered it, e.g. <code>ReservationConfirmed</code>"
+    ProblemDetail:
+      type: object
+      description: Error response (RFC 9457)
+      properties:
+        code:
+          type: string
+          description: "Reason of the error, e.g. QUOTE_EXPIRED"
+        detail:
+          type: string
+        errors:
+          type: array
+          description: Invalid fields
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        instance:
+          type: string
+          format: uri
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
