@@ -1,0 +1,17 @@
+spring:
+  flyway:
+    locations: classpath:db/messaging
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  rabbitmq:
+    listener:
+      simple:
+        retry:
+          initial-interval: 100ms
+
+rentporto:
+  messaging:
+    outbox:
+      poll-interval: 200ms
+      confirm-timeout: 1s
