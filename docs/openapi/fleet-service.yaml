@@ -1,0 +1,584 @@
+openapi: 3.1.0
+info:
+  title: fleet-service
+  version: v1
+servers:
+- description: Generated server url
+  url: http://localhost
+security:
+- bearerAuth: []
+paths:
+  /categories:
+    get:
+      description: Lists the vehicle categories with their requirements. Public.
+      operationId: categories
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryResponse"
+          description: the categories
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: Lists the vehicle categories with their requirements.
+      tags:
+      - Categories
+    post:
+      description: "Creates a vehicle category and publishes <code>VehicleCategoryChanged</code>.\
+        \ Roles: FLEET_MANAGER."
+      operationId: createCategory
+      parameters:
+      - description: key that makes a repeated request return the same category; optional
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryRequest"
+        description: category and its requirements
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+          description: the created category
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Creates a vehicle category and publishes <code>VehicleCategoryChanged</code>.
+      tags:
+      - Categories
+  /categories/{code}:
+    put:
+      description: "Updates a vehicle category and publishes <code>VehicleCategoryChanged</code>.\
+        \ Roles: FLEET_MANAGER."
+      operationId: updateCategory
+      parameters:
+      - description: ACRISS code of the category
+        in: path
+        name: code
+        required: true
+        schema:
+          type: string
+          pattern: "[A-Z]{4}"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryRequest"
+        description: category and its requirements
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+          description: the updated category
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Updates a vehicle category and publishes <code>VehicleCategoryChanged</code>.
+      tags:
+      - Categories
+  /internal/vehicles/assignments:
+    post:
+      description: |-
+        Assigns an available vehicle of the category at the station, called by the rental-service at pick-up. The vehicle
+         becomes rented.
+      operationId: assignVehicle
+      parameters:
+      - description: key that makes a repeated request return the same assignment
+        in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleAssignmentRequest"
+        description: "rental, category and station"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleAssignmentResponse"
+          description: the assigned vehicle
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: "Assigns an available vehicle of the category at the station, called\
+        \ by the rental-service at pick-up."
+      tags:
+      - Internal
+  /stations:
+    get:
+      description: Lists the stations. Public.
+      operationId: stations
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StationResponse"
+          description: the stations
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: Lists the stations.
+      tags:
+      - Stations
+  /vehicles:
+    get:
+      description: "Lists the vehicles, optionally of one station and in one state.\
+        \ Roles: FLEET_MANAGER."
+      operationId: vehicles
+      parameters:
+      - description: code of the station; optional
+        in: query
+        name: station
+        required: false
+        schema:
+          type: string
+          pattern: "[A-Z]{3}"
+      - description: state of the vehicles; optional
+        in: query
+        name: status
+        required: false
+        schema:
+          type: string
+          enum:
+          - AVAILABLE
+          - RENTED
+          - IN_MAINTENANCE
+          - IN_TRANSFER
+          - RETIRED
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleResponse"
+          description: the vehicles that match
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: "Lists the vehicles, optionally of one station and in one state."
+      tags:
+      - Vehicles
+    post:
+      description: "Registers a vehicle at a station. Roles: FLEET_MANAGER."
+      operationId: registerVehicle
+      parameters:
+      - description: key that makes a repeated request return the same vehicle; optional
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleRequest"
+        description: vehicle to register
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleResponse"
+          description: the registered vehicle
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Registers a vehicle at a station.
+      tags:
+      - Vehicles
+  /vehicles/{plate}/status:
+    patch:
+      description: "Sends a vehicle to maintenance, retires it or brings it back to\
+        \ service. Roles: FLEET_MANAGER."
+      operationId: changeStatus
+      parameters:
+      - description: licence plate of the vehicle
+        in: path
+        name: plate
+        required: true
+        schema:
+          type: string
+          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleStatusRequest"
+        description: new state
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleResponse"
+          description: the vehicle in its new state
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: "Sends a vehicle to maintenance, retires it or brings it back to service."
+      tags:
+      - Vehicles
+  /vehicles/{plate}/transfers:
+    post:
+      description: |-
+        Starts the transfer of a vehicle to another station; the vehicle stays in transfer until the transfer is
+         completed. Roles: FLEET_MANAGER.
+      operationId: startTransfer
+      parameters:
+      - description: licence plate of the vehicle
+        in: path
+        name: plate
+        required: true
+        schema:
+          type: string
+          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}"
+      - description: key that makes a repeated request return the same transfer; optional
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequest"
+        description: destination station
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+          description: the started transfer
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: |-
+        Starts the transfer of a vehicle to another station; the vehicle stays in transfer until the transfer is
+         completed.
+      tags:
+      - Vehicles
+  /vehicles/{plate}/transfers/{id}/completion:
+    post:
+      description: |-
+        Completes a transfer: the vehicle is available at the destination station and the capacity of both stations is
+         published. Roles: FLEET_MANAGER.
+      operationId: completeTransfer
+      parameters:
+      - description: licence plate of the vehicle
+        in: path
+        name: plate
+        required: true
+        schema:
+          type: string
+          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}"
+      - description: transfer identifier
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+          description: the completed transfer
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: |-
+        Completes a transfer: the vehicle is available at the destination station and the capacity of both stations is
+         published.
+      tags:
+      - Vehicles
+components:
+  schemas:
+    CategoryRequest:
+      type: object
+      description: Vehicle category a fleet manager creates or updates.
+      properties:
+        code:
+          type: string
+          description: "ACRISS code of the category, e.g. <code>ECMR</code>"
+          pattern: "[A-Z]{4}"
+        minimumAge:
+          type: integer
+          format: int32
+          description: minimum driver age
+          minimum: 0
+        minimumLicenseYears:
+          type: integer
+          format: int32
+          description: minimum years since the driving licence was issued
+          minimum: 0
+        name:
+          type: string
+          description: "category name, e.g. <code>Group B - Economy</code>"
+          minLength: 1
+      required:
+      - code
+      - name
+    CategoryResponse:
+      type: object
+      description: Vehicle category and its driver requirements.
+      properties:
+        code:
+          type: string
+          description: "ACRISS code of the category, e.g. <code>ECMR</code>"
+        minimumAge:
+          type: integer
+          format: int32
+          description: minimum driver age
+        minimumLicenseYears:
+          type: integer
+          format: int32
+          description: minimum years since the driving licence was issued
+        name:
+          type: string
+          description: "category name, e.g. <code>Group B - Economy</code>"
+    ProblemDetail:
+      type: object
+      description: Error response (RFC 9457)
+      properties:
+        code:
+          type: string
+          description: "Reason of the error, e.g. QUOTE_EXPIRED"
+        detail:
+          type: string
+        errors:
+          type: array
+          description: Invalid fields
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        instance:
+          type: string
+          format: uri
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    StationResponse:
+      type: object
+      description: Station where vehicles are picked up and returned.
+      properties:
+        code:
+          type: string
+          description: "station code, e.g. <code>OPO</code>"
+        name:
+          type: string
+          description: "station name, e.g. <code>Porto Airport</code>"
+    TransferRequest:
+      type: object
+      description: Transfer of a vehicle to another station.
+      properties:
+        toStation:
+          type: string
+          description: code of the destination station
+          pattern: "[A-Z]{3}"
+      required:
+      - toStation
+    TransferResponse:
+      type: object
+      description: Transfer of a vehicle between stations.
+      properties:
+        fromStation:
+          type: string
+          description: code of the origin station
+        licensePlate:
+          type: string
+          description: licence plate of the vehicle
+        status:
+          type: string
+          description: current state
+          enum:
+          - IN_TRANSFER
+          - COMPLETED
+        toStation:
+          type: string
+          description: code of the destination station
+        transferId:
+          type: string
+          format: uuid
+          description: transfer identifier
+    VehicleAssignmentRequest:
+      type: object
+      description: Request for a vehicle of a category at pick-up.
+      properties:
+        categoryCode:
+          type: string
+          description: ACRISS code of the category booked
+          pattern: "[A-Z]{4}"
+        rentalId:
+          type: string
+          format: uuid
+          description: rental agreement the vehicle is for
+        station:
+          type: string
+          description: code of the pick-up station
+          pattern: "[A-Z]{3}"
+      required:
+      - categoryCode
+      - rentalId
+      - station
+    VehicleAssignmentResponse:
+      type: object
+      description: Vehicle assigned to a rental.
+      properties:
+        licensePlate:
+          type: string
+          description: "licence plate of the vehicle, e.g. <code>AA-12-BB</code>"
+        odometerKm:
+          type: integer
+          format: int64
+          description: odometer reading in kilometres at assignment
+    VehicleRequest:
+      type: object
+      description: Vehicle a fleet manager registers.
+      properties:
+        categoryCode:
+          type: string
+          description: ACRISS code of the vehicle category
+          pattern: "[A-Z]{4}"
+        licensePlate:
+          type: string
+          description: "licence plate, e.g. <code>AA-12-BB</code>"
+          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}"
+        odometerKm:
+          type: integer
+          format: int64
+          description: odometer reading in kilometres
+          minimum: 0
+        station:
+          type: string
+          description: code of the station where the vehicle is
+          pattern: "[A-Z]{3}"
+      required:
+      - categoryCode
+      - licensePlate
+      - station
+    VehicleResponse:
+      type: object
+      description: Vehicle of the fleet.
+      properties:
+        categoryCode:
+          type: string
+          description: ACRISS code of the vehicle category
+        fuelLevelEighths:
+          type: integer
+          format: int32
+          description: "fuel level in eighths of a tank, from 0 to 8"
+        licensePlate:
+          type: string
+          description: "licence plate, e.g. <code>AA-12-BB</code>"
+        odometerKm:
+          type: integer
+          format: int64
+          description: odometer reading in kilometres
+        station:
+          type: string
+          description: code of the station where the vehicle is
+        status:
+          type: string
+          description: current state
+          enum:
+          - AVAILABLE
+          - RENTED
+          - IN_MAINTENANCE
+          - IN_TRANSFER
+          - RETIRED
+    VehicleStatusRequest:
+      type: object
+      description: State change a fleet manager requests for a vehicle.
+      properties:
+        reason:
+          type: string
+          description: "why the state changes, e.g. <code>Brake service</code>; optional"
+        status:
+          type: string
+          description: new state
+          enum:
+          - AVAILABLE
+          - IN_MAINTENANCE
+          - RETIRED
+      required:
+      - status
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

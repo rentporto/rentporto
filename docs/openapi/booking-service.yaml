@@ -1,0 +1,1176 @@
+openapi: 3.1.0
+info:
+  title: booking-service
+  version: v1
+servers:
+- description: Generated server url
+  url: http://localhost
+security:
+- bearerAuth: []
+paths:
+  /availability:
+    get:
+      description: Lists the categories that can still be booked between two stations
+        for a period. Public.
+      operationId: availability
+      parameters:
+      - description: code of the pick-up station
+        in: query
+        name: pickupStation
+        required: true
+        schema:
+          type: string
+      - description: code of the return station
+        in: query
+        name: returnStation
+        required: true
+        schema:
+          type: string
+      - description: pick-up date-time
+        in: query
+        name: from
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - description: return date-time
+        in: query
+        name: to
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailabilityResponse"
+          description: the available categories
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: Lists the categories that can still be booked between two stations
+        for a period.
+      tags:
+      - Availability
+  /coverages:
+    get:
+      description: Reads the coverages a customer can choose. Public.
+      operationId: coverages
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Coverage"
+          description: the coverages
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: Reads the coverages a customer can choose.
+      tags:
+      - Price list
+    put:
+      description: "Replaces the whole list of coverages. Roles: PRICING_MANAGER."
+      operationId: replaceCoverages
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Coverage"
+        description: new list of coverages
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Coverage"
+          description: the stored coverages
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Replaces the whole list of coverages.
+      tags:
+      - Price list
+  /extras:
+    get:
+      description: Reads the extras a customer can add to a quote. Public.
+      operationId: extras
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Extra"
+          description: the extras
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: Reads the extras a customer can add to a quote.
+      tags:
+      - Price list
+    put:
+      description: "Replaces the whole list of extras. Roles: PRICING_MANAGER."
+      operationId: replaceExtras
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Extra"
+        description: new list of extras
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Extra"
+          description: the stored extras
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Replaces the whole list of extras.
+      tags:
+      - Price list
+  /fees:
+    get:
+      description: "Reads the fees. Roles: PRICING_MANAGER."
+      operationId: fees
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Fee"
+          description: the fees
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Reads the fees.
+      tags:
+      - Price list
+    put:
+      description: "Replaces the whole list of fees. Roles: PRICING_MANAGER."
+      operationId: replaceFees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Fee"
+        description: new list of fees
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Fee"
+          description: the stored fees
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Replaces the whole list of fees.
+      tags:
+      - Price list
+  /internal/deposits:
+    post:
+      description: |-
+        Pre-authorises the security deposit at pick-up, called by the rental-service while the customer waits at the
+         desk.
+      operationId: authorizeDeposit
+      parameters:
+      - description: optional key that makes a repeated request return the same deposit
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepositRequest"
+        description: "rental, reservation and amount"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositResponse"
+          description: the deposit pre-authorised
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: |-
+        Pre-authorises the security deposit at pick-up, called by the rental-service while the customer waits at the
+         desk.
+      tags:
+      - Internal
+  /payments:
+    get:
+      description: "Lists the payments of a reservation. Roles: CUSTOMER (owner),\
+        \ AGENT, ADMIN."
+      operationId: payments
+      parameters:
+      - description: reservation identifier
+        in: query
+        name: reservationId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentResponse"
+          description: the payments
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Lists the payments of a reservation.
+      tags:
+      - Payments
+  /payments/stripe-webhook:
+    post:
+      description: |-
+        Receives an event from Stripe, e.g. a payment that succeeded. Public, verified by the <code>Stripe-Signature</code>
+         header.
+      operationId: receive
+      parameters:
+      - description: signature of the payload computed by Stripe
+        in: header
+        name: Stripe-Signature
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: "Stripe event, as sent"
+        required: true
+      responses:
+        "200":
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: |-
+        Receives an event from Stripe, e.g. a payment that succeeded. Public, verified by the <code>Stripe-Signature</code>
+         header.
+      tags:
+      - Stripe webhook
+  /quotes:
+    post:
+      description: "Issues a quote for a rental, valid for 15 minutes. Public."
+      operationId: createQuote
+      parameters:
+      - description: optional key that makes a repeated request return the same quote
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteRequest"
+        description: what the customer wants to rent
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteResponse"
+          description: the quote with its price lines
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: "Issues a quote for a rental, valid for 15 minutes."
+      tags:
+      - Quotes
+  /rate-cards/{categoryCode}:
+    get:
+      description: "Reads the base daily rate of a category. Roles: PRICING_MANAGER."
+      operationId: rateCard
+      parameters:
+      - description: ACRISS code of the category
+        in: path
+        name: categoryCode
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateCard"
+          description: the rate card
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Reads the base daily rate of a category.
+      tags:
+      - Price list
+    put:
+      description: "Sets the base daily rate of a category; new quotes use it straight\
+        \ away. Roles: PRICING_MANAGER."
+      operationId: saveRateCard
+      parameters:
+      - description: ACRISS code of the category
+        in: path
+        name: categoryCode
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RateCard"
+        description: new rate card
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateCard"
+          description: the stored rate card
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Sets the base daily rate of a category; new quotes use it straight
+        away.
+      tags:
+      - Price list
+  /receipts/{id}:
+    get:
+      description: "Reads a receipt. Roles: CUSTOMER (owner)."
+      operationId: receipt
+      parameters:
+      - description: receipt identifier
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptResponse"
+          description: the receipt
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Reads a receipt.
+      tags:
+      - Receipts
+  /reservations:
+    get:
+      description: "Lists the pick-ups scheduled at a station on a day. Roles: AGENT."
+      operationId: pickUpsOfTheDay
+      parameters:
+      - description: code of the station
+        in: query
+        name: station
+        required: true
+        schema:
+          type: string
+      - description: day of the pick-ups
+        in: query
+        name: date
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReservationResponse"
+          description: the reservations to pick up
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Lists the pick-ups scheduled at a station on a day.
+      tags:
+      - Reservations
+    post:
+      description: |-
+        Books a quote and starts the payment; the reservation stays in <code>PENDING_PAYMENT</code> until the payment is
+         confirmed. The response carries a <code>Location</code> header to follow its state. Business errors:
+         <code>DRIVER_NOT_ELIGIBLE</code>, <code>QUOTE_DRIVER_MISMATCH</code>, <code>QUOTE_EXPIRED</code>, <code>QUOTE_ALREADY_USED</code>,
+         <code>NO_AVAILABILITY</code>. Roles: CUSTOMER.
+      operationId: createReservation
+      parameters:
+      - description: key that makes a repeated request return the same reservation
+        in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReservationRequest"
+        description: quote to book and payment method
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationResponse"
+          description: the reservation created
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: |-
+        Books a quote and starts the payment; the reservation stays in <code>PENDING_PAYMENT</code> until the payment is
+         confirmed.
+      tags:
+      - Reservations
+  /reservations/me:
+    get:
+      description: "Lists the reservations of the authenticated customer. Roles: CUSTOMER."
+      operationId: myReservations
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReservationResponse"
+          description: the reservations
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Lists the reservations of the authenticated customer.
+      tags:
+      - Reservations
+  /reservations/{id}:
+    get:
+      description: "Reads a reservation. Roles: CUSTOMER (owner), AGENT."
+      operationId: reservation
+      parameters:
+      - description: reservation identifier
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationResponse"
+          description: the reservation
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Reads a reservation.
+      tags:
+      - Reservations
+  /reservations/{id}/cancellation:
+    post:
+      description: |-
+        Cancels a reservation; the penalty is zero up to 48 hours before pick-up and one day afterwards. The response
+         carries a <code>Location</code> header to follow the refund. Business error: <code>RESERVATION_NOT_CANCELLABLE</code>.
+         Roles: CUSTOMER (owner), AGENT.
+      operationId: cancel
+      parameters:
+      - description: reservation identifier
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancellationRequest"
+        description: reason of the cancellation
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationResponse"
+          description: the reservation being cancelled
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Cancels a reservation; the penalty is zero up to 48 hours before pick-up
+        and one day afterwards.
+      tags:
+      - Reservations
+  /seasons:
+    get:
+      description: "Reads the seasons. Roles: PRICING_MANAGER."
+      operationId: seasons
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Season"
+          description: the seasons
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Reads the seasons.
+      tags:
+      - Price list
+    put:
+      description: "Replaces the whole list of seasons. Roles: PRICING_MANAGER."
+      operationId: replaceSeasons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Season"
+        description: new list of seasons
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Season"
+          description: the stored seasons
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Replaces the whole list of seasons.
+      tags:
+      - Price list
+components:
+  schemas:
+    AvailabilityResponse:
+      type: object
+      description: Vehicles of a category still available for a period.
+      properties:
+        available:
+          type: integer
+          format: int32
+          description: number of vehicles that can still be booked for the whole period
+        categoryCode:
+          type: string
+          description: ACRISS code of the category
+        categoryName:
+          type: string
+          description: "name of the category, e.g. <code>Group B - Economy</code>"
+    CancellationRequest:
+      type: object
+      description: Cancellation of a reservation.
+      properties:
+        reason:
+          type: string
+          description: why the reservation is cancelled; optional
+    Coverage:
+      type: object
+      description: Insurance coverage a customer can choose.
+      properties:
+        code:
+          type: string
+          description: coverage code
+          enum:
+          - BASIC
+          - MEDIUM
+          - FULL
+        deposit:
+          $ref: "#/components/schemas/Money"
+          description: security deposit pre-authorised at pick-up
+        excess:
+          $ref: "#/components/schemas/Money"
+          description: maximum the customer pays for damages
+        pricePerDay:
+          $ref: "#/components/schemas/Money"
+          description: price per 24-hour day
+      required:
+      - code
+      - deposit
+      - excess
+      - pricePerDay
+    CreateReservationRequest:
+      type: object
+      description: Booking of a quote.
+      properties:
+        paymentMethodId:
+          type: string
+          description: "Stripe test payment method, e.g. <code>pm_card_visa</code>"
+          minLength: 1
+        quoteId:
+          type: string
+          format: uuid
+          description: quote to book; must not have expired nor been used
+      required:
+      - paymentMethodId
+      - quoteId
+    DepositRequest:
+      type: object
+      description: "Pre-authorisation of the security deposit at pick-up, on the card\
+        \ used for the advance payment."
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: amount to pre-authorise
+        rentalId:
+          type: string
+          format: uuid
+          description: rental agreement identifier
+        reservationId:
+          type: string
+          format: uuid
+          description: reservation paid in advance; its card is used
+      required:
+      - amount
+      - rentalId
+      - reservationId
+    DepositResponse:
+      type: object
+      description: Security deposit pre-authorised on the card.
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: amount pre-authorised
+        depositId:
+          type: string
+          format: uuid
+          description: "deposit identifier, used later to settle it"
+        expiresAt:
+          type: string
+          format: date-time
+          description: instant the pre-authorisation lapses unless renewed
+        status:
+          type: string
+          description: current state
+          enum:
+          - AUTHORIZED
+    Extra:
+      type: object
+      description: Extra a customer can add to a rental.
+      properties:
+        cap:
+          $ref: "#/components/schemas/Money"
+          description: maximum charged for the whole rental
+        code:
+          type: string
+          description: "extra code, e.g. <code>CHILD_SEAT</code>"
+          minLength: 1
+        name:
+          type: string
+          description: name shown to the customer
+          minLength: 1
+        pricePerDay:
+          $ref: "#/components/schemas/Money"
+          description: price per 24-hour day
+      required:
+      - cap
+      - code
+      - name
+      - pricePerDay
+    ExtraSelection:
+      type: object
+      description: Extra chosen for a quote.
+      properties:
+        code:
+          type: string
+          description: "extra code, e.g. <code>CHILD_SEAT</code>"
+          minLength: 1
+        quantity:
+          type: integer
+          format: int32
+          description: how many units
+          exclusiveMinimum: 0
+      required:
+      - code
+    Fee:
+      type: object
+      description: "Fee added to a quote when it applies, e.g. at the airport or on\
+        \ a one-way rental."
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: amount charged
+        code:
+          type: string
+          description: fee code
+          enum:
+          - AIRPORT
+          - ONE_WAY
+          - YOUNG_DRIVER
+        per:
+          type: string
+          description: whether the amount is charged per day or once per rental
+          enum:
+          - DAY
+          - RENTAL
+      required:
+      - amount
+      - code
+      - per
+    Money:
+      type: object
+      description: Amount of money in euro cents.
+      properties:
+        amountCents:
+          type: integer
+          format: int64
+          description: "amount in cents, e.g. <code>4500</code> for €45.00; never\
+            \ negative"
+        currency:
+          type: string
+          description: ISO 4217 currency code; always <code>EUR</code>
+    PaymentResponse:
+      type: object
+      description: Payment made for a reservation.
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: amount of the payment
+        paymentId:
+          type: string
+          format: uuid
+          description: payment identifier
+        reservationId:
+          type: string
+          format: uuid
+          description: reservation the payment belongs to
+        status:
+          type: string
+          description: current state
+          enum:
+          - PENDING
+          - SUCCEEDED
+          - FAILED
+          - CANCELLED
+          - REFUNDED
+        type:
+          type: string
+          description: what the payment is for
+          enum:
+          - PREPAYMENT
+          - DEPOSIT
+          - EXTRA_CHARGE
+          - REFUND
+    ProblemDetail:
+      type: object
+      description: Error response (RFC 9457)
+      properties:
+        code:
+          type: string
+          description: "Reason of the error, e.g. QUOTE_EXPIRED"
+        detail:
+          type: string
+        errors:
+          type: array
+          description: Invalid fields
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        instance:
+          type: string
+          format: uri
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    QuoteLine:
+      type: object
+      description: Line of a quote.
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: "amount of the line, rounded once to the cent"
+        description:
+          type: string
+          description: detail shown to the customer
+        type:
+          type: string
+          description: what the line charges or discounts
+          enum:
+          - BASE_RATE
+          - SEASON
+          - DURATION_DISCOUNT
+          - EXTRA
+          - COVERAGE
+          - AIRPORT_FEE
+          - ONE_WAY_FEE
+          - YOUNG_DRIVER_FEE
+    QuoteRequest:
+      type: object
+      description: What a customer wants to rent.
+      properties:
+        categoryCode:
+          type: string
+          description: "ACRISS code of the vehicle category, e.g. <code>ECMR</code>"
+          pattern: "[A-Z]{4}"
+        coverage:
+          type: string
+          description: coverage chosen
+          enum:
+          - BASIC
+          - MEDIUM
+          - FULL
+        driverBirthDate:
+          type: string
+          format: date
+          description: date of birth of the driver; decides the driver age band
+        extras:
+          type: array
+          description: "extras wanted, possibly none"
+          items:
+            $ref: "#/components/schemas/ExtraSelection"
+        pickupStation:
+          type: string
+          description: "code of the pick-up station: OPO, CMP, TRD or MAT"
+          pattern: "[A-Z]{3}"
+        rentalPeriod:
+          $ref: "#/components/schemas/RentalPeriod"
+          description: pick-up and return date-times
+        returnStation:
+          type: string
+          description: code of the return station; differs from <code>pickupStation</code>
+            on a one-way rental
+          pattern: "[A-Z]{3}"
+      required:
+      - categoryCode
+      - coverage
+      - driverBirthDate
+      - extras
+      - pickupStation
+      - rentalPeriod
+      - returnStation
+    QuoteResponse:
+      type: object
+      description: Detailed price of a rental; immutable and valid for 15 minutes.
+      properties:
+        categoryCode:
+          type: string
+          description: ACRISS code of the vehicle category
+        driverAgeBand:
+          type: string
+          description: age band of the driver
+          enum:
+          - UNDER_25
+          - STANDARD
+        excess:
+          $ref: "#/components/schemas/Money"
+          description: maximum the customer pays for damages
+        expiresAt:
+          type: string
+          format: date-time
+          description: "instant after which the quote can no longer be booked, 15\
+            \ minutes after it was issued"
+        lines:
+          type: array
+          description: price lines
+          items:
+            $ref: "#/components/schemas/QuoteLine"
+        pickupStation:
+          type: string
+          description: code of the pick-up station
+        quoteId:
+          type: string
+          format: uuid
+          description: quote identifier
+        rentalDays:
+          type: integer
+          format: int32
+          description: number of 24-hour days charged
+        rentalPeriod:
+          $ref: "#/components/schemas/RentalPeriod"
+          description: pick-up and return date-times
+        returnStation:
+          type: string
+          description: code of the return station
+        securityDeposit:
+          $ref: "#/components/schemas/Money"
+          description: amount pre-authorised on the card at pick-up
+        total:
+          $ref: "#/components/schemas/Money"
+          description: "amount to pay in advance, VAT included"
+        vat:
+          $ref: "#/components/schemas/Money"
+          description: VAT on the sum of the lines
+    RateCard:
+      type: object
+      description: Base daily rate of a vehicle category.
+      properties:
+        categoryCode:
+          type: string
+          description: ACRISS code of the category; matches the path
+          pattern: "[A-Z]{4}"
+        dailyRate:
+          $ref: "#/components/schemas/Money"
+          description: "price per 24-hour day, before seasons and discounts"
+      required:
+      - categoryCode
+      - dailyRate
+    ReceiptLine:
+      type: object
+      description: Line of a receipt.
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: amount charged
+        description:
+          type: string
+          description: what was charged
+    ReceiptResponse:
+      type: object
+      description: Receipt of what a customer paid for a reservation.
+      properties:
+        issuedAt:
+          type: string
+          format: date-time
+          description: instant the receipt was issued
+        lines:
+          type: array
+          description: amounts charged
+          items:
+            $ref: "#/components/schemas/ReceiptLine"
+        receiptId:
+          type: string
+          format: uuid
+          description: receipt identifier
+        reservationId:
+          type: string
+          format: uuid
+          description: reservation the receipt refers to
+        total:
+          $ref: "#/components/schemas/Money"
+          description: total charged
+        vat:
+          $ref: "#/components/schemas/Money"
+          description: VAT included in the total
+    RentalPeriod:
+      type: object
+      description: |-
+        Pick-up and return date-times of a rental, normalised to UTC.
+
+         <p>Normalising keeps the JSON the same whatever offset the sender used, so it always reads back as an equal value.
+         Showing the local time is up to the client.
+      properties:
+        pickupAt:
+          type: string
+          format: date-time
+          description: pick-up date-time
+        returnAt:
+          type: string
+          format: date-time
+          description: return date-time; after <code>pickupAt</code>
+    ReservationResponse:
+      type: object
+      description: Reservation and its state.
+      properties:
+        cancellationFee:
+          $ref: "#/components/schemas/Money"
+          description: penalty kept; set in <code>CANCELLED</code>
+        categoryCode:
+          type: string
+          description: ACRISS code of the vehicle category
+        createdAt:
+          type: string
+          format: date-time
+          description: instant the reservation was created
+        customerId:
+          type: string
+          format: uuid
+          description: customer who booked
+        paymentDeadline:
+          type: string
+          format: date-time
+          description: instant the reservation expires if not paid; set in <code>PENDING_PAYMENT</code>
+        pickupStation:
+          type: string
+          description: code of the pick-up station
+        quoteId:
+          type: string
+          format: uuid
+          description: quote that was booked
+        refundAmount:
+          $ref: "#/components/schemas/Money"
+          description: amount refunded; set in <code>CANCELLED</code> and <code>NO_SHOW</code>
+        rentalPeriod:
+          $ref: "#/components/schemas/RentalPeriod"
+          description: pick-up and return date-times
+        reservationId:
+          type: string
+          format: uuid
+          description: reservation identifier
+        returnStation:
+          type: string
+          description: code of the return station
+        status:
+          type: string
+          description: current state
+          enum:
+          - PENDING_PAYMENT
+          - CONFIRMED
+          - PAYMENT_FAILED
+          - EXPIRED
+          - CANCELLED
+          - NO_SHOW
+          - FULFILLED
+        total:
+          $ref: "#/components/schemas/Money"
+          description: amount paid in advance
+    Season:
+      type: object
+      description: "Date range whose rates are multiplied, e.g. the high season."
+      properties:
+        from:
+          type: string
+          format: date
+          description: first day of the season
+        multiplier:
+          type: number
+          description: "factor applied to the daily rate, e.g. <code>1.4</code>"
+          exclusiveMinimum: 0
+        name:
+          type: string
+          description: "season name, e.g. <code>High</code>"
+          minLength: 1
+        to:
+          type: string
+          format: date
+          description: last day of the season
+      required:
+      - from
+      - multiplier
+      - name
+      - to
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

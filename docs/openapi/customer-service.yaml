@@ -1,0 +1,273 @@
+openapi: 3.1.0
+info:
+  title: customer-service
+  version: v1
+servers:
+- description: Generated server url
+  url: http://localhost
+security:
+- bearerAuth: []
+paths:
+  /customers/me:
+    get:
+      description: "Reads the profile of the authenticated customer. Roles: CUSTOMER."
+      operationId: myProfile
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+          description: the profile
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Reads the profile of the authenticated customer.
+      tags:
+      - Customers
+    put:
+      description: |-
+        Creates or updates the profile of the authenticated customer; the first call creates it and publishes
+         <code>CustomerRegistered</code>. Roles: CUSTOMER.
+      operationId: saveMyProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerRequest"
+        description: profile and driving licence
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+          description: the stored profile
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: |-
+        Creates or updates the profile of the authenticated customer; the first call creates it and publishes
+         <code>CustomerRegistered</code>.
+      tags:
+      - Customers
+  /customers/{id}:
+    get:
+      description: "Reads the profile of a customer. Roles: AGENT, ADMIN."
+      operationId: customer
+      parameters:
+      - description: customer identifier
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+          description: the profile
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Reads the profile of a customer.
+      tags:
+      - Customers
+  /internal/customers/{id}/driver-profile:
+    get:
+      description: "Age and licence seniority of a customer on a date, used by the\
+        \ booking-service to check eligibility."
+      operationId: driverProfile
+      parameters:
+      - description: customer identifier
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "date to compute the profile for, usually the pick-up date"
+        in: query
+        name: "on"
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverProfileResponse"
+          description: the driver profile
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: "Age and licence seniority of a customer on a date, used by the booking-service\
+        \ to check eligibility."
+      tags:
+      - Internal
+components:
+  schemas:
+    CustomerRequest:
+      type: object
+      description: Profile a customer creates or updates.
+      properties:
+        birthDate:
+          type: string
+          format: date
+          description: date of birth
+        driverLicense:
+          $ref: "#/components/schemas/DriverLicense"
+          description: driving licence
+        fullName:
+          type: string
+          description: full name as on the driving licence
+          minLength: 1
+        phone:
+          type: string
+          description: contact phone number
+          minLength: 1
+        taxNumber:
+          type: string
+          description: "Portuguese tax number (NIF), 9 digits"
+          pattern: "\\d{9}"
+      required:
+      - birthDate
+      - driverLicense
+      - fullName
+      - phone
+      - taxNumber
+    CustomerResponse:
+      type: object
+      description: Profile of a customer.
+      properties:
+        birthDate:
+          type: string
+          format: date
+          description: date of birth
+        customerId:
+          type: string
+          format: uuid
+          description: "customer identifier, equal to the user id issued by the auth-service"
+        driverLicense:
+          $ref: "#/components/schemas/DriverLicense"
+          description: driving licence
+        email:
+          type: string
+          description: "email of the account, from the JWT"
+        fullName:
+          type: string
+          description: full name as on the driving licence
+        phone:
+          type: string
+          description: contact phone number
+        taxNumber:
+          type: string
+          description: Portuguese tax number (NIF)
+    DriverLicense:
+      type: object
+      description: Driving licence of a customer.
+      properties:
+        category:
+          type: string
+          description: "licence category, e.g. <code>B</code>"
+          minLength: 1
+        expiryDate:
+          type: string
+          format: date
+          description: date the licence expires
+        issueDate:
+          type: string
+          format: date
+          description: date the licence was issued
+        issuingCountry:
+          type: string
+          description: "country that issued the licence, ISO 3166-1 alpha-2, e.g.\
+            \ <code>PT</code>"
+          pattern: "[A-Z]{2}"
+        number:
+          type: string
+          description: licence number
+          minLength: 1
+      required:
+      - category
+      - expiryDate
+      - issueDate
+      - issuingCountry
+      - number
+    DriverProfileResponse:
+      type: object
+      description: "Age and licence seniority of a customer on a given date, used\
+        \ to check eligibility."
+      properties:
+        age:
+          type: integer
+          format: int32
+          description: age in full years on that date
+        customerId:
+          type: string
+          format: uuid
+          description: customer identifier
+        licenseValid:
+          type: boolean
+          description: whether the licence has not expired on that date
+        licenseYears:
+          type: integer
+          format: int32
+          description: "full years since the licence was issued, on that date"
+        "on":
+          type: string
+          format: date
+          description: "date the profile refers to, usually the pick-up date"
+    ProblemDetail:
+      type: object
+      description: Error response (RFC 9457)
+      properties:
+        code:
+          type: string
+          description: "Reason of the error, e.g. QUOTE_EXPIRED"
+        detail:
+          type: string
+        errors:
+          type: array
+          description: Invalid fields
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        instance:
+          type: string
+          format: uri
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

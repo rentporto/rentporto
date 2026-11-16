@@ -7,8 +7,8 @@ import java.util.Objects;
 /**
  * Pick-up and return date-times of a rental, normalised to UTC.
  *
- * <p>Normalising keeps the JSON the same whatever offset the producer used, so a message always deserialises to an
- * equal object. Showing the local time is up to the consumer.
+ * <p>Normalising keeps the JSON the same whatever offset the sender used, so it always reads back as an equal value.
+ * Showing the local time is up to the client.
  *
  * @param pickupAt pick-up date-time
  * @param returnAt return date-time; after {@code pickupAt}

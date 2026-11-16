@@ -1,0 +1,449 @@
+openapi: 3.1.0
+info:
+  title: rental-service
+  version: v1
+servers:
+- description: Generated server url
+  url: http://localhost
+security:
+- bearerAuth: []
+paths:
+  /rentals:
+    get:
+      description: "Lists the rental agreements of a station, optionally by status.\
+        \ Roles: AGENT."
+      operationId: rentals
+      parameters:
+      - description: "code of the station, e.g. <code>OPO</code>; all stations if\
+          \ absent"
+        in: query
+        name: station
+        required: false
+        schema:
+          type: string
+      - description: status of the agreements; all statuses if absent
+        in: query
+        name: status
+        required: false
+        schema:
+          type: string
+          enum:
+          - AWAITING_PICKUP
+          - ACTIVE
+          - RETURNED
+          - CLOSED
+          - DISCARDED
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RentalAgreementResponse"
+          description: the matching agreements
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: "Lists the rental agreements of a station, optionally by status."
+      tags:
+      - Rentals
+  /rentals/{id}:
+    get:
+      description: "Reads a rental agreement with its charges and status. Roles: AGENT,\
+        \ CUSTOMER (owner)."
+      operationId: rental
+      parameters:
+      - description: rental agreement identifier
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalAgreementResponse"
+          description: the agreement
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Reads a rental agreement with its charges and status.
+      tags:
+      - Rentals
+  /rentals/{id}/pickup:
+    post:
+      description: |-
+        Registers the pick-up: assigns a vehicle of the category, pre-authorises the security deposit and records the
+         check-out inspection. Roles: AGENT.
+      operationId: pickUp
+      parameters:
+      - description: rental agreement identifier
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PickUpRequest"
+        description: additional drivers and check-out inspection
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalAgreementResponse"
+          description: the active agreement
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: |-
+        Registers the pick-up: assigns a vehicle of the category, pre-authorises the security deposit and records the
+         check-out inspection.
+      tags:
+      - Rentals
+  /rentals/{id}/return:
+    post:
+      description: |-
+        Registers the return and starts the settlement of the deposit, which finishes asynchronously; the response has
+         a <code>Location</code> header to follow the agreement. Roles: AGENT.
+      operationId: returnVehicle
+      parameters:
+      - description: rental agreement identifier
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReturnRequest"
+        description: return station and inspection
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalAgreementResponse"
+          description: the returned agreement
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: |-
+        Registers the return and starts the settlement of the deposit, which finishes asynchronously; the response has
+         a <code>Location</code> header to follow the agreement.
+      tags:
+      - Rentals
+components:
+  schemas:
+    ContractExtra:
+      type: object
+      description: "Extra booked with the reservation, at the price agreed at booking\
+        \ time."
+      properties:
+        cap:
+          $ref: "#/components/schemas/Money"
+          description: maximum charged for the whole rental
+        code:
+          type: string
+          description: "extra code, e.g. <code>CHILD_SEAT</code>"
+        pricePerDay:
+          $ref: "#/components/schemas/Money"
+          description: price per 24-hour day
+    ContractTerms:
+      type: object
+      description: Contract conditions frozen at booking time; the rental-service
+        settles the agreement with them.
+      properties:
+        coverage:
+          type: string
+          description: "code of the coverage chosen, e.g. <code>FULL</code>"
+        dailyRate:
+          $ref: "#/components/schemas/Money"
+          description: price per 24-hour day
+        deposit:
+          $ref: "#/components/schemas/Money"
+          description: security deposit pre-authorised at pick-up
+        excess:
+          $ref: "#/components/schemas/Money"
+          description: maximum the customer pays for damages
+        extras:
+          type: array
+          description: "extras booked, possibly none"
+          items:
+            $ref: "#/components/schemas/ContractExtra"
+        fuelPricePerLitre:
+          $ref: "#/components/schemas/Money"
+          description: price charged per missing litre of fuel
+        refuellingFee:
+          $ref: "#/components/schemas/Money"
+          description: service fee charged when the vehicle is returned with less
+            fuel
+    Damage:
+      type: object
+      description: Damage found at the return inspection that was not recorded at
+        pick-up.
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: "amount charged for the damage, up to the excess"
+        description:
+          type: string
+          description: what the agent recorded
+          minLength: 1
+        location:
+          type: string
+          description: "part of the vehicle, e.g. <code>FRONT_BUMPER</code>"
+          minLength: 1
+      required:
+      - amount
+      - description
+      - location
+    Driver:
+      type: object
+      description: Additional driver added to the rental agreement at pick-up.
+      properties:
+        driverLicense:
+          $ref: "#/components/schemas/DriverLicense"
+          description: driving licence
+        fullName:
+          type: string
+          description: full name as on the driving licence
+          minLength: 1
+      required:
+      - driverLicense
+      - fullName
+    DriverLicense:
+      type: object
+      description: Driving licence of a driver.
+      properties:
+        category:
+          type: string
+          description: "licence category, e.g. <code>B</code>"
+          minLength: 1
+        expiryDate:
+          type: string
+          format: date
+          description: date the licence expires
+        issueDate:
+          type: string
+          format: date
+          description: date the licence was issued
+        issuingCountry:
+          type: string
+          description: "country that issued the licence, ISO 3166-1 alpha-2, e.g.\
+            \ <code>PT</code>"
+          pattern: "[A-Z]{2}"
+        number:
+          type: string
+          description: licence number
+          minLength: 1
+      required:
+      - category
+      - expiryDate
+      - issueDate
+      - issuingCountry
+      - number
+    ExtraCharge:
+      type: object
+      description: Amount charged at settlement on top of the advance payment.
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: amount charged
+        description:
+          type: string
+          description: "detail shown to the customer, e.g. <code>12 litres missing</code>"
+        type:
+          type: string
+          description: what the charge is for
+          enum:
+          - FUEL
+          - LATE_RETURN
+          - DAMAGE
+    Inspection:
+      type: object
+      description: State of the vehicle recorded by the agent at pick-up or return.
+      properties:
+        damages:
+          type: array
+          description: "new damages, only recorded on return; possibly none"
+          items:
+            $ref: "#/components/schemas/Damage"
+        fuelLevelEighths:
+          type: integer
+          format: int32
+          description: "fuel level in eighths of a tank, from 0 to 8"
+          maximum: 8
+          minimum: 0
+        notes:
+          type: string
+          description: free notes of the agent; optional
+        odometerKm:
+          type: integer
+          format: int64
+          description: odometer reading in kilometres
+          minimum: 0
+    Money:
+      type: object
+      description: Amount of money in euro cents.
+      properties:
+        amountCents:
+          type: integer
+          format: int64
+          description: "amount in cents, e.g. <code>4500</code> for €45.00; never\
+            \ negative"
+        currency:
+          type: string
+          description: ISO 4217 currency code; always <code>EUR</code>
+    PickUpRequest:
+      type: object
+      description: Pick-up of the vehicle at the counter.
+      properties:
+        additionalDrivers:
+          type: array
+          description: drivers besides the customer; possibly none
+          items:
+            $ref: "#/components/schemas/Driver"
+        inspection:
+          $ref: "#/components/schemas/Inspection"
+          description: check-out inspection
+      required:
+      - inspection
+    ProblemDetail:
+      type: object
+      description: Error response (RFC 9457)
+      properties:
+        code:
+          type: string
+          description: "Reason of the error, e.g. QUOTE_EXPIRED"
+        detail:
+          type: string
+        errors:
+          type: array
+          description: Invalid fields
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        instance:
+          type: string
+          format: uri
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    RentalAgreementResponse:
+      type: object
+      description: Rental agreement with its charges and status.
+      properties:
+        extraCharges:
+          type: array
+          description: "charges on top of the advance payment, possibly none"
+          items:
+            $ref: "#/components/schemas/ExtraCharge"
+        licensePlate:
+          type: string
+          description: licence plate of the vehicle assigned; set after pick-up
+        pickedUpAt:
+          type: string
+          format: date-time
+          description: pick-up date-time; set after pick-up
+        pickupStation:
+          type: string
+          description: code of the pick-up station
+        rentalId:
+          type: string
+          format: uuid
+          description: rental agreement identifier
+        reservationId:
+          type: string
+          format: uuid
+          description: reservation fulfilled by this rental
+        returnStation:
+          type: string
+          description: code of the return station
+        returnedAt:
+          type: string
+          format: date-time
+          description: return date-time; set after return
+        settlement:
+          $ref: "#/components/schemas/Settlement"
+          description: settlement of the deposit; set after the deposit is settled
+        status:
+          type: string
+          description: status of the agreement
+          enum:
+          - AWAITING_PICKUP
+          - ACTIVE
+          - RETURNED
+          - CLOSED
+          - DISCARDED
+        terms:
+          $ref: "#/components/schemas/ContractTerms"
+          description: conditions frozen at booking time
+    ReturnRequest:
+      type: object
+      description: Return of the vehicle.
+      properties:
+        inspection:
+          $ref: "#/components/schemas/Inspection"
+          description: return inspection
+        station:
+          type: string
+          description: "code of the station where the vehicle was returned, e.g. <code>OPO</code>"
+          pattern: "[A-Z]{3}"
+      required:
+      - inspection
+      - station
+    Settlement:
+      type: object
+      description: Settlement of the security deposit after the return.
+      properties:
+        captured:
+          $ref: "#/components/schemas/Money"
+          description: "amount charged to the customer, from the deposit and any extra\
+            \ charge"
+        outstanding:
+          $ref: "#/components/schemas/Money"
+          description: amount still owed when the charge above the deposit failed;
+            zero otherwise
+        released:
+          $ref: "#/components/schemas/Money"
+          description: part of the deposit released
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

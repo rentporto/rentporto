@@ -1,0 +1,270 @@
+openapi: 3.1.0
+info:
+  title: auth-service
+  version: v1
+servers:
+- description: Generated server url
+  url: http://localhost
+security:
+- bearerAuth: []
+paths:
+  /auth/jwks:
+    get:
+      description: Public key used by the gateway and the services to validate the
+        JWTs. Public.
+      operationId: jwks
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: the JWK Set
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: Public key used by the gateway and the services to validate the JWTs.
+      tags:
+      - Authentication
+  /auth/login:
+    post:
+      description: Authenticates a user and issues a JWT. Public.
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        description: email and password
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+          description: the access token
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: Authenticates a user and issues a JWT.
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      description: Creates a customer account. Public.
+      operationId: register
+      parameters:
+      - description: key that makes a repeated request return the same account
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        description: email and password
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+          description: "the account created, with the CUSTOMER role"
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      security: []
+      summary: Creates a customer account.
+      tags:
+      - Authentication
+  /auth/users:
+    post:
+      description: "Creates an agent or manager account. Roles: ADMIN."
+      operationId: createStaffUser
+      parameters:
+      - description: key that makes a repeated request return the same account
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStaffUserRequest"
+        description: "email, initial password and roles"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+          description: the account created
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Error
+      summary: Creates an agent or manager account.
+      tags:
+      - Users
+components:
+  schemas:
+    CreateStaffUserRequest:
+      type: object
+      description: Staff account an administrator creates.
+      properties:
+        email:
+          type: string
+          format: email
+          description: email used to log in
+          minLength: 1
+        password:
+          type: string
+          description: "initial password, 8 to 72 characters"
+          maxLength: 72
+          minLength: 8
+        roles:
+          type: array
+          description: "roles of the account, e.g. <code>AGENT</code>"
+          items:
+            type: string
+            enum:
+            - CUSTOMER
+            - AGENT
+            - FLEET_MANAGER
+            - PRICING_MANAGER
+            - ADMIN
+          minItems: 1
+          uniqueItems: true
+      required:
+      - email
+      - password
+      - roles
+    LoginRequest:
+      type: object
+      description: Credentials of a user logging in.
+      properties:
+        email:
+          type: string
+          format: email
+          description: email of the account
+          minLength: 1
+        password:
+          type: string
+          description: password of the account
+          minLength: 1
+      required:
+      - email
+      - password
+    ProblemDetail:
+      type: object
+      description: Error response (RFC 9457)
+      properties:
+        code:
+          type: string
+          description: "Reason of the error, e.g. QUOTE_EXPIRED"
+        detail:
+          type: string
+        errors:
+          type: array
+          description: Invalid fields
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        instance:
+          type: string
+          format: uri
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    RegisterRequest:
+      type: object
+      description: Account a customer registers.
+      properties:
+        email:
+          type: string
+          format: email
+          description: email used to log in and to receive notifications
+          minLength: 1
+        password:
+          type: string
+          description: "password, 8 to 72 characters"
+          maxLength: 72
+          minLength: 8
+      required:
+      - email
+      - password
+    TokenResponse:
+      type: object
+      description: Token issued at login.
+      properties:
+        accessToken:
+          type: string
+          description: "JWT signed with RS256, with <code>sub</code> = userId and\
+            \ the <code>roles</code> and <code>email</code> claims"
+        expiresIn:
+          type: integer
+          format: int32
+          description: seconds until the token expires
+        tokenType:
+          type: string
+          description: always <code>Bearer</code>
+    UserResponse:
+      type: object
+      description: User account.
+      properties:
+        email:
+          type: string
+          description: email used to log in
+        roles:
+          type: array
+          description: roles of the account
+          items:
+            type: string
+            enum:
+            - CUSTOMER
+            - AGENT
+            - FLEET_MANAGER
+            - PRICING_MANAGER
+            - ADMIN
+          uniqueItems: true
+        userId:
+          type: string
+          format: uuid
+          description: "account identifier; for a customer, it is also the customer\
+            \ identifier"
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
