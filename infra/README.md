@@ -17,6 +17,16 @@ Sem `.env`, usam-se as passwords por omissão do `.env.example`.
 
 Portas dos serviços: gateway 8080, auth 8081, customer 8082, fleet 8083, booking 8084, rental 8085, notification 8086, config-server 8888.
 
+## Config Server
+
+Os serviços leem a configuração do Config Server e não arrancam sem ele, por isso arranca-se primeiro:
+
+```
+./mvnw -pl config-server spring-boot:run
+```
+
+No perfil `dev` (por omissão), o Config Server lê a pasta `config/` local: uma alteração aplica-se ao reiniciar o serviço, sem commit. No perfil `k8s`, lê o ramo `main` do GitHub (ADR-19).
+
 ## Stripe
 
 Copiar o `.env.example` para `.env`, pôr a chave de teste em `STRIPE_API_KEY` e arrancar com o perfil `stripe`:

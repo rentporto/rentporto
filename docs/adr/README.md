@@ -24,3 +24,4 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-16](0016-k3d-como-cluster-local.md) | k3d como cluster Kubernetes local | Aceite |
 | [ADR-17](0017-repositorio-publico.md) | Repositório público no GitHub | Aceite |
 | [ADR-18](0018-lock-partilhado-em-jpa.md) | Lock partilhado em JPA em vez do ShedLock | Aceite |
+| [ADR-19](0019-configuracao-externa-no-config-server.md) | Configuração externa no Config Server | Aceite |

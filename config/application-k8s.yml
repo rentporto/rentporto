@@ -1,0 +1,9 @@
+rentporto:
+  postgres:
+    host: postgres
+  mailpit:
+    host: mailpit
+
+spring:
+  rabbitmq:
+    host: rabbitmq
