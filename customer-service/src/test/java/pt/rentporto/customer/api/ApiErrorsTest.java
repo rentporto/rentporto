@@ -1,8 +1,6 @@
 package pt.rentporto.customer.api;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,16 +19,6 @@ class ApiErrorsTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Test
-    void answersAnEndpointNotImplementedYetWith501() throws Exception {
-        mockMvc.perform(get("/internal/customers/{id}/driver-profile", "8d3f6a2e-0b7c-4a51-9e43-2f1d5c6b7a80")
-                        .param("on", "2026-12-01")
-                        .header(HttpHeaders.AUTHORIZATION, CUSTOMER))
-                .andExpect(status().isNotImplemented())
-                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(jsonPath("$.code").value("NOT_IMPLEMENTED"));
-    }
 
     @Test
     void answersAnInvalidProfileWithTheInvalidFields() throws Exception {

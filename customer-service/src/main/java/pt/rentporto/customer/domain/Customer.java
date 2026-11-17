@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -79,7 +80,7 @@ public class Customer {
     }
 
     private void change(String email, CustomerDetails details, LocalDate today) {
-        if (!details.driverLicense().validOn(today)) {
+        if (details.driverLicense().expiredOn(today)) {
             throw new DriverLicenseExpiredException(details.driverLicense().expiryDate());
         }
         this.email = Objects.requireNonNull(email, "email");
@@ -89,6 +90,24 @@ public class Customer {
         this.phone = details.phone();
         this.driverLicense = details.driverLicense();
         this.updatedAt = Instant.now();
+    }
+
+    /**
+     * Age and licence seniority on a date, usually the pick-up date. Someone born on 29 February has their birthday
+     * on 1 March in the years without that day.
+     *
+     * @param date the date
+     * @return the driver profile on that date
+     * @throws DateBeforeBirthException if the date is before the date of birth
+     */
+    public DriverProfile driverProfileOn(LocalDate date) {
+        if (date.isBefore(birthDate)) {
+            throw new DateBeforeBirthException(date);
+        }
+        return new DriverProfile(
+                Period.between(birthDate, date).getYears(),
+                driverLicense.yearsOn(date),
+                driverLicense.validOn(date));
     }
 
     public UUID id() {

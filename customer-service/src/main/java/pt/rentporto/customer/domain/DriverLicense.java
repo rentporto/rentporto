@@ -3,6 +3,7 @@ package pt.rentporto.customer.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -51,12 +52,32 @@ public record DriverLicense(
     }
 
     /**
+     * Whether the licence has expired on a date; it can still be used on its expiry date.
+     *
+     * @param date the date
+     * @return {@code true} if the expiry date is before that date
+     */
+    public boolean expiredOn(LocalDate date) {
+        return expiryDate.isBefore(date);
+    }
+
+    /**
      * Whether the licence can be used on a date.
      *
      * @param date the date
-     * @return {@code true} if the licence has not expired on that date
+     * @return {@code true} if the licence was already issued and had not expired on that date
      */
     public boolean validOn(LocalDate date) {
-        return !expiryDate.isBefore(date);
+        return !issueDate.isAfter(date) && !expiredOn(date);
+    }
+
+    /**
+     * Full years since the licence was issued.
+     *
+     * @param date the date
+     * @return the full years on that date, 0 if the licence was not issued yet
+     */
+    public int yearsOn(LocalDate date) {
+        return date.isBefore(issueDate) ? 0 : Period.between(issueDate, date).getYears();
     }
 }

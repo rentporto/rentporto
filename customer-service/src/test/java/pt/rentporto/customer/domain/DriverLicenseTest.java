@@ -45,10 +45,10 @@ class DriverLicenseTest {
     }
 
     @Test
-    void isValidUntilTheDayItExpires() {
+    void expiresTheDayAfterItsExpiryDate() {
         DriverLicense license = new DriverLicense("P-1234567 8", "B", "PT", ISSUED, EXPIRES);
 
-        assertThat(license.validOn(EXPIRES)).isTrue();
-        assertThat(license.validOn(EXPIRES.plusDays(1))).isFalse();
+        assertThat(license.expiredOn(EXPIRES)).isFalse();
+        assertThat(license.expiredOn(EXPIRES.plusDays(1))).isTrue();
     }
 }
