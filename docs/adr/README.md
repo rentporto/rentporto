@@ -28,3 +28,4 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-20](0020-chave-dos-jwt-e-primeiro-administrador.md) | Chave de assinatura dos JWT e primeiro administrador | Aceite |
 | [ADR-21](0021-entrada-pelo-api-gateway.md) | Entrada pelo API Gateway: rotas por recurso, autenticação à entrada e rate limiting | Aceite |
 | [ADR-22](0022-chamadas-entre-servicos-com-o-jwt-do-utilizador.md) | Chamadas entre serviços com o JWT do utilizador | Aceite |
+| [ADR-23](0023-disponibilizacao-no-k3d.md) | Disponibilização no k3d: segredos gerados no deploy, imagens por overlay e ordem de arranque | Aceite |

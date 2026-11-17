@@ -24,6 +24,7 @@ jobs:
       services: ${{ steps.filter.outputs.changes }}
       contracts: ${{ steps.other.outputs.contracts }}
       compose: ${{ steps.other.outputs.compose }}
+      kubernetes: ${{ steps.other.outputs.kubernetes }}
     steps:
       - uses: actions/checkout@v7
       - id: filter
@@ -98,6 +99,12 @@ jobs:
             compose:
               - compose.yaml
               - infra/**
+              - .github/workflows/ci.yml
+            kubernetes:
+              - infra/k8s/**
+              - infra/postgres/**
+              - infra/rabbitmq/**
+              - deploy.sh
               - .github/workflows/ci.yml
 
   build:
@@ -189,11 +196,25 @@ jobs:
         name: Stop
         run: docker compose down -v
 
+  kubernetes:
+    name: Kubernetes manifests
+    needs: changes
+    if: needs.changes.outputs.kubernetes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate against the Kubernetes schemas
+        run: |
+          kubectl kustomize --load-restrictor LoadRestrictionsNone infra/k8s/overlays/k3d \
+            | docker run --rm -i ghcr.io/yannh/kubeconform:v0.7.0 -strict -summary -kubernetes-version 1.33.0 -
+      - name: Check probes and resource limits
+        run: ./infra/k8s/check-manifests.sh
+
   # Single required status check for branch protection.
   ci-result:
     name: CI result
     if: always()
-    needs: [changes, build, contracts, compose]
+    needs: [changes, build, contracts, compose, kubernetes]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')

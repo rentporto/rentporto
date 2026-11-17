@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rental-service
+  labels:
+    app.kubernetes.io/name: rental-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rental-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rental-service
+    spec:
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              until wget -q -O /dev/null http://config-server:8888/actuator/health/readiness; do echo waiting for config-server; sleep 2; done
+              for target in postgres:5432 rabbitmq:5672; do until nc -z -w 2 ${target%:*} ${target#*:}; do echo waiting for $target; sleep 2; done; done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+      containers:
+        - name: rental-service
+          image: ghcr.io/rentporto/rental-service
+          ports:
+            - name: http
+              containerPort: 8085
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+            - name: JAVA_TOOL_OPTIONS
+              value: -XX:MaxRAMPercentage=75
+            - name: CONFIG_SERVER_URL
+              value: http://config-server:8888
+            - name: RENTAL_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: RENTAL_DB_PASSWORD
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq
+                  key: RABBITMQ_PASSWORD
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rental-service
+  labels:
+    app.kubernetes.io/name: rental-service
+spec:
+  selector:
+    app.kubernetes.io/name: rental-service
+  ports:
+    - name: http
+      port: 8085
+      targetPort: http

@@ -27,7 +27,10 @@ public class MessagingTestApplication {
                 .withAdminPassword("rentporto")
                 .withCopyFileToContainer(
                         MountableFile.forHostPath("../infra/rabbitmq/definitions.json"),
-                        "/etc/rabbitmq/definitions.json")
+                        "/etc/rabbitmq/definitions/10-topology.json")
+                .withCopyFileToContainer(
+                        MountableFile.forHostPath("../infra/rabbitmq/users.json"),
+                        "/etc/rabbitmq/definitions/20-users.json")
                 .withCopyFileToContainer(
                         MountableFile.forHostPath("../infra/rabbitmq/rentporto.conf"),
                         "/etc/rabbitmq/conf.d/20-rentporto.conf");

@@ -11,7 +11,7 @@ O ambiente de destino é um cluster k3s, criado com o k3d, que já fornece Servi
 
 ## Decisão
 
-Os clientes OpenFeign chamam os outros serviços pelo nome do Service do Kubernetes (ex.: `http://booking-service:8080`). O docker-compose usa os mesmos nomes. Não há servidor Eureka nem Spring Cloud LoadBalancer. O Config Server mantém-se para a configuração externa.
+Os clientes OpenFeign chamam os outros serviços pelo nome do Service do Kubernetes (ex.: `http://booking-service:8084`). O docker-compose usa os mesmos nomes. Não há servidor Eureka nem Spring Cloud LoadBalancer. O Config Server mantém-se para a configuração externa.
 
 ## Alternativas consideradas
 
