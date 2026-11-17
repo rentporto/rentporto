@@ -1,0 +1,24 @@
+info:
+  name: Cliente
+  type: folder
+  seq: 1
+
+request:
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+  scripts:
+    - type: before-request
+      code: |-
+        // Logs in before any request of this folder that needs a token, when there is none or it expires within a minute.
+        if (req.getAuthMode() === "bearer"
+            && (!bru.getVar("customerToken") || Date.now() > bru.getVar("customerTokenExpiresAt") - 60000)) {
+          const response = await bru.sendRequest({
+            method: "POST",
+            url: bru.interpolate("{{baseUrl}}/auth/login"),
+            headers: { "Content-Type": "application/json" },
+            data: { email: bru.interpolate("{{customerEmail}}"), password: bru.interpolate("{{actorPassword}}") }
+          });
+          bru.setVar("customerToken", response.data.accessToken);
+          bru.setVar("customerTokenExpiresAt", Date.now() + response.data.expiresIn * 1000);
+        }

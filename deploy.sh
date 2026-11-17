@@ -1,7 +1,7 @@
 #!/bin/bash
 # Deploys RentPorto to the k3d cluster "rentporto" (ADR-16, ADR-23): creates the cluster if needed, builds and imports
-# the images, creates the Secrets that do not exist yet, applies the k3d overlay, waits until every pod is ready and
-# logs in through the Ingress.
+# the images, creates the Secrets that do not exist yet, applies the k3d overlay, waits until every pod is ready,
+# logs in through the Ingress and writes the administrator password for the k3d environment of the Bruno collection.
 #
 # Usage: ./deploy.sh [--skip-build]
 #   --skip-build   import the images already built, without building them again
@@ -140,6 +140,9 @@ for _ in $(seq 1 30); do
 done
 [[ "$status" == "501" ]] || { echo "FAIL: the token was not accepted ($status)"; exit 1; }
 echo "OK: the administrator logged in and the gateway and the notification-service accepted the JWT"
+
+printf 'ADMIN_PASSWORD=%s\n' "$admin_password" > docs/bruno/.env
+echo "Bruno: the k3d environment reads the administrator password from docs/bruno/.env"
 
 if ! grep -q "[[:space:]]$HOST" /etc/hosts; then
     echo

@@ -1,0 +1,7 @@
+variables:
+  - name: baseUrl
+    value: http://localhost:8080/api/v1
+  - name: adminEmail
+    value: admin@rentporto.pt
+  - name: adminPassword
+    value: rentporto-admin
