@@ -1,27 +1,7 @@
 {
-  "users": [
-    {
-      "name": "rentporto",
-      "password_hash": "m7d5ShmYGlAWMmy08hfhPZtfg/n/Uyfp+K92QJfRyOGL97c9",
-      "hashing_algorithm": "rabbit_password_hashing_sha256",
-      "tags": [
-        "administrator"
-      ],
-      "limits": {}
-    }
-  ],
   "vhosts": [
     {
       "name": "/"
-    }
-  ],
-  "permissions": [
-    {
-      "user": "rentporto",
-      "vhost": "/",
-      "configure": ".*",
-      "write": ".*",
-      "read": ".*"
     }
   ],
   "exchanges": [

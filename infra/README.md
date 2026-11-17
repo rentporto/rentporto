@@ -48,7 +48,29 @@ O Stripe CLI reencaminha os webhooks para o booking-service em `localhost:8084`;
 
 ## RabbitMQ
 
-A topologia (exchange, filas, DLQ e bindings) está em `rabbitmq/definitions.json` e é carregada no arranque; os serviços não declaram filas. O `RabbitTopologyTest` do `common-events` confirma que cada routing key tem fila e que cada fila tem a sua DLQ.
+A topologia (exchange, filas, DLQ e bindings) está em `rabbitmq/definitions.json` e é carregada no arranque; os serviços não declaram filas. O `RabbitTopologyTest` do `common-events` confirma que cada routing key tem fila e que cada fila tem a sua DLQ. O utilizador está à parte, em `rabbitmq/users.json`, que só o compose usa; no k3d vem de um Secret (ADR-23).
+
+## Kubernetes (k3d)
+
+Com Docker e k3d instalados:
+
+```
+./deploy.sh                 # cria o cluster, constrói e importa as imagens e espera que tudo fique ready
+./deploy.sh --skip-build    # importa as imagens já construídas, sem compilar
+k3d cluster delete rentporto
+```
+
+O `deploy.sh` cria os Secrets que ainda não existem, com passwords aleatórias e a chave dos JWT, e termina com um login do administrador pelo Ingress. A password do administrador:
+
+```
+kubectl --context k3d-rentporto -n rentporto get secret auth-service -o jsonpath='{.data.AUTH_ADMIN_PASSWORD}' | base64 --decode
+```
+
+Para abrir `http://rentporto.local` no browser, acrescentar ao `/etc/hosts` as duas linhas `127.0.0.1 rentporto.local` e `::1 rentporto.local`; sem a segunda, o macOS procura o nome `.local` por mDNS e cada pedido demora alguns segundos.
+
+O Config Server do cluster lê o ramo `main` do GitHub (ADR-19). Para testar a configuração de um ramo já enviado para o GitHub: `CONFIG_LABEL=<ramo> ./deploy.sh`. A consola do RabbitMQ e a caixa do Mailpit abrem-se com `kubectl --context k3d-rentporto -n rentporto port-forward svc/rabbitmq 15672` e `port-forward svc/mailpit 8025`; a password do RabbitMQ está no Secret `rabbitmq`.
+
+Os manifestos estão em `infra/k8s`: a base usa as imagens do GHCR e o overlay `k3d` as imagens locais (ADR-23). `./infra/k8s/check-manifests.sh` confirma que todos os contentores têm probes e limites.
 
 ## Recomeçar do zero
 
