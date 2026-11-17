@@ -12,6 +12,8 @@ import pt.rentporto.customer.domain.CustomerAlreadyRegisteredException;
 import pt.rentporto.customer.domain.CustomerDetails;
 import pt.rentporto.customer.domain.CustomerNotFoundException;
 import pt.rentporto.customer.domain.Customers;
+import pt.rentporto.customer.domain.DateBeforeBirthException;
+import pt.rentporto.customer.domain.DriverProfile;
 import pt.rentporto.customer.domain.DriverLicenseExpiredException;
 import pt.rentporto.customer.domain.TaxNumberAlreadyRegisteredException;
 
@@ -63,6 +65,19 @@ public class CustomerProfiles {
      */
     public Customer profile(UUID id) {
         return transaction.execute(status -> customers.withId(id).orElseThrow(() -> new CustomerNotFoundException(id)));
+    }
+
+    /**
+     * Age and licence seniority of a customer on a date, for the eligibility rules of the booking-service.
+     *
+     * @param id   id of the customer
+     * @param date the date, usually the pick-up date
+     * @return the driver profile on that date
+     * @throws CustomerNotFoundException if the customer has no profile
+     * @throws DateBeforeBirthException  if the date is before the date of birth
+     */
+    public DriverProfile driverProfile(UUID id, LocalDate date) {
+        return profile(id).driverProfileOn(date);
     }
 
     private Customer saveOnce(UUID id, String email, CustomerDetails details) {

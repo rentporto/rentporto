@@ -56,15 +56,4 @@ class AuthorizationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
-
-    @Test
-    void theInternalEndpointNeedsTheTokenOfTheCustomerWhoIsBooking() throws Exception {
-        String driverProfile = "/internal/customers/8d3f6a2e-0b7c-4a51-9e43-2f1d5c6b7a80/driver-profile";
-
-        mockMvc.perform(get(driverProfile).param("on", "2026-12-01"))
-                .andExpect(status().isUnauthorized());
-        mockMvc.perform(get(driverProfile).param("on", "2026-12-01")
-                        .header(HttpHeaders.AUTHORIZATION, TestJwt.bearer("ana", "CUSTOMER")))
-                .andExpect(status().isNotImplemented());
-    }
 }

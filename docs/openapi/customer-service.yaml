@@ -227,7 +227,8 @@ components:
           description: customer identifier
         licenseValid:
           type: boolean
-          description: whether the licence has not expired on that date
+          description: whether the licence was already issued and had not expired
+            on that date
         licenseYears:
           type: integer
           format: int32

@@ -10,7 +10,7 @@ import java.util.UUID;
  * @param on           date the profile refers to, usually the pick-up date
  * @param age          age in full years on that date
  * @param licenseYears full years since the licence was issued, on that date
- * @param licenseValid whether the licence has not expired on that date
+ * @param licenseValid whether the licence was already issued and had not expired on that date
  */
 public record DriverProfileResponse(UUID customerId, LocalDate on, int age, int licenseYears, boolean licenseValid) {
 }
