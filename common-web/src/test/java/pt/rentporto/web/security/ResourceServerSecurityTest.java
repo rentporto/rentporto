@@ -58,8 +58,9 @@ class ResourceServerSecurityTest {
     }
 
     @Test
-    void theOpenApiDocumentIsAlwaysPublic() throws Exception {
+    void theOpenApiDocumentAndTheMetricsAreAlwaysPublic() throws Exception {
         mockMvc.perform(get("/v3/api-docs")).andExpect(status().isOk());
+        mockMvc.perform(get("/actuator/prometheus")).andExpect(status().isOk());
     }
 
     static String[] invalidTokens() {

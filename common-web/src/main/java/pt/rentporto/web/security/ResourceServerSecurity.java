@@ -21,12 +21,13 @@ public class ResourceServerSecurity {
 
     private static final PathPatternRequestMatcher.Builder PATHS = PathPatternRequestMatcher.withDefaults();
 
-    private static final RequestMatcher DOCS_AND_HEALTH = new OrRequestMatcher(
+    private static final RequestMatcher OPERATIONS = new OrRequestMatcher(
             PATHS.matcher("/v3/api-docs/**"),
             PATHS.matcher("/v3/api-docs.yaml"),
             PATHS.matcher("/swagger-ui/**"),
             PATHS.matcher("/swagger-ui.html"),
-            PATHS.matcher("/actuator/health/**"));
+            PATHS.matcher("/actuator/health/**"),
+            PATHS.matcher("/actuator/prometheus"));
 
     private final SecurityProblems problems;
     private final JwtAuthenticationConverter rolesAsAuthorities;
@@ -43,15 +44,16 @@ public class ResourceServerSecurity {
     }
 
     /**
-     * The public endpoints of a service, with the OpenAPI document, the Swagger UI and the health probes, which are
-     * always public.
+     * The public endpoints of a service, with the OpenAPI document, the Swagger UI, the health probes and the
+     * Prometheus metrics, which are always public. The metrics stay inside the cluster, since the Ingress only routes
+     * {@code /api} (ADR-24).
      *
      * @param endpoints endpoints of the catalogue open without a token, e.g. {@code GET /stations}
      * @return the matcher to pass to {@link #apply(HttpSecurity, RequestMatcher)}
      */
     public static RequestMatcher publicEndpoints(RequestMatcher... endpoints) {
         List<RequestMatcher> all = new ArrayList<>(List.of(endpoints));
-        all.add(DOCS_AND_HEALTH);
+        all.add(OPERATIONS);
         return new OrRequestMatcher(all);
     }
 

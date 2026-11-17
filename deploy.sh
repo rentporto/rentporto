@@ -1,7 +1,8 @@
 #!/bin/bash
 # Deploys RentPorto to the k3d cluster "rentporto" (ADR-16, ADR-23): creates the cluster if needed, builds and imports
 # the images, creates the Secrets that do not exist yet, applies the k3d overlay, waits until every pod is ready,
-# logs in through the Ingress and writes the administrator password for the k3d environment of the Bruno collection.
+# logs in through the Ingress, checks that Prometheus scrapes every application and that Grafana has its datasource,
+# and writes the administrator password for the k3d environment of the Bruno collection.
 #
 # Usage: ./deploy.sh [--skip-build]
 #   --skip-build   import the images already built, without building them again
@@ -97,6 +98,11 @@ if ! kube get secret auth-service >/dev/null 2>&1; then
     echo "created auth-service"
 fi
 
+if ! kube get secret grafana >/dev/null 2>&1; then
+    kube create secret generic grafana --from-literal=GF_SECURITY_ADMIN_PASSWORD="$(random_password)" >/dev/null
+    echo "created grafana"
+fi
+
 kube create configmap config-server --from-literal=label="$CONFIG_LABEL" --dry-run=client -o yaml \
     | kube apply -f - >/dev/null
 echo "the Config Server reads the branch $CONFIG_LABEL"
@@ -112,7 +118,7 @@ fi
 
 step "Waiting for the pods"
 kube rollout status statefulset/postgres statefulset/rabbitmq --timeout=10m
-for app in mailpit $APPS; do
+for app in mailpit prometheus grafana $APPS; do
     kube rollout status "deployment/$app" --timeout=10m
 done
 kube get pods
@@ -141,6 +147,33 @@ done
 [[ "$status" == "501" ]] || { echo "FAIL: the token was not accepted ($status)"; exit 1; }
 echo "OK: the administrator logged in and the gateway and the notification-service accepted the JWT"
 
+status=$(curl -s -o /dev/null -w '%{http_code}' --resolve "$HOST:80:127.0.0.1" "http://$HOST/actuator/prometheus")
+[[ "$status" == "404" ]] || { echo "FAIL: the Ingress exposes the metrics of the gateway ($status)"; exit 1; }
+echo "OK: the Ingress only routes /api, so the metrics stay inside the cluster"
+
+step "Metrics"
+expected=0
+# shellcheck disable=SC2086
+for replicas in $(kube get deployment $APPS -o jsonpath='{.items[*].spec.replicas}'); do
+    expected=$((expected + replicas))
+done
+up=0
+for _ in $(seq 1 30); do
+    up=$(kube exec deployment/prometheus -- wget -qO- 'http://localhost:9090/api/v1/targets?state=active' \
+        | grep -o '"health":"up"' | wc -l | tr -d ' ')
+    [[ "$up" == "$expected" ]] && break
+    sleep 2
+done
+[[ "$up" == "$expected" ]] || { echo "FAIL: $up of $expected application pods are UP in Prometheus"; exit 1; }
+echo "OK: the $expected application pods are UP in Prometheus"
+
+grafana_password=$(kube get secret grafana -o jsonpath='{.data.GF_SECURITY_ADMIN_PASSWORD}' | base64 --decode)
+datasource=$(kube exec deployment/grafana -- wget -qO- \
+    --header "Authorization: Basic $(printf 'admin:%s' "$grafana_password" | base64)" \
+    http://localhost:3000/api/datasources/uid/prometheus/health || true)
+[[ "$datasource" == *'"status":"OK"'* ]] || { echo "FAIL: the Prometheus datasource of Grafana is not working"; exit 1; }
+echo "OK: Grafana has the Prometheus datasource provisioned and working"
+
 printf 'ADMIN_PASSWORD=%s\n' "$admin_password" > docs/bruno/.env
 echo "Bruno: the k3d environment reads the administrator password from docs/bruno/.env"
 
@@ -154,4 +187,6 @@ fi
 echo
 echo "Administrator: $ADMIN_EMAIL; password:"
 echo "  kubectl --context k3d-$CLUSTER -n $NAMESPACE get secret auth-service -o jsonpath='{.data.AUTH_ADMIN_PASSWORD}' | base64 --decode"
+echo "Grafana: kubectl --context k3d-$CLUSTER -n $NAMESPACE port-forward svc/grafana 3000, then http://localhost:3000 as admin; password:"
+echo "  kubectl --context k3d-$CLUSTER -n $NAMESPACE get secret grafana -o jsonpath='{.data.GF_SECURITY_ADMIN_PASSWORD}' | base64 --decode"
 echo "Remove everything: k3d cluster delete $CLUSTER"
