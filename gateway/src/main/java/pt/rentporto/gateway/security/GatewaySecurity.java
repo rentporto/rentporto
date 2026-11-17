@@ -9,7 +9,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -27,10 +26,10 @@ class GatewaySecurity {
     private static final PathPatternRequestMatcher.Builder PATHS = PathPatternRequestMatcher.withDefaults();
 
     /**
-     * Endpoints open without a token. {@code /api/v1/internal/**} is here so that it is answered 404, with or without
-     * a token, since no route leads to it.
+     * Endpoints open without a token, besides the API docs and the health probes. {@code /api/v1/internal/**} is here
+     * so that it is answered 404, with or without a token, since no route leads to it.
      */
-    static final RequestMatcher PUBLIC = new OrRequestMatcher(
+    static final RequestMatcher PUBLIC = ResourceServerSecurity.publicEndpoints(
             PATHS.matcher(HttpMethod.POST, "/api/v1/auth/register"),
             PATHS.matcher(HttpMethod.POST, "/api/v1/auth/login"),
             PATHS.matcher(HttpMethod.GET, "/api/v1/auth/jwks"),
@@ -41,8 +40,7 @@ class GatewaySecurity {
             PATHS.matcher(HttpMethod.GET, "/api/v1/availability"),
             PATHS.matcher(HttpMethod.POST, "/api/v1/quotes"),
             PATHS.matcher(HttpMethod.POST, "/api/v1/payments/stripe-webhook"),
-            PATHS.matcher("/api/v1/internal/**"),
-            PATHS.matcher("/actuator/health/**"));
+            PATHS.matcher("/api/v1/internal/**"));
 
     @Bean
     SecurityFilterChain securityFilterChain(

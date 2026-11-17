@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import org.wiremock.spring.InjectWireMock;
+import pt.rentporto.web.testing.TestJwt;
 
 /**
  * Only a valid token reaches a protected route; the public routes of the catalogue pass without one.
@@ -41,7 +42,7 @@ class AuthenticationTest {
 
     @BeforeEach
     void setUp() {
-        Tokens.publishKey(auth);
+        Jwks.publish(auth);
         customer.stubFor(WireMock.get("/customers/me").willReturn(ok()));
     }
 
@@ -56,7 +57,7 @@ class AuthenticationTest {
     }
 
     @ParameterizedTest
-    @MethodSource("invalidTokens")
+    @MethodSource("pt.rentporto.web.testing.TestJwt#invalidTokens")
     void anInvalidTokenIsA401AndNeverReachesTheService(String token) throws Exception {
         mockMvc.perform(get("/api/v1/customers/me").header(HttpHeaders.AUTHORIZATION, token))
                 .andExpect(status().isUnauthorized())
@@ -67,7 +68,8 @@ class AuthenticationTest {
 
     @Test
     void aValidTokenReachesTheService() throws Exception {
-        mockMvc.perform(get("/api/v1/customers/me").header(HttpHeaders.AUTHORIZATION, Tokens.bearer("ana", "CUSTOMER")))
+        mockMvc.perform(get("/api/v1/customers/me")
+                        .header(HttpHeaders.AUTHORIZATION, TestJwt.bearer("ana", "CUSTOMER")))
                 .andExpect(status().isOk());
     }
 
@@ -77,14 +79,9 @@ class AuthenticationTest {
         auth.stubFor(WireMock.post("/auth/login").willReturn(ok()));
 
         mockMvc.perform(get("/api/v1/stations")).andExpect(status().isOk());
-        mockMvc.perform(post("/api/v1/auth/login").header(HttpHeaders.AUTHORIZATION, Tokens.expired()))
+        mockMvc.perform(post("/api/v1/auth/login").header(HttpHeaders.AUTHORIZATION, TestJwt.expired()))
                 .andExpect(status().isOk());
 
         auth.verify(WireMock.postRequestedFor(urlPathEqualTo("/auth/login")));
-    }
-
-    static String[] invalidTokens() {
-        return new String[] {
-                Tokens.expired(), Tokens.fromAnotherIssuer(), Tokens.signedWithAnotherKey(), "Bearer not.a.token"};
     }
 }

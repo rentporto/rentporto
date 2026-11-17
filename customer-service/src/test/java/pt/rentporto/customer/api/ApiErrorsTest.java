@@ -10,19 +10,26 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.rentporto.web.testing.TestJwt;
+import pt.rentporto.web.testing.TestJwtDecoder;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestJwtDecoder.class)
 class ApiErrorsTest {
+
+    private static final String CUSTOMER = TestJwt.bearer("ana", "CUSTOMER");
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
     void answersAnEndpointNotImplementedYetWith501() throws Exception {
-        mockMvc.perform(get("/customers/me"))
+        mockMvc.perform(get("/customers/me").header(HttpHeaders.AUTHORIZATION, CUSTOMER))
                 .andExpect(status().isNotImplemented())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.code").value("NOT_IMPLEMENTED"));
@@ -30,7 +37,10 @@ class ApiErrorsTest {
 
     @Test
     void answersAnInvalidProfileWithTheInvalidFields() throws Exception {
-        mockMvc.perform(put("/customers/me").contentType(MediaType.APPLICATION_JSON).content("{\"taxNumber\": \"12\"}"))
+        mockMvc.perform(put("/customers/me")
+                        .header(HttpHeaders.AUTHORIZATION, CUSTOMER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"taxNumber\": \"12\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.errors[?(@.field == 'taxNumber')]").exists());

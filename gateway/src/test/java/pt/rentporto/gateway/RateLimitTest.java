@@ -19,6 +19,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.wiremock.spring.InjectWireMock;
+import pt.rentporto.web.testing.TestJwt;
 
 /**
  * Each client has its own limit, and logins have a lower one per IP.
@@ -40,14 +41,14 @@ class RateLimitTest {
 
     @BeforeEach
     void setUp() {
-        Tokens.publishKey(auth);
+        Jwks.publish(auth);
         auth.stubFor(WireMock.post("/auth/login").willReturn(ok()));
         customer.stubFor(WireMock.get("/customers/me").willReturn(ok()));
     }
 
     @Test
     void aClientOverItsLimitGetsA429UntilTheLimitRefills() throws Exception {
-        String ana = Tokens.bearer("ana", "CUSTOMER");
+        String ana = TestJwt.bearer("ana", "CUSTOMER");
         for (int i = 0; i < 3; i++) {
             mockMvc.perform(get("/api/v1/customers/me").header(HttpHeaders.AUTHORIZATION, ana))
                     .andExpect(status().isOk());
@@ -57,7 +58,8 @@ class RateLimitTest {
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")))
                 .andExpect(jsonPath("$.code").value("TOO_MANY_REQUESTS"));
-        mockMvc.perform(get("/api/v1/customers/me").header(HttpHeaders.AUTHORIZATION, Tokens.bearer("rui", "CUSTOMER")))
+        mockMvc.perform(get("/api/v1/customers/me")
+                        .header(HttpHeaders.AUTHORIZATION, TestJwt.bearer("rui", "CUSTOMER")))
                 .andExpect(status().isOk());
     }
 

@@ -12,6 +12,6 @@ public enum Role {
     FLEET_MANAGER,
     /** Manages rates, seasons, extras, coverages and fees. */
     PRICING_MANAGER,
-    /** Manages staff accounts and reads every resource. */
+    /** Manages the staff accounts. */
     ADMIN
 }
