@@ -8,18 +8,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.rentporto.customer.CustomerServiceTest;
 import pt.rentporto.web.testing.TestJwt;
-import pt.rentporto.web.testing.TestJwtDecoder;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import(TestJwtDecoder.class)
+@CustomerServiceTest
 class ApiErrorsTest {
 
     private static final String CUSTOMER = TestJwt.bearer("ana", "CUSTOMER");
@@ -29,7 +24,9 @@ class ApiErrorsTest {
 
     @Test
     void answersAnEndpointNotImplementedYetWith501() throws Exception {
-        mockMvc.perform(get("/customers/me").header(HttpHeaders.AUTHORIZATION, CUSTOMER))
+        mockMvc.perform(get("/internal/customers/{id}/driver-profile", "8d3f6a2e-0b7c-4a51-9e43-2f1d5c6b7a80")
+                        .param("on", "2026-12-01")
+                        .header(HttpHeaders.AUTHORIZATION, CUSTOMER))
                 .andExpect(status().isNotImplemented())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.code").value("NOT_IMPLEMENTED"));

@@ -1,0 +1,24 @@
+info:
+  name: Pricing manager
+  type: folder
+  seq: 5
+
+request:
+  auth:
+    type: bearer
+    token: "{{pricingManagerToken}}"
+  scripts:
+    - type: before-request
+      code: |-
+        // Logs in before any request of this folder that needs a token, when there is none or it expires within a minute.
+        if (req.getAuthMode() === "bearer"
+            && (!bru.getVar("pricingManagerToken") || Date.now() > bru.getVar("pricingManagerTokenExpiresAt") - 60000)) {
+          const response = await bru.sendRequest({
+            method: "POST",
+            url: bru.interpolate("{{baseUrl}}/auth/login"),
+            headers: { "Content-Type": "application/json" },
+            data: { email: bru.interpolate("{{pricingManagerEmail}}"), password: bru.interpolate("{{actorPassword}}") }
+          });
+          bru.setVar("pricingManagerToken", response.data.accessToken);
+          bru.setVar("pricingManagerTokenExpiresAt", Date.now() + response.data.expiresIn * 1000);
+        }

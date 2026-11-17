@@ -1,0 +1,35 @@
+info:
+  name: Create pricing manager
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/users"
+  headers:
+    - name: Idempotency-Key
+      value: bruno-gestor-comercial
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{pricingManagerEmail}}",
+        "password": "{{actorPassword}}",
+        "roles": ["PRICING_MANAGER"]
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the account exists", function () {
+          expect(res.status).to.equal(201);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

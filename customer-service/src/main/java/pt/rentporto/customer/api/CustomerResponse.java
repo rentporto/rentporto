@@ -2,6 +2,7 @@ package pt.rentporto.customer.api;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import pt.rentporto.customer.domain.Customer;
 
 /**
  * Profile of a customer.
@@ -22,4 +23,21 @@ public record CustomerResponse(
         LocalDate birthDate,
         String phone,
         DriverLicense driverLicense) {
+
+    static CustomerResponse from(Customer customer) {
+        pt.rentporto.customer.domain.DriverLicense license = customer.driverLicense();
+        return new CustomerResponse(
+                customer.id(),
+                customer.email(),
+                customer.fullName(),
+                customer.taxNumber().value(),
+                customer.birthDate(),
+                customer.phone(),
+                new DriverLicense(
+                        license.number(),
+                        license.category(),
+                        license.issuingCountry(),
+                        license.issueDate(),
+                        license.expiryDate()));
+    }
 }

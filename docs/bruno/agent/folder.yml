@@ -1,0 +1,24 @@
+info:
+  name: Agent
+  type: folder
+  seq: 3
+
+request:
+  auth:
+    type: bearer
+    token: "{{agentToken}}"
+  scripts:
+    - type: before-request
+      code: |-
+        // Logs in before any request of this folder that needs a token, when there is none or it expires within a minute.
+        if (req.getAuthMode() === "bearer"
+            && (!bru.getVar("agentToken") || Date.now() > bru.getVar("agentTokenExpiresAt") - 60000)) {
+          const response = await bru.sendRequest({
+            method: "POST",
+            url: bru.interpolate("{{baseUrl}}/auth/login"),
+            headers: { "Content-Type": "application/json" },
+            data: { email: bru.interpolate("{{agentEmail}}"), password: bru.interpolate("{{actorPassword}}") }
+          });
+          bru.setVar("agentToken", response.data.accessToken);
+          bru.setVar("agentTokenExpiresAt", Date.now() + response.data.expiresIn * 1000);
+        }
