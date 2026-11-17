@@ -1,0 +1,9 @@
+rentporto:
+  postgres:
+    host: localhost
+  mailpit:
+    host: localhost
+
+spring:
+  rabbitmq:
+    host: localhost

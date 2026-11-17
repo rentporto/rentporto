@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${rentporto.postgres.host}:5432/notification
+    username: notification
+    password: ${NOTIFICATION_DB_PASSWORD:notification}
+  mail:
+    host: ${rentporto.mailpit.host}
+    port: 1025

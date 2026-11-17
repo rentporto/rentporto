@@ -5,9 +5,17 @@ spring:
   application:
     name: config-server
   profiles:
-    active: native
+    default: dev
+    group:
+      dev: native
+      k8s: git
   cloud:
     config:
       server:
         native:
-          search-locations: classpath:/config
+          search-locations: ${CONFIG_REPO:file:../config/}
+        git:
+          uri: https://github.com/rentporto/rentporto
+          search-paths: config
+          default-label: main
+          clone-on-start: true

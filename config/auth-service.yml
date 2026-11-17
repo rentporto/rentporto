@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${rentporto.postgres.host}:5432/auth
+    username: auth
+    password: ${AUTH_DB_PASSWORD:auth}

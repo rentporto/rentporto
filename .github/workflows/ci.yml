@@ -40,6 +40,8 @@ jobs:
                 - .sdkmanrc
                 - .github/workflows/ci.yml
               - config-server/**
+              - config/**
+              - customer-service/src/main/resources/application.yml
             gateway:
               - *build
               - gateway/**
