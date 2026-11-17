@@ -3,6 +3,13 @@ rentporto:
     host: postgres
   mailpit:
     host: mailpit
+  services:
+    auth: http://auth-service:8081
+    customer: http://customer-service:8082
+    fleet: http://fleet-service:8083
+    booking: http://booking-service:8084
+    rental: http://rental-service:8085
+    notification: http://notification-service:8086
 
 spring:
   rabbitmq:

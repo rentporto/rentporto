@@ -10,13 +10,11 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.util.StringUtils;
 
 /**
- * Signing key, the encoder that issues the tokens, and the decoder and role converter that validate them on this
- * service's own endpoints.
+ * Signing key, the encoder that issues the tokens, and the decoder that validates them on this service's own
+ * endpoints with the local key, without calling its own JWK Set.
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(TokenProperties.class)
@@ -52,21 +50,5 @@ class TokenConfiguration {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(signingKey.publicKey()).build();
         decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.issuer()));
         return decoder;
-    }
-
-    /**
-     * Turns the {@code roles} claim into the {@code ROLE_} authorities that {@code @PreAuthorize("hasRole(...)")}
-     * checks.
-     *
-     * @return the converter
-     */
-    @Bean
-    JwtAuthenticationConverter rolesAsAuthorities() {
-        JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
-        authorities.setAuthoritiesClaimName(RsaTokenSigner.ROLES);
-        authorities.setAuthorityPrefix("ROLE_");
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authorities);
-        return converter;
     }
 }

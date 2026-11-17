@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import pt.rentporto.auth.application.TokenSigner;
 import pt.rentporto.auth.domain.Account;
 import pt.rentporto.auth.domain.Role;
+import pt.rentporto.web.security.CommonSecurityAutoConfiguration;
 
 /**
  * JWT signed with RS256: {@code sub} is the account id, and the {@code email} and {@code roles} claims carry what the
@@ -20,7 +21,7 @@ import pt.rentporto.auth.domain.Role;
 class RsaTokenSigner implements TokenSigner {
 
     static final String EMAIL = "email";
-    static final String ROLES = "roles";
+    static final String ROLES = CommonSecurityAutoConfiguration.ROLES_CLAIM;
 
     private final JwtEncoder encoder;
     private final SigningKey signingKey;

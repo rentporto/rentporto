@@ -1,25 +1,27 @@
-package pt.rentporto.auth.infrastructure.security;
+package pt.rentporto.web.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 /**
  * Hands the 401 and 403 raised in the security filters to Spring MVC, so that {@link SecurityProblemsAdvice} answers
  * them with the same ProblemDetail as the errors raised in a controller.
  */
-@Component
-class SecurityProblems implements AuthenticationEntryPoint, AccessDeniedHandler {
+public class SecurityProblems implements AuthenticationEntryPoint, AccessDeniedHandler {
 
     private final HandlerExceptionResolver resolver;
 
-    SecurityProblems(@Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
+    /**
+     * Creates the entry point and handler.
+     *
+     * @param resolver the exception resolver of Spring MVC
+     */
+    public SecurityProblems(HandlerExceptionResolver resolver) {
         this.resolver = resolver;
     }
 

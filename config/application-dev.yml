@@ -3,6 +3,13 @@ rentporto:
     host: localhost
   mailpit:
     host: localhost
+  services:
+    auth: http://localhost:8081
+    customer: http://localhost:8082
+    fleet: http://localhost:8083
+    booking: http://localhost:8084
+    rental: http://localhost:8085
+    notification: http://localhost:8086
 
 spring:
   rabbitmq:

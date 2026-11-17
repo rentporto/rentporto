@@ -1,0 +1,24 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${rentporto.services.auth}/auth/jwks
+          issuer-uri: rentporto
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          trusted-proxies: '127\.0\.0\.1'
+
+rentporto:
+  gateway:
+    rate-limit:
+      client:
+        capacity: 1000
+        period: 1m
+      login:
+        capacity: 1000
+        period: 1m
+    cors:
+      allowed-origins: http://localhost:3000

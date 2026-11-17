@@ -1,3 +1,6 @@
+server:
+  forward-headers-strategy: framework
+
 spring:
   rabbitmq:
     port: 5672
@@ -9,6 +12,12 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${rentporto.services.auth}/auth/jwks
+          issuer-uri: rentporto
 
 management:
   endpoint:
