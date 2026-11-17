@@ -44,6 +44,7 @@
         <stripe-java.version>34.1.0</stripe-java.version>
         <wiremock-spring-boot.version>4.4.3</wiremock-spring-boot.version>
         <archunit.version>1.4.2</archunit.version>
+        <bucket4j.version>8.15.0</bucket4j.version>
     </properties>
 
     <dependencyManagement>
@@ -113,6 +114,11 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit</artifactId>
                 <version>${archunit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bucket4j</groupId>
+                <artifactId>bucket4j_jdk17-core</artifactId>
+                <version>${bucket4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

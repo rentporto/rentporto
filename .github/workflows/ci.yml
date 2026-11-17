@@ -44,10 +44,11 @@ jobs:
               - customer-service/src/main/resources/application.yml
             gateway:
               - *build
+              - &web common-web/**
               - gateway/**
             auth-service:
               - *build
-              - &web common-web/**
+              - *web
               - auth-service/**
               - docs/openapi/auth-service.yaml
             customer-service:

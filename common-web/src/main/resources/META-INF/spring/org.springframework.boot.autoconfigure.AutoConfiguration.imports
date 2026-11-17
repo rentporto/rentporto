@@ -1,1 +1,2 @@
 pt.rentporto.web.CommonWebAutoConfiguration
+pt.rentporto.web.security.CommonSecurityAutoConfiguration

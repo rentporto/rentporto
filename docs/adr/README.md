@@ -26,3 +26,4 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-18](0018-lock-partilhado-em-jpa.md) | Lock partilhado em JPA em vez do ShedLock | Aceite |
 | [ADR-19](0019-configuracao-externa-no-config-server.md) | Configuração externa no Config Server | Aceite |
 | [ADR-20](0020-chave-dos-jwt-e-primeiro-administrador.md) | Chave de assinatura dos JWT e primeiro administrador | Aceite |
+| [ADR-21](0021-entrada-pelo-api-gateway.md) | Entrada pelo API Gateway: rotas por recurso, autenticação à entrada e rate limiting | Aceite |

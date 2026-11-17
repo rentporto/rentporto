@@ -27,6 +27,10 @@ Os serviços leem a configuração do Config Server e não arrancam sem ele, por
 
 No perfil `dev` (por omissão), o Config Server lê a pasta `config/` local: uma alteração aplica-se ao reiniciar o serviço, sem commit. No perfil `k8s`, lê o ramo `main` do GitHub (ADR-19).
 
+## Gateway
+
+A API pública fica em `http://localhost:8080/api/v1`: o gateway remove o `/api/v1` e encaminha cada recurso para o serviço dono (ADR-21). Arranca depois do Config Server, como os serviços; um serviço parado responde 503.
+
 ## auth-service
 
 No perfil `dev`, o auth-service cria no arranque o administrador `admin@rentporto.pt` com a password `rentporto-admin`, e assina os JWT com uma chave gerada nesse arranque: depois de o reiniciar, é preciso fazer login de novo. No `k8s`, a chave e o administrador vêm de um Secret (ADR-20).

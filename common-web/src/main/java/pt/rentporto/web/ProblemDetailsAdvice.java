@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Answers every error as a ProblemDetail (RFC 9457) with a {@code code} property: the business reason for a
@@ -69,6 +70,16 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
                                 result.getMethodParameter().getParameterName(), message(error.getDefaultMessage()))))
                 .toList();
         return invalid(e, e.getBody(), errors, headers, status, request);
+    }
+
+    /**
+     * A path without an endpoint ends in Spring's static resources; the default detail would say so.
+     */
+    @Override
+    protected ResponseEntity<Object> handleNoResourceFoundException(
+            NoResourceFoundException e, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail body = ProblemDetail.forStatusAndDetail(status, "There is no endpoint at this path");
+        return handleExceptionInternal(e, body, headers, status, request);
     }
 
     @Override
