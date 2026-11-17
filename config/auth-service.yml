@@ -3,3 +3,11 @@ spring:
     url: jdbc:postgresql://${rentporto.postgres.host}:5432/auth
     username: auth
     password: ${AUTH_DB_PASSWORD:auth}
+  flyway:
+    locations: classpath:db/migration
+
+rentporto:
+  auth:
+    admin:
+      email: ${AUTH_ADMIN_EMAIL:admin@rentporto.pt}
+      password: ${AUTH_ADMIN_PASSWORD:rentporto-admin}

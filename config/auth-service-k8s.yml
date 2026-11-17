@@ -1,0 +1,7 @@
+rentporto:
+  auth:
+    token:
+      signing-key: ${AUTH_SIGNING_KEY}
+    admin:
+      email: ${AUTH_ADMIN_EMAIL}
+      password: ${AUTH_ADMIN_PASSWORD}
