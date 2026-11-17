@@ -7,7 +7,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import pt.rentporto.web.security.ResourceServerSecurity;
 
@@ -21,15 +20,10 @@ class SecurityConfiguration {
 
     private static final PathPatternRequestMatcher.Builder PATHS = PathPatternRequestMatcher.withDefaults();
 
-    static final RequestMatcher PUBLIC = new OrRequestMatcher(
+    static final RequestMatcher PUBLIC = ResourceServerSecurity.publicEndpoints(
             PATHS.matcher(HttpMethod.POST, "/auth/register"),
             PATHS.matcher(HttpMethod.POST, "/auth/login"),
-            PATHS.matcher(HttpMethod.GET, "/auth/jwks"),
-            PATHS.matcher("/v3/api-docs/**"),
-            PATHS.matcher("/v3/api-docs.yaml"),
-            PATHS.matcher("/swagger-ui/**"),
-            PATHS.matcher("/swagger-ui.html"),
-            PATHS.matcher("/actuator/health/**"));
+            PATHS.matcher(HttpMethod.GET, "/auth/jwks"));
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, ResourceServerSecurity resourceServer) {

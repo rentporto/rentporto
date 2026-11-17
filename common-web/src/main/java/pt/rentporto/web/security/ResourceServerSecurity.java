@@ -1,11 +1,15 @@
 package pt.rentporto.web.security;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
@@ -14,6 +18,15 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  * {@code roles} claim as authorities and the errors as ProblemDetail.
  */
 public class ResourceServerSecurity {
+
+    private static final PathPatternRequestMatcher.Builder PATHS = PathPatternRequestMatcher.withDefaults();
+
+    private static final RequestMatcher DOCS_AND_HEALTH = new OrRequestMatcher(
+            PATHS.matcher("/v3/api-docs/**"),
+            PATHS.matcher("/v3/api-docs.yaml"),
+            PATHS.matcher("/swagger-ui/**"),
+            PATHS.matcher("/swagger-ui.html"),
+            PATHS.matcher("/actuator/health/**"));
 
     private final SecurityProblems problems;
     private final JwtAuthenticationConverter rolesAsAuthorities;
@@ -27,6 +40,19 @@ public class ResourceServerSecurity {
     public ResourceServerSecurity(SecurityProblems problems, JwtAuthenticationConverter rolesAsAuthorities) {
         this.problems = problems;
         this.rolesAsAuthorities = rolesAsAuthorities;
+    }
+
+    /**
+     * The public endpoints of a service, with the OpenAPI document, the Swagger UI and the health probes, which are
+     * always public.
+     *
+     * @param endpoints endpoints of the catalogue open without a token, e.g. {@code GET /stations}
+     * @return the matcher to pass to {@link #apply(HttpSecurity, RequestMatcher)}
+     */
+    public static RequestMatcher publicEndpoints(RequestMatcher... endpoints) {
+        List<RequestMatcher> all = new ArrayList<>(List.of(endpoints));
+        all.add(DOCS_AND_HEALTH);
+        return new OrRequestMatcher(all);
     }
 
     /**

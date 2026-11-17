@@ -9,10 +9,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.wiremock.spring.ConfigureWireMock;
 import org.wiremock.spring.EnableWireMock;
+import pt.rentporto.web.testing.TestJwt;
 
 /**
  * Starts the gateway with a WireMock server in the place of each service; the auth-service one also serves the JWK
- * Set of {@link Tokens}.
+ * Set of {@link TestJwt}.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

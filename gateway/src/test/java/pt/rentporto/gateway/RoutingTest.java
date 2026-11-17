@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import org.wiremock.spring.InjectWireMock;
+import pt.rentporto.web.testing.TestJwt;
 
 /**
  * Each resource of {@code /api/v1} reaches the service that owns it, without the prefix; {@code /internal} is not
@@ -31,7 +32,7 @@ import org.wiremock.spring.InjectWireMock;
 @GatewayTest
 class RoutingTest {
 
-    private static final String TOKEN = Tokens.bearer("routing-user", "CUSTOMER");
+    private static final String TOKEN = TestJwt.bearer("routing-user", "CUSTOMER");
 
     @Autowired
     private MockMvc mockMvc;
@@ -58,7 +59,7 @@ class RoutingTest {
 
     @BeforeEach
     void setUp() {
-        Tokens.publishKey(auth);
+        Jwks.publish(auth);
         services = Map.of(
                 "auth-service", auth,
                 "customer-service", customer,

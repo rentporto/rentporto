@@ -1,6 +1,7 @@
 package pt.rentporto.auth.api;
 
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import pt.rentporto.auth.application.AccountService;
 import pt.rentporto.auth.application.LoginService;
@@ -18,17 +19,20 @@ class AuthController implements AuthApi {
     }
 
     @Override
+    @PreAuthorize("permitAll()")
     public UserResponse register(RegisterRequest request, String idempotencyKey) {
         return UserResponse.from(accounts.register(request.email(), request.password(), idempotencyKey));
     }
 
     @Override
+    @PreAuthorize("permitAll()")
     public TokenResponse login(LoginRequest request) {
         IssuedToken token = logins.login(request.email(), request.password());
         return new TokenResponse(token.value(), "Bearer", Math.toIntExact(token.expiresIn().toSeconds()));
     }
 
     @Override
+    @PreAuthorize("permitAll()")
     public Map<String, Object> jwks() {
         return logins.publicKeys();
     }

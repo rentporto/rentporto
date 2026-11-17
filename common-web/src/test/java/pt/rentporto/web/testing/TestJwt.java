@@ -1,9 +1,5 @@
-package pt.rentporto.gateway;
+package pt.rentporto.web.testing;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
-
-import com.github.tomakehurst.wiremock.WireMockServer;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import java.security.KeyPair;
@@ -22,27 +18,22 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
 /**
- * Tokens signed as the auth-service signs them, with a key whose public part the fake auth-service publishes.
+ * Tokens signed as the auth-service signs them, with a key that only exists in the tests. {@link TestJwtDecoder}
+ * validates them as the services validate the real ones.
  */
-public final class Tokens {
+public final class TestJwt {
 
+    /** Value of the {@code iss} claim the services accept. */
     public static final String ISSUER = "rentporto";
+
+    /** Every role of the RentPorto accounts. */
+    public static final List<String> ROLES = List.of("CUSTOMER", "AGENT", "FLEET_MANAGER", "PRICING_MANAGER", "ADMIN");
 
     private static final String KEY_ID = "test-key";
     private static final KeyPair KEYS = generateKeys();
     private static final JwtEncoder ENCODER = encoder(KEYS);
 
-    private Tokens() {
-    }
-
-    /**
-     * Makes the fake auth-service publish the public key at {@code /auth/jwks}.
-     *
-     * @param authService the WireMock server in the place of the auth-service
-     */
-    public static void publishKey(WireMockServer authService) {
-        RSAKey publicKey = new RSAKey.Builder((RSAPublicKey) KEYS.getPublic()).keyID(KEY_ID).build();
-        authService.stubFor(get("/auth/jwks").willReturn(okJson(new JWKSet(publicKey).toString())));
+    private TestJwt() {
     }
 
     /**
@@ -57,19 +48,62 @@ public final class Tokens {
         return bearer(ENCODER, ISSUER, subject, now, now.plus(Duration.ofHours(1)), roles);
     }
 
+    /**
+     * {@code Authorization} header with a token that expired an hour ago.
+     *
+     * @return {@code Bearer <token>}
+     */
     public static String expired() {
         Instant now = Instant.now();
-        return bearer(ENCODER, ISSUER, "user", now.minus(Duration.ofHours(2)), now.minus(Duration.ofHours(1)));
+        return bearer(ENCODER, ISSUER, "user", now.minus(Duration.ofHours(2)), now.minus(Duration.ofHours(1)), "ADMIN");
     }
 
+    /**
+     * {@code Authorization} header with a token issued by someone else.
+     *
+     * @return {@code Bearer <token>}
+     */
     public static String fromAnotherIssuer() {
         Instant now = Instant.now();
-        return bearer(ENCODER, "someone-else", "user", now, now.plus(Duration.ofHours(1)));
+        return bearer(ENCODER, "someone-else", "user", now, now.plus(Duration.ofHours(1)), "ADMIN");
     }
 
+    /**
+     * {@code Authorization} header with a token signed with a key the services do not know.
+     *
+     * @return {@code Bearer <token>}
+     */
     public static String signedWithAnotherKey() {
         Instant now = Instant.now();
-        return bearer(encoder(generateKeys()), ISSUER, "user", now, now.plus(Duration.ofHours(1)));
+        return bearer(encoder(generateKeys()), ISSUER, "user", now, now.plus(Duration.ofHours(1)), "ADMIN");
+    }
+
+    /**
+     * {@code Authorization} headers that every service answers with 401: expired, from another issuer, signed with
+     * another key and not a JWT. For {@code @MethodSource("pt.rentporto.web.testing.TestJwt#invalidTokens")}.
+     *
+     * @return the headers
+     */
+    public static List<String> invalidTokens() {
+        return List.of(expired(), fromAnotherIssuer(), signedWithAnotherKey(), "Bearer not.a.token");
+    }
+
+    /**
+     * Public key that validates the tokens of this class.
+     *
+     * @return the key
+     */
+    public static RSAPublicKey publicKey() {
+        return (RSAPublicKey) KEYS.getPublic();
+    }
+
+    /**
+     * JWK Set with the public key, as the auth-service publishes it at {@code /auth/jwks}.
+     *
+     * @return the JWK Set as JSON
+     */
+    public static String jwkSet() {
+        return new JWKSet(new RSAKey.Builder(publicKey()).keyID(KEY_ID).build()).toString();
     }
 
     private static String bearer(
