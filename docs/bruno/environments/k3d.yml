@@ -1,0 +1,7 @@
+variables:
+  - name: baseUrl
+    value: http://rentporto.local/api/v1
+  - name: adminEmail
+    value: admin@rentporto.pt
+  - name: adminPassword
+    value: "{{process.env.ADMIN_PASSWORD}}"

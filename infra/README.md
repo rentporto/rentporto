@@ -60,7 +60,7 @@ Com Docker e k3d instalados:
 k3d cluster delete rentporto
 ```
 
-O `deploy.sh` cria os Secrets que ainda não existem, com passwords aleatórias e a chave dos JWT, e termina com um login do administrador pelo Ingress. A password do administrador:
+O `deploy.sh` cria os Secrets que ainda não existem, com passwords aleatórias e a chave dos JWT, termina com um login do administrador pelo Ingress e escreve a password do administrador em `docs/bruno/.env`, para o ambiente `k3d` da coleção Bruno (`docs/bruno/README.md`). A password do administrador:
 
 ```
 kubectl --context k3d-rentporto -n rentporto get secret auth-service -o jsonpath='{.data.AUTH_ADMIN_PASSWORD}' | base64 --decode

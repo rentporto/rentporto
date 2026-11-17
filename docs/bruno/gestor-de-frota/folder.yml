@@ -1,0 +1,24 @@
+info:
+  name: Gestor de frota
+  type: folder
+  seq: 4
+
+request:
+  auth:
+    type: bearer
+    token: "{{fleetManagerToken}}"
+  scripts:
+    - type: before-request
+      code: |-
+        // Logs in before any request of this folder that needs a token, when there is none or it expires within a minute.
+        if (req.getAuthMode() === "bearer"
+            && (!bru.getVar("fleetManagerToken") || Date.now() > bru.getVar("fleetManagerTokenExpiresAt") - 60000)) {
+          const response = await bru.sendRequest({
+            method: "POST",
+            url: bru.interpolate("{{baseUrl}}/auth/login"),
+            headers: { "Content-Type": "application/json" },
+            data: { email: bru.interpolate("{{fleetManagerEmail}}"), password: bru.interpolate("{{actorPassword}}") }
+          });
+          bru.setVar("fleetManagerToken", response.data.accessToken);
+          bru.setVar("fleetManagerTokenExpiresAt", Date.now() + response.data.expiresIn * 1000);
+        }

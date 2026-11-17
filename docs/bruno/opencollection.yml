@@ -1,0 +1,26 @@
+opencollection: 1.0.0
+
+info:
+  name: RentPorto
+  version: "1"
+
+request:
+  variables:
+    - name: customerEmail
+      value: cliente@rentporto.pt
+    - name: agentEmail
+      value: agente@rentporto.pt
+    - name: fleetManagerEmail
+      value: gestor.frota@rentporto.pt
+    - name: pricingManagerEmail
+      value: gestor.comercial@rentporto.pt
+    - name: actorPassword
+      value: bruno-password
+    - name: customerId
+      value: 00000000-0000-0000-0000-000000000000
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git

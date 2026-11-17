@@ -1,0 +1,24 @@
+info:
+  name: Administrador
+  type: folder
+  seq: 2
+
+request:
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+  scripts:
+    - type: before-request
+      code: |-
+        // Logs in before any request of this folder that needs a token, when there is none or it expires within a minute.
+        if (req.getAuthMode() === "bearer"
+            && (!bru.getVar("adminToken") || Date.now() > bru.getVar("adminTokenExpiresAt") - 60000)) {
+          const response = await bru.sendRequest({
+            method: "POST",
+            url: bru.interpolate("{{baseUrl}}/auth/login"),
+            headers: { "Content-Type": "application/json" },
+            data: { email: bru.interpolate("{{adminEmail}}"), password: bru.interpolate("{{adminPassword}}") }
+          });
+          bru.setVar("adminToken", response.data.accessToken);
+          bru.setVar("adminTokenExpiresAt", Date.now() + response.data.expiresIn * 1000);
+        }
