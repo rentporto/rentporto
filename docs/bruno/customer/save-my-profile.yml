@@ -1,0 +1,41 @@
+info:
+  name: Save my profile
+  type: http
+  seq: 3
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/customers/me"
+  body:
+    type: json
+    data: |-
+      {
+        "fullName": "Ana Ferreira",
+        "taxNumber": "245678905",
+        "birthDate": "1990-05-10",
+        "phone": "+351912345678",
+        "driverLicense": {
+          "number": "P-1234567 8",
+          "category": "B",
+          "issuingCountry": "PT",
+          "issueDate": "2010-06-01",
+          "expiryDate": "2035-06-01"
+        }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the profile is stored with the email of the account", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.email).to.equal(bru.interpolate("{{customerEmail}}"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

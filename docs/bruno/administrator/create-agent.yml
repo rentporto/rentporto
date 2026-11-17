@@ -1,0 +1,35 @@
+info:
+  name: Create agent
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/users"
+  headers:
+    - name: Idempotency-Key
+      value: bruno-agente
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{agentEmail}}",
+        "password": "{{actorPassword}}",
+        "roles": ["AGENT"]
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the account exists", function () {
+          expect(res.status).to.equal(201);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

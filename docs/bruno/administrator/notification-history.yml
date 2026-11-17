@@ -1,0 +1,24 @@
+info:
+  name: Notification history
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}/notifications?customerId={{customerId}}"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the role of the actor is allowed", function () {
+          expect(res.status).to.not.be.oneOf([401, 403]);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

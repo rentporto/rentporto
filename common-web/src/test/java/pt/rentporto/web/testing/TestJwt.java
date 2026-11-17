@@ -45,7 +45,20 @@ public final class TestJwt {
      */
     public static String bearer(String subject, String... roles) {
         Instant now = Instant.now();
-        return bearer(ENCODER, ISSUER, subject, now, now.plus(Duration.ofHours(1)), roles);
+        return bearer(ENCODER, ISSUER, subject, null, now, now.plus(Duration.ofHours(1)), roles);
+    }
+
+    /**
+     * {@code Authorization} header with a valid token of a customer, with the {@code email} claim the auth-service
+     * adds.
+     *
+     * @param subject id of the account
+     * @param email   email of the account
+     * @return {@code Bearer <token>}
+     */
+    public static String customer(String subject, String email) {
+        Instant now = Instant.now();
+        return bearer(ENCODER, ISSUER, subject, email, now, now.plus(Duration.ofHours(1)), "CUSTOMER");
     }
 
     /**
@@ -55,7 +68,8 @@ public final class TestJwt {
      */
     public static String expired() {
         Instant now = Instant.now();
-        return bearer(ENCODER, ISSUER, "user", now.minus(Duration.ofHours(2)), now.minus(Duration.ofHours(1)), "ADMIN");
+        Instant issuedAt = now.minus(Duration.ofHours(2));
+        return bearer(ENCODER, ISSUER, "user", null, issuedAt, issuedAt.plus(Duration.ofHours(1)), "ADMIN");
     }
 
     /**
@@ -65,7 +79,7 @@ public final class TestJwt {
      */
     public static String fromAnotherIssuer() {
         Instant now = Instant.now();
-        return bearer(ENCODER, "someone-else", "user", now, now.plus(Duration.ofHours(1)), "ADMIN");
+        return bearer(ENCODER, "someone-else", "user", null, now, now.plus(Duration.ofHours(1)), "ADMIN");
     }
 
     /**
@@ -75,7 +89,7 @@ public final class TestJwt {
      */
     public static String signedWithAnotherKey() {
         Instant now = Instant.now();
-        return bearer(encoder(generateKeys()), ISSUER, "user", now, now.plus(Duration.ofHours(1)), "ADMIN");
+        return bearer(encoder(generateKeys()), ISSUER, "user", null, now, now.plus(Duration.ofHours(1)), "ADMIN");
     }
 
     /**
@@ -107,16 +121,24 @@ public final class TestJwt {
     }
 
     private static String bearer(
-            JwtEncoder encoder, String issuer, String subject, Instant issuedAt, Instant expiresAt, String... roles) {
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+            JwtEncoder encoder,
+            String issuer,
+            String subject,
+            String email,
+            Instant issuedAt,
+            Instant expiresAt,
+            String... roles) {
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .subject(subject)
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
-                .claim("roles", List.of(roles))
-                .build();
+                .claim("roles", List.of(roles));
+        if (email != null) {
+            claims.claim("email", email);
+        }
         JwsHeader header = JwsHeader.with(SignatureAlgorithm.RS256).keyId(KEY_ID).build();
-        return "Bearer " + encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+        return "Bearer " + encoder.encode(JwtEncoderParameters.from(header, claims.build())).getTokenValue();
     }
 
     private static JwtEncoder encoder(KeyPair keys) {

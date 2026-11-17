@@ -7,7 +7,7 @@ Abrir esta pasta no Bruno 4 ("Open Collection") e escolher o ambiente:
 | `compose` | `http://localhost:8080/api/v1`, com os serviços a correr localmente | a do perfil `dev` (`rentporto-admin`) |
 | `k3d` | `http://rentporto.local/api/v1` (ver `infra/README.md`) | do `.env` desta pasta, que o `deploy.sh` escreve; o `.gitignore` exclui-o |
 
-Há uma pasta por ator. O cliente regista-se a si próprio e o administrador cria o agente e os dois gestores, por isso, num ambiente novo, corre-se primeiro a coleção inteira (Run Collection), por ordem. Os pedidos de criação de contas têm uma `Idempotency-Key` fixa: correr a coleção outra vez devolve as mesmas contas.
+Há uma pasta por ator: `customer`, `administrator`, `agent`, `fleet-manager` e `pricing-manager`. O cliente regista-se a si próprio e o administrador cria o agente e os dois gestores, por isso, num ambiente novo, corre-se primeiro a coleção inteira (Run Collection), por ordem. Os pedidos de criação de contas têm uma `Idempotency-Key` fixa: correr a coleção outra vez devolve as mesmas contas.
 
 Cada pasta faz login sozinha antes de um pedido do seu ator quando ainda não há token ou quando ele expira dentro de um minuto; o pedido Login de cada pasta faz o mesmo à vista. Os pedidos de negócio respondem 501 até a história de cada endpoint o implementar; o teste confirma que o papel do ator passa (nem 401 nem 403).
 
@@ -18,7 +18,7 @@ O gateway aceita 10 logins por minuto por IP (ADR-21) e cada execução da cole�
 ```
 cd docs/bruno
 npx @usebruno/cli@4.3.0 run --env compose
-npx @usebruno/cli@4.3.0 run agente --env k3d
+npx @usebruno/cli@4.3.0 run agent --env k3d
 ```
 
 ## Outras ferramentas
