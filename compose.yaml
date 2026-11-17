@@ -1,0 +1,70 @@
+name: rentporto
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-auth}
+      CUSTOMER_DB_PASSWORD: ${CUSTOMER_DB_PASSWORD:-customer}
+      FLEET_DB_PASSWORD: ${FLEET_DB_PASSWORD:-fleet}
+      BOOKING_DB_PASSWORD: ${BOOKING_DB_PASSWORD:-booking}
+      RENTAL_DB_PASSWORD: ${RENTAL_DB_PASSWORD:-rental}
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-notification}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ./infra/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./infra/rabbitmq/rentporto.conf:/etc/rabbitmq/conf.d/20-rentporto.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.33
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  zipkin:
+    image: openzipkin/zipkin:3.6
+    ports:
+      - "9411:9411"
+
+  wiremock:
+    image: wiremock/wiremock:3.13.2
+    ports:
+      - "8089:8080"
+    volumes:
+      - ./infra/wiremock:/home/wiremock
+
+  stripe-cli:
+    image: stripe/stripe-cli:v1.55.11
+    profiles: [stripe]
+    command: ["listen", "--forward-to", "http://host.docker.internal:8084/payments/stripe-webhook"]
+    environment:
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres-data:
+  rabbitmq-data:

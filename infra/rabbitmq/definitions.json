@@ -1,0 +1,534 @@
+{
+  "users": [
+    {
+      "name": "rentporto",
+      "password_hash": "m7d5ShmYGlAWMmy08hfhPZtfg/n/Uyfp+K92QJfRyOGL97c9",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [
+        "administrator"
+      ],
+      "limits": {}
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "rentporto",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "rentporto.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "notification.customer-registered",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "notification.customer-registered.dlq"
+      }
+    },
+    {
+      "name": "notification.customer-registered.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "booking.reservation.station-capacity-changed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "booking.reservation.station-capacity-changed.dlq"
+      }
+    },
+    {
+      "name": "booking.reservation.station-capacity-changed.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "booking.reservation.vehicle-category-changed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "booking.reservation.vehicle-category-changed.dlq"
+      }
+    },
+    {
+      "name": "booking.reservation.vehicle-category-changed.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "booking.pricing.vehicle-category-changed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "booking.pricing.vehicle-category-changed.dlq"
+      }
+    },
+    {
+      "name": "booking.pricing.vehicle-category-changed.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "rental.reservation-confirmed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "rental.reservation-confirmed.dlq"
+      }
+    },
+    {
+      "name": "rental.reservation-confirmed.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.reservation-confirmed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "notification.reservation-confirmed.dlq"
+      }
+    },
+    {
+      "name": "notification.reservation-confirmed.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "rental.reservation-cancelled",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "rental.reservation-cancelled.dlq"
+      }
+    },
+    {
+      "name": "rental.reservation-cancelled.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.reservation-cancelled",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "notification.reservation-cancelled.dlq"
+      }
+    },
+    {
+      "name": "notification.reservation-cancelled.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.reservation-expired",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "notification.reservation-expired.dlq"
+      }
+    },
+    {
+      "name": "notification.reservation-expired.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "rental.reservation-no-show",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "rental.reservation-no-show.dlq"
+      }
+    },
+    {
+      "name": "rental.reservation-no-show.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.reservation-no-show",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "notification.reservation-no-show.dlq"
+      }
+    },
+    {
+      "name": "notification.reservation-no-show.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.payment-failed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "notification.payment-failed.dlq"
+      }
+    },
+    {
+      "name": "notification.payment-failed.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.payment-refunded",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "notification.payment-refunded.dlq"
+      }
+    },
+    {
+      "name": "notification.payment-refunded.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "rental.deposit-settled",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "rental.deposit-settled.dlq"
+      }
+    },
+    {
+      "name": "rental.deposit-settled.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "booking.reservation.rental-started",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "booking.reservation.rental-started.dlq"
+      }
+    },
+    {
+      "name": "booking.reservation.rental-started.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.rental-started",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "notification.rental-started.dlq"
+      }
+    },
+    {
+      "name": "notification.rental-started.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "fleet.vehicle-returned",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "fleet.vehicle-returned.dlq"
+      }
+    },
+    {
+      "name": "fleet.vehicle-returned.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "booking.reservation.vehicle-returned",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "booking.reservation.vehicle-returned.dlq"
+      }
+    },
+    {
+      "name": "booking.reservation.vehicle-returned.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.rental-closed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "notification.rental-closed.dlq"
+      }
+    },
+    {
+      "name": "notification.rental-closed.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "payment.settle-deposit",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "payment.settle-deposit.dlq"
+      }
+    },
+    {
+      "name": "payment.settle-deposit.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "notification.customer-registered",
+      "destination_type": "queue",
+      "routing_key": "customer.registered",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "booking.reservation.station-capacity-changed",
+      "destination_type": "queue",
+      "routing_key": "fleet.station-capacity-changed",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "booking.reservation.vehicle-category-changed",
+      "destination_type": "queue",
+      "routing_key": "fleet.vehicle-category-changed",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "booking.pricing.vehicle-category-changed",
+      "destination_type": "queue",
+      "routing_key": "fleet.vehicle-category-changed",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "rental.reservation-confirmed",
+      "destination_type": "queue",
+      "routing_key": "reservation.confirmed",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "notification.reservation-confirmed",
+      "destination_type": "queue",
+      "routing_key": "reservation.confirmed",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "rental.reservation-cancelled",
+      "destination_type": "queue",
+      "routing_key": "reservation.cancelled",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "notification.reservation-cancelled",
+      "destination_type": "queue",
+      "routing_key": "reservation.cancelled",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "notification.reservation-expired",
+      "destination_type": "queue",
+      "routing_key": "reservation.expired",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "rental.reservation-no-show",
+      "destination_type": "queue",
+      "routing_key": "reservation.no-show",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "notification.reservation-no-show",
+      "destination_type": "queue",
+      "routing_key": "reservation.no-show",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "notification.payment-failed",
+      "destination_type": "queue",
+      "routing_key": "payment.failed",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "notification.payment-refunded",
+      "destination_type": "queue",
+      "routing_key": "payment.refunded",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "rental.deposit-settled",
+      "destination_type": "queue",
+      "routing_key": "payment.deposit-settled",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "booking.reservation.rental-started",
+      "destination_type": "queue",
+      "routing_key": "rental.started",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "notification.rental-started",
+      "destination_type": "queue",
+      "routing_key": "rental.started",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "fleet.vehicle-returned",
+      "destination_type": "queue",
+      "routing_key": "rental.vehicle-returned",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "booking.reservation.vehicle-returned",
+      "destination_type": "queue",
+      "routing_key": "rental.vehicle-returned",
+      "arguments": {}
+    },
+    {
+      "source": "rentporto.events",
+      "vhost": "/",
+      "destination": "notification.rental-closed",
+      "destination_type": "queue",
+      "routing_key": "rental.closed",
+      "arguments": {}
+    }
+  ]
+}

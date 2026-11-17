@@ -22,7 +22,8 @@ jobs:
       pull-requests: read
     outputs:
       services: ${{ steps.filter.outputs.changes }}
-      asyncapi: ${{ steps.contracts.outputs.asyncapi }}
+      contracts: ${{ steps.other.outputs.contracts }}
+      compose: ${{ steps.other.outputs.compose }}
     steps:
       - uses: actions/checkout@v7
       - id: filter
@@ -82,13 +83,18 @@ jobs:
               - *messaging
               - notification-service/**
               - docs/openapi/notification-service.yaml
-      - id: contracts
+      - id: other
         uses: dorny/paths-filter@v4
         with:
           filters: |
-            asyncapi:
+            contracts:
               - docs/asyncapi/**
               - common-events/**
+              - infra/rabbitmq/**
+              - .github/workflows/ci.yml
+            compose:
+              - compose.yaml
+              - infra/**
               - .github/workflows/ci.yml
 
   build:
@@ -138,10 +144,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  asyncapi:
-    name: AsyncAPI
+  contracts:
+    name: Message contracts
     needs: changes
-    if: needs.changes.outputs.asyncapi == 'true'
+    if: needs.changes.outputs.contracts == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -162,14 +168,29 @@ jobs:
         with:
           path: ~/.m2/wrapper
           key: maven-wrapper-${{ runner.os }}-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
-      - name: Check the documented messages against common-events
-        run: ./mvnw -B -ntp -pl common-events verify
+      - name: Check AsyncAPI and RabbitMQ definitions against the contracts
+        run: ./mvnw -B -ntp -pl common-events,common-messaging -am verify
+
+  compose:
+    name: Local infrastructure
+    needs: changes
+    if: needs.changes.outputs.compose == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Start
+        run: docker compose up -d --wait --wait-timeout 180
+      - name: Verify databases and RabbitMQ topology
+        run: ./infra/verify.sh
+      - if: always()
+        name: Stop
+        run: docker compose down -v
 
   # Single required status check for branch protection.
   ci-result:
     name: CI result
     if: always()
-    needs: [changes, build, asyncapi]
+    needs: [changes, build, contracts, compose]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
