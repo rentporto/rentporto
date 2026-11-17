@@ -104,6 +104,8 @@ jobs:
               - infra/k8s/**
               - infra/postgres/**
               - infra/rabbitmq/**
+              - infra/prometheus/**
+              - infra/grafana/**
               - deploy.sh
               - .github/workflows/ci.yml
 

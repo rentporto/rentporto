@@ -36,6 +36,11 @@ class SecurityTestApplication {
             return "authenticated";
         }
 
+        @GetMapping("/actuator/prometheus")
+        String metrics() {
+            return "metrics";
+        }
+
         @GetMapping("/admin")
         @PreAuthorize("hasRole('ADMIN')")
         String admin() {

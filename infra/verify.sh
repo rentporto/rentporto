@@ -30,3 +30,8 @@ bindings=$(curl -fsS -u rentporto:rentporto http://localhost:15672/api/exchanges
 [[ "$queues" == "$expected_queues" ]] || { echo "FAIL: $queues queues, expected $expected_queues"; exit 1; }
 [[ "$bindings" == "$expected_bindings" ]] || { echo "FAIL: $bindings bindings, expected $expected_bindings"; exit 1; }
 echo "RabbitMQ: $queues queues and $bindings bindings loaded from definitions.json"
+
+curl -fsS http://localhost:9090/-/ready >/dev/null || { echo "FAIL: Prometheus is not ready"; exit 1; }
+curl -fsS -u "admin:${GRAFANA_PASSWORD:-rentporto}" http://localhost:3000/api/datasources/uid/prometheus/health \
+    | grep -q '"status":"OK"' || { echo "FAIL: the Prometheus datasource of Grafana is not working"; exit 1; }
+echo "Grafana: the Prometheus datasource is provisioned and working"

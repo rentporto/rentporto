@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: fleet-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8083"
+        prometheus.io/path: /actuator/prometheus
     spec:
       initContainers:
         - name: wait-for-dependencies

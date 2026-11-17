@@ -12,6 +12,8 @@ resources:
   - postgres.yaml
   - rabbitmq.yaml
   - mailpit.yaml
+  - prometheus.yaml
+  - grafana.yaml
   - config-server.yaml
   - gateway.yaml
   - ingress.yaml
@@ -32,3 +34,9 @@ configMapGenerator:
   - name: rabbitmq-config
     files:
       - 20-rentporto.conf=../../rabbitmq/rentporto.conf
+  - name: prometheus-config
+    files:
+      - prometheus.yml=../../prometheus/prometheus-k8s.yml
+  - name: grafana-datasources
+    files:
+      - prometheus.yml=../../grafana/provisioning/datasources/prometheus.yml
