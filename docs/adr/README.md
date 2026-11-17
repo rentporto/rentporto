@@ -20,8 +20,9 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-12](0012-stripe-com-anti-corruption-layer.md) | Stripe em modo de teste atrás de uma Anti-Corruption Layer, com um adaptador WireMock | Aceite |
 | [ADR-13](0013-sem-frontend.md) | Sem frontend: interação pela API | Aceite |
 | [ADR-14](0014-montantes-e-arredondamento.md) | Montantes e arredondamento | Proposta |
-| [ADR-15](0015-estrutura-modular-do-booking-service.md) | Estrutura modular do booking-service | Aceite |
+| [ADR-15](0015-estrutura-modular-do-booking-service.md) | Arquitetura hexagonal nos serviços e módulos do booking-service | Aceite |
 | [ADR-16](0016-k3d-como-cluster-local.md) | k3d como cluster Kubernetes local | Aceite |
 | [ADR-17](0017-repositorio-publico.md) | Repositório público no GitHub | Aceite |
 | [ADR-18](0018-lock-partilhado-em-jpa.md) | Lock partilhado em JPA em vez do ShedLock | Aceite |
 | [ADR-19](0019-configuracao-externa-no-config-server.md) | Configuração externa no Config Server | Aceite |
+| [ADR-20](0020-chave-dos-jwt-e-primeiro-administrador.md) | Chave de assinatura dos JWT e primeiro administrador | Aceite |

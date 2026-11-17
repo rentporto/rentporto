@@ -2,23 +2,34 @@ package pt.rentporto.auth.api;
 
 import java.util.Map;
 import org.springframework.web.bind.annotation.RestController;
-import pt.rentporto.web.EndpointNotImplementedException;
+import pt.rentporto.auth.application.AccountService;
+import pt.rentporto.auth.application.LoginService;
+import pt.rentporto.auth.application.TokenSigner.IssuedToken;
 
 @RestController
 class AuthController implements AuthApi {
 
+    private final AccountService accounts;
+    private final LoginService logins;
+
+    AuthController(AccountService accounts, LoginService logins) {
+        this.accounts = accounts;
+        this.logins = logins;
+    }
+
     @Override
     public UserResponse register(RegisterRequest request, String idempotencyKey) {
-        throw new EndpointNotImplementedException();
+        return UserResponse.from(accounts.register(request.email(), request.password(), idempotencyKey));
     }
 
     @Override
     public TokenResponse login(LoginRequest request) {
-        throw new EndpointNotImplementedException();
+        IssuedToken token = logins.login(request.email(), request.password());
+        return new TokenResponse(token.value(), "Bearer", Math.toIntExact(token.expiresIn().toSeconds()));
     }
 
     @Override
     public Map<String, Object> jwks() {
-        throw new EndpointNotImplementedException();
+        return logins.publicKeys();
     }
 }

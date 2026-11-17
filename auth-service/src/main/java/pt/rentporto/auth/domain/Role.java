@@ -1,4 +1,4 @@
-package pt.rentporto.auth.api;
+package pt.rentporto.auth.domain;
 
 /**
  * Role of a user account, carried in the {@code roles} claim of the JWT.
