@@ -62,8 +62,8 @@ public interface VehiclesApi {
             @Valid @RequestBody VehicleStatusRequest request);
 
     /**
-     * Starts the transfer of a vehicle to another station; the vehicle stays in transfer until the transfer is
-     * completed. Roles: FLEET_MANAGER.
+     * Starts the transfer of a vehicle to another station: the vehicle stops counting at its station, whose new
+     * capacity is published, and stays in transfer until the transfer is completed. Roles: FLEET_MANAGER.
      *
      * @param plate          licence plate of the vehicle
      * @param idempotencyKey key that makes a repeated request return the same transfer; optional
@@ -78,8 +78,8 @@ public interface VehiclesApi {
             @Valid @RequestBody TransferRequest request);
 
     /**
-     * Completes a transfer: the vehicle is available at the destination station and the capacity of both stations is
-     * published. Roles: FLEET_MANAGER.
+     * Completes a transfer: the vehicle is available at the destination station, whose new capacity is published.
+     * Completing it again changes nothing. Roles: FLEET_MANAGER.
      *
      * @param plate licence plate of the vehicle
      * @param id    transfer identifier

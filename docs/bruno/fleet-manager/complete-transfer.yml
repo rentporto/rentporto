@@ -1,0 +1,26 @@
+info:
+  name: Complete transfer
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: "{{baseUrl}}/vehicles/45-RT-12/transfers/{{transferId}}/completion"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the vehicle arrived at Matosinhos", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.status).to.equal("COMPLETED");
+          expect(res.body.toStation).to.equal("MAT");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

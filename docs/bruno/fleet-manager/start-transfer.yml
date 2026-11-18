@@ -1,0 +1,37 @@
+info:
+  name: Start transfer
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: "{{baseUrl}}/vehicles/45-RT-12/transfers"
+  headers:
+    - name: Idempotency-Key
+      value: bruno-transfer
+  body:
+    type: json
+    data: |-
+      {
+        "toStation": "MAT"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: bru.setVar("transferId", res.body.transferId);
+    - type: tests
+      code: |-
+        test("the vehicle leaves Campanhã for Matosinhos", function () {
+          expect(res.status).to.equal(201);
+          expect(res.body.fromStation).to.equal("CMP");
+          expect(res.body.toStation).to.equal("MAT");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

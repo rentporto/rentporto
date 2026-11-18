@@ -19,12 +19,13 @@ import pt.rentporto.fleet.FleetServiceTest;
 import pt.rentporto.fleet.LicensePlates;
 import pt.rentporto.fleet.domain.AcrissCode;
 import pt.rentporto.fleet.domain.DriverRequirements;
+import pt.rentporto.fleet.domain.InvalidStatusTransitionException;
 import pt.rentporto.fleet.domain.LicensePlate;
 import pt.rentporto.fleet.domain.VehicleStatus;
 
 /**
  * Changes at the same time happen one after the other: the capacity the booking-service reads last is the real one,
- * and a vehicle changes state once.
+ * a vehicle changes state once and starts one transfer.
  */
 @FleetServiceTest
 class ConcurrentChangesTest {
@@ -33,6 +34,9 @@ class ConcurrentChangesTest {
 
     @Autowired
     private FleetVehicles fleet;
+
+    @Autowired
+    private FleetTransfers transfers;
 
     @Autowired
     private FleetCatalogue catalogue;
@@ -64,6 +68,25 @@ class ConcurrentChangesTest {
         assertThat(jdbc.queryForObject(
                 "SELECT count(*) FROM vehicle_status_changes WHERE license_plate = ? AND to_status = 'IN_MAINTENANCE'",
                 Integer.class, plate.value())).isEqualTo(1);
+    }
+
+    @Test
+    void simultaneousTransfersOfAVehicleStartOnlyOne() throws Exception {
+        AcrissCode category = newCategory();
+        LicensePlate plate = new LicensePlate(LicensePlates.unique());
+        fleet.register(plate, category, "TRD", 0, null, "frota");
+
+        runTogether(i -> () -> {
+            try {
+                return transfers.start(plate, i % 2 == 0 ? "MAT" : "OPO", null, "frota");
+            } catch (InvalidStatusTransitionException e) {
+                return null;
+            }
+        });
+
+        assertThat(capacities(category)).containsExactly(1, 0);
+        assertThat(jdbc.queryForObject(
+                "SELECT count(*) FROM transfers WHERE license_plate = ?", Integer.class, plate.value())).isEqualTo(1);
     }
 
     private AcrissCode newCategory() {
