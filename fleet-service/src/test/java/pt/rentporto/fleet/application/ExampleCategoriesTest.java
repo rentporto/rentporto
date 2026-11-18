@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.mock;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -16,9 +15,10 @@ import pt.rentporto.fleet.domain.VehicleCategory;
 class ExampleCategoriesTest {
 
     private final InMemoryVehicleCategories categories = new InMemoryVehicleCategories();
-    private final List<VehicleCategory> published = new ArrayList<>();
+    private final RecordedEvents events = new RecordedEvents();
+    private final List<VehicleCategory> published = events.categories;
     private final FleetCatalogue catalogue = new FleetCatalogue(
-            mock(Stations.class), categories, published::add, mock(PlatformTransactionManager.class));
+            mock(Stations.class), categories, events, mock(PlatformTransactionManager.class));
     private final ExampleCategories examples = new ExampleCategories(catalogue);
 
     @Test

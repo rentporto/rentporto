@@ -1,0 +1,32 @@
+info:
+  name: Send to maintenance
+  type: http
+  seq: 7
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/vehicles/AQ-21-RP/status"
+  body:
+    type: json
+    data: |-
+      {
+        "status": "IN_MAINTENANCE",
+        "reason": "Brake service"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the vehicle is in maintenance", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.status).to.equal("IN_MAINTENANCE");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

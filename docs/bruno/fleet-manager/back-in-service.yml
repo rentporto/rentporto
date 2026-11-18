@@ -1,0 +1,31 @@
+info:
+  name: Back in service
+  type: http
+  seq: 8
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/vehicles/AQ-21-RP/status"
+  body:
+    type: json
+    data: |-
+      {
+        "status": "AVAILABLE"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the vehicle is available again", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.status).to.equal("AVAILABLE");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

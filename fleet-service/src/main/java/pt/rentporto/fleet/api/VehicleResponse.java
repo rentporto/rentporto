@@ -1,5 +1,7 @@
 package pt.rentporto.fleet.api;
 
+import pt.rentporto.fleet.domain.Vehicle;
+
 /**
  * Vehicle of the fleet.
  *
@@ -17,4 +19,14 @@ public record VehicleResponse(
         VehicleStatus status,
         long odometerKm,
         int fuelLevelEighths) {
+
+    static VehicleResponse from(Vehicle vehicle) {
+        return new VehicleResponse(
+                vehicle.plate().value(),
+                vehicle.category().value(),
+                vehicle.station(),
+                VehicleStatus.valueOf(vehicle.status().name()),
+                vehicle.odometerKm(),
+                vehicle.fuelLevelEighths());
+    }
 }

@@ -1,0 +1,38 @@
+info:
+  name: Register vehicle
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/vehicles"
+  headers:
+    - name: Idempotency-Key
+      value: bruno-vehicle
+  body:
+    type: json
+    data: |-
+      {
+        "licensePlate": "AQ-21-RP",
+        "categoryCode": "ECMR",
+        "station": "OPO",
+        "odometerKm": 12000
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the vehicle is registered at its station", function () {
+          expect(res.status).to.equal(201);
+          expect(res.body.licensePlate).to.equal("AQ-21-RP");
+          expect(res.body.station).to.equal("OPO");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
