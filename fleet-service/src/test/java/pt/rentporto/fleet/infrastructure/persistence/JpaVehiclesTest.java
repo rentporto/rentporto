@@ -3,6 +3,11 @@ package pt.rentporto.fleet.infrastructure.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,8 +26,8 @@ import pt.rentporto.fleet.domain.VehicleStatus;
 import pt.rentporto.fleet.domain.Vehicles;
 
 /**
- * The capacity counts the available and the rented vehicles of a category at a station, and the primary key of the
- * table becomes a domain exception.
+ * The capacity counts the available and the rented vehicles of a category at a station, the selection at pick-up
+ * skips the vehicles other transactions hold, and the primary key of the table becomes a domain exception.
  */
 @FleetServiceTest
 class JpaVehiclesTest {
@@ -55,11 +60,47 @@ class JpaVehiclesTest {
     }
 
     @Test
+    void aVehicleLockedByAnotherTransactionIsSkippedWithoutWaiting() throws Exception {
+        AcrissCode category = newCategory();
+        LicensePlate first = add(category, "OPO");
+        LicensePlate second = add(category, "OPO");
+        CountDownLatch locked = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+
+        try (ExecutorService threads = Executors.newFixedThreadPool(2)) {
+            Future<LicensePlate> holder = threads.submit(() -> transaction.execute(status -> {
+                LicensePlate plate = vehicles.lockFirstAvailable("OPO", category).orElseThrow().plate();
+                locked.countDown();
+                await(release);
+                return plate;
+            }));
+            assertThat(locked.await(10, TimeUnit.SECONDS)).isTrue();
+            Future<LicensePlate> other = threads.submit(() -> transaction.execute(
+                    status -> vehicles.lockFirstAvailable("OPO", category).orElseThrow().plate()));
+            try {
+                assertThat(other.get(5, TimeUnit.SECONDS)).isEqualTo(second);
+            } finally {
+                release.countDown();
+            }
+            assertThat(holder.get()).isEqualTo(first);
+        }
+    }
+
+    @Test
     void storingTheSamePlateTwiceTellsTheSecondRequest() {
         AcrissCode category = newCategory();
         LicensePlate plate = add(category, "OPO");
 
         assertThatThrownBy(() -> add(plate, category, "OPO")).isInstanceOf(VehicleAlreadyRegisteredException.class);
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private AcrissCode newCategory() {

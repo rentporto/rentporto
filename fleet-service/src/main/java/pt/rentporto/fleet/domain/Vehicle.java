@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Physical vehicle of the fleet, identified by its licence plate, of one category, at one station and in one state.
@@ -40,6 +41,9 @@ public class Vehicle {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private VehicleStatus status;
+
+    @Column(name = "status_changed_at", nullable = false)
+    private Instant statusChangedAt;
 
     @Column(name = "odometer_km", nullable = false)
     private long odometerKm;
@@ -84,6 +88,7 @@ public class Vehicle {
         vehicle.idempotencyKey = idempotencyKey;
         vehicle.createdAt = Instant.now();
         vehicle.updatedAt = vehicle.createdAt;
+        vehicle.statusChangedAt = vehicle.createdAt;
         return vehicle;
     }
 
@@ -143,6 +148,20 @@ public class Vehicle {
     }
 
     /**
+     * Hands the vehicle over to a rental at pick-up. It stays at its station, where it still counts, until it is
+     * returned.
+     *
+     * @param rentalId       the rental
+     * @param idempotencyKey key of the request that assigns it
+     * @return the assignment
+     * @throws InvalidStatusTransitionException if the vehicle is not available
+     */
+    public VehicleAssignment assignTo(UUID rentalId, String idempotencyKey) {
+        moveTo(VehicleStatus.RENTED);
+        return VehicleAssignment.of(rentalId, this, idempotencyKey);
+    }
+
+    /**
      * Tells whether the vehicle counts in the capacity of its station.
      *
      * @return {@code true} if its state is one of {@link VehicleStatus#countedInCapacity()}
@@ -165,6 +184,7 @@ public class Vehicle {
         requireTransitionTo(target);
         status = target;
         updatedAt = Instant.now();
+        statusChangedAt = updatedAt;
     }
 
     private void requireTransitionTo(VehicleStatus target) {

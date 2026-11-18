@@ -29,6 +29,9 @@ class JpaVehicles implements Vehicles {
 
     static final String PRIMARY_KEY = "vehicles_pkey";
 
+    private static final String LOCK_TIMEOUT = "jakarta.persistence.lock.timeout";
+    private static final int SKIP_LOCKED = -2;
+
     private final EntityManager entityManager;
 
     JpaVehicles(EntityManager entityManager) {
@@ -43,6 +46,23 @@ class JpaVehicles implements Vehicles {
     @Override
     public Optional<Vehicle> lockWithPlate(LicensePlate plate) {
         return Optional.ofNullable(entityManager.find(Vehicle.class, plate, LockModeType.PESSIMISTIC_WRITE));
+    }
+
+    @Override
+    public Optional<Vehicle> lockFirstAvailable(String station, AcrissCode category) {
+        return entityManager.createQuery("""
+                        SELECT v FROM Vehicle v
+                        WHERE v.station = :station AND v.category = :category AND v.status = :status
+                        ORDER BY v.statusChangedAt, v.plate.value""", Vehicle.class)
+                .setParameter("station", station)
+                .setParameter("category", category)
+                .setParameter("status", VehicleStatus.AVAILABLE)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .setHint(LOCK_TIMEOUT, SKIP_LOCKED)
+                .setMaxResults(1)
+                .getResultList()
+                .stream()
+                .findFirst();
     }
 
     @Override

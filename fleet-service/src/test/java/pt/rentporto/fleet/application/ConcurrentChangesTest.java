@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -21,11 +22,12 @@ import pt.rentporto.fleet.domain.AcrissCode;
 import pt.rentporto.fleet.domain.DriverRequirements;
 import pt.rentporto.fleet.domain.InvalidStatusTransitionException;
 import pt.rentporto.fleet.domain.LicensePlate;
+import pt.rentporto.fleet.domain.NoVehicleAvailableException;
 import pt.rentporto.fleet.domain.VehicleStatus;
 
 /**
  * Changes at the same time happen one after the other: the capacity the booking-service reads last is the real one,
- * a vehicle changes state once and starts one transfer.
+ * a vehicle changes state once and starts one transfer, and two rentals never get the same vehicle.
  */
 @FleetServiceTest
 class ConcurrentChangesTest {
@@ -37,6 +39,9 @@ class ConcurrentChangesTest {
 
     @Autowired
     private FleetTransfers transfers;
+
+    @Autowired
+    private FleetAssignments assignments;
 
     @Autowired
     private FleetCatalogue catalogue;
@@ -89,15 +94,52 @@ class ConcurrentChangesTest {
                 "SELECT count(*) FROM transfers WHERE license_plate = ?", Integer.class, plate.value())).isEqualTo(1);
     }
 
+    @Test
+    void simultaneousAssignmentsNeverGetTheSameVehicle() throws Exception {
+        AcrissCode category = newCategory();
+        for (int i = 0; i < 5; i++) {
+            fleet.register(new LicensePlate(LicensePlates.unique()), category, "TRD", 0, null, "frota");
+        }
+
+        List<Object> results = runTogether(i -> () -> {
+            try {
+                return assignments.assign(UUID.randomUUID(), category, "TRD", "key-" + i, "agente").plate();
+            } catch (NoVehicleAvailableException e) {
+                return e.code();
+            }
+        });
+
+        assertThat(results.stream().filter(LicensePlate.class::isInstance).distinct()).hasSize(5);
+        assertThat(results).filteredOn("NO_VEHICLE_AVAILABLE"::equals).hasSize(REQUESTS - 5);
+    }
+
+    @Test
+    void simultaneousAssignmentsOfARentalAssignOneVehicle() throws Exception {
+        AcrissCode category = newCategory();
+        for (int i = 0; i < 3; i++) {
+            fleet.register(new LicensePlate(LicensePlates.unique()), category, "TRD", 0, null, "frota");
+        }
+        UUID rental = UUID.randomUUID();
+
+        List<Object> results = runTogether(
+                i -> () -> assignments.assign(rental, category, "TRD", "key-" + rental, "agente").plate());
+
+        assertThat(results.stream().distinct()).hasSize(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT count(*) FROM vehicles WHERE category_code = ? AND status = 'RENTED'", Integer.class,
+                category.value())).isEqualTo(1);
+    }
+
     private AcrissCode newCategory() {
         AcrissCode category = new AcrissCode(AcrissCodes.unique());
         catalogue.createCategory(category, "Group K - Van", new DriverRequirements(21, 2), null);
         return category;
     }
 
-    private static void runTogether(IntFunction<Callable<?>> request) throws Exception {
+    private static List<Object> runTogether(IntFunction<Callable<?>> request) throws Exception {
         CountDownLatch start = new CountDownLatch(1);
         List<Future<?>> requests = new ArrayList<>();
+        List<Object> results = new ArrayList<>();
         try (ExecutorService threads = Executors.newFixedThreadPool(REQUESTS)) {
             for (int i = 0; i < REQUESTS; i++) {
                 Callable<?> call = request.apply(i);
@@ -108,9 +150,10 @@ class ConcurrentChangesTest {
             }
             start.countDown();
             for (Future<?> future : requests) {
-                future.get();
+                results.add(future.get());
             }
         }
+        return results;
     }
 
     private List<Integer> capacities(AcrissCode category) {
