@@ -108,6 +108,41 @@ public class Vehicle {
     }
 
     /**
+     * Starts a transfer to another station. The vehicle stays at its station, without counting in its capacity, until
+     * it arrives.
+     *
+     * @param destination    code of the destination station
+     * @param idempotencyKey key of the request that starts it, or {@code null}
+     * @return the transfer
+     * @throws InvalidStatusTransitionException if the vehicle is not available
+     * @throws SameStationException             if the vehicle is already at the destination
+     */
+    public Transfer startTransfer(String destination, String idempotencyKey) {
+        Objects.requireNonNull(destination, "destination");
+        requireTransitionTo(VehicleStatus.IN_TRANSFER);
+        if (destination.equals(station)) {
+            throw new SameStationException(plate, destination);
+        }
+        moveTo(VehicleStatus.IN_TRANSFER);
+        return Transfer.start(plate, station, destination, idempotencyKey);
+    }
+
+    /**
+     * Ends a transfer: the vehicle is available at the destination.
+     *
+     * @param destination code of the destination station
+     * @throws InvalidStatusTransitionException if the vehicle is not in transfer
+     */
+    public void arriveAt(String destination) {
+        Objects.requireNonNull(destination, "destination");
+        if (status != VehicleStatus.IN_TRANSFER) {
+            throw new InvalidStatusTransitionException(plate, status, VehicleStatus.AVAILABLE);
+        }
+        moveTo(VehicleStatus.AVAILABLE);
+        station = destination;
+    }
+
+    /**
      * Tells whether the vehicle counts in the capacity of its station.
      *
      * @return {@code true} if its state is one of {@link VehicleStatus#countedInCapacity()}
@@ -127,11 +162,15 @@ public class Vehicle {
     }
 
     private void moveTo(VehicleStatus target) {
+        requireTransitionTo(target);
+        status = target;
+        updatedAt = Instant.now();
+    }
+
+    private void requireTransitionTo(VehicleStatus target) {
         if (!status.canChangeTo(target)) {
             throw new InvalidStatusTransitionException(plate, status, target);
         }
-        status = target;
-        updatedAt = Instant.now();
     }
 
     public LicensePlate plate() {

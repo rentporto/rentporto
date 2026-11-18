@@ -4,18 +4,20 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
+import pt.rentporto.fleet.application.FleetTransfers;
 import pt.rentporto.fleet.application.FleetVehicles;
 import pt.rentporto.fleet.domain.AcrissCode;
 import pt.rentporto.fleet.domain.LicensePlate;
-import pt.rentporto.web.EndpointNotImplementedException;
 
 @RestController
 class VehiclesController implements VehiclesApi {
 
     private final FleetVehicles fleet;
+    private final FleetTransfers transfers;
 
-    VehiclesController(FleetVehicles fleet) {
+    VehiclesController(FleetVehicles fleet, FleetTransfers transfers) {
         this.fleet = fleet;
+        this.transfers = transfers;
     }
 
     @Override
@@ -51,12 +53,13 @@ class VehiclesController implements VehiclesApi {
     @Override
     @PreAuthorize("hasRole('FLEET_MANAGER')")
     public TransferResponse startTransfer(String plate, String idempotencyKey, TransferRequest request) {
-        throw new EndpointNotImplementedException();
+        return TransferResponse.from(transfers.start(
+                new LicensePlate(plate), request.toStation(), idempotencyKey, AuthenticatedUser.id()));
     }
 
     @Override
     @PreAuthorize("hasRole('FLEET_MANAGER')")
     public TransferResponse completeTransfer(String plate, UUID id) {
-        throw new EndpointNotImplementedException();
+        return TransferResponse.from(transfers.complete(new LicensePlate(plate), id, AuthenticatedUser.id()));
     }
 }

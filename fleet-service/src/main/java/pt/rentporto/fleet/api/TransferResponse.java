@@ -1,6 +1,7 @@
 package pt.rentporto.fleet.api;
 
 import java.util.UUID;
+import pt.rentporto.fleet.domain.Transfer;
 
 /**
  * Transfer of a vehicle between stations.
@@ -13,4 +14,13 @@ import java.util.UUID;
  */
 public record TransferResponse(
         UUID transferId, String licensePlate, String fromStation, String toStation, TransferStatus status) {
+
+    static TransferResponse from(Transfer transfer) {
+        return new TransferResponse(
+                transfer.id(),
+                transfer.plate().value(),
+                transfer.fromStation(),
+                transfer.toStation(),
+                TransferStatus.valueOf(transfer.status().name()));
+    }
 }

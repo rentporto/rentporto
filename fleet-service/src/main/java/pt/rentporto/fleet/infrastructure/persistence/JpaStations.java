@@ -29,6 +29,11 @@ class JpaStations implements Stations {
     }
 
     @Override
+    public Optional<Station> withCode(String code) {
+        return jpa.findById(code);
+    }
+
+    @Override
     public Optional<Station> lock(String code) {
         return Optional.ofNullable(entityManager.find(Station.class, code, LockModeType.PESSIMISTIC_WRITE));
     }
