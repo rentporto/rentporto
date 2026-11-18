@@ -3,6 +3,7 @@ package pt.rentporto.fleet.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -122,6 +123,47 @@ class VehicleTest {
         assertThatThrownBy(() -> vehicle.changeStatus(VehicleStatus.AVAILABLE))
                 .isInstanceOf(InvalidStatusTransitionException.class);
         assertThatThrownBy(() -> vehicle.changeStatus(VehicleStatus.IN_MAINTENANCE))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+    }
+
+    @Test
+    void anAssignedVehicleIsRentedAndStillCountsAtItsStation() {
+        UUID rental = UUID.randomUUID();
+
+        VehicleAssignment assignment = vehicle.assignTo(rental, "key-7");
+
+        assertThat(vehicle.status()).isEqualTo(VehicleStatus.RENTED);
+        assertThat(vehicle.countsInCapacity()).isTrue();
+        assertThat(assignment.rentalId()).isEqualTo(rental);
+        assertThat(assignment.plate()).isEqualTo(vehicle.plate());
+        assertThat(assignment.station()).isEqualTo("OPO");
+        assertThat(assignment.category()).isEqualTo(new AcrissCode("ECMR"));
+        assertThat(assignment.odometerKm()).isEqualTo(12000);
+        assertThat(assignment.createdWith("key-7")).isTrue();
+        assertThat(assignment.createdWith("key-8")).isFalse();
+        assertThat(assignment.createdWith(null)).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"IN_MAINTENANCE", "RETIRED"})
+    void onlyAnAvailableVehicleIsAssigned(VehicleStatus status) {
+        vehicle.changeStatus(status);
+        UUID rental = UUID.randomUUID();
+
+        assertThatThrownBy(() -> vehicle.assignTo(rental, "key-7"))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+        assertThat(vehicle.status()).isEqualTo(status);
+    }
+
+    @Test
+    void aRentedVehicleIsNotSentToMaintenanceNorTransferred() {
+        vehicle.assignTo(UUID.randomUUID(), "key-7");
+
+        assertThatThrownBy(() -> vehicle.changeStatus(VehicleStatus.AVAILABLE))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+        assertThatThrownBy(() -> vehicle.startTransfer("MAT", null))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+        assertThatThrownBy(() -> vehicle.assignTo(UUID.randomUUID(), "key-8"))
                 .isInstanceOf(InvalidStatusTransitionException.class);
     }
 

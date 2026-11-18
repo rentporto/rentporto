@@ -26,6 +26,17 @@ public interface Vehicles {
     Optional<Vehicle> lockWithPlate(LicensePlate plate);
 
     /**
+     * Finds the vehicle of a category that has been available at a station the longest, and locks it until the end of
+     * the transaction. Vehicles locked by other transactions are skipped, so requests at the same time get different
+     * vehicles without waiting for each other.
+     *
+     * @param station  code of the station
+     * @param category ACRISS code of the category
+     * @return the vehicle, if there is one
+     */
+    Optional<Vehicle> lockFirstAvailable(String station, AcrissCode category);
+
+    /**
      * Lists the vehicles of a station and in a state.
      *
      * @param station code of the station, or {@code null} for every station

@@ -15,8 +15,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public interface VehicleAssignmentsApi {
 
     /**
-     * Assigns an available vehicle of the category at the station, called by the rental-service at pick-up. The vehicle
-     * becomes rented.
+     * Assigns the vehicle of the category that has been available the longest at the station, called by the
+     * rental-service at pick-up. The vehicle becomes rented. A rental has one vehicle: a request with the same key gets
+     * the same assignment, and one with another key is a conflict. Roles: AGENT.
      *
      * @param idempotencyKey key that makes a repeated request return the same assignment
      * @param request        rental, category and station

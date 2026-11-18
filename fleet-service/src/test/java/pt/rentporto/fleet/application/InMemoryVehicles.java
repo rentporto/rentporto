@@ -33,6 +33,13 @@ final class InMemoryVehicles implements Vehicles {
     }
 
     @Override
+    public Optional<Vehicle> lockFirstAvailable(String station, AcrissCode category) {
+        return matching(station, VehicleStatus.AVAILABLE).stream()
+                .filter(vehicle -> vehicle.category().equals(category))
+                .findFirst();
+    }
+
+    @Override
     public List<Vehicle> matching(String station, VehicleStatus status) {
         return byPlate.values().stream()
                 .filter(vehicle -> station == null || vehicle.station().equals(station))

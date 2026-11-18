@@ -108,8 +108,9 @@ paths:
   /internal/vehicles/assignments:
     post:
       description: |-
-        Assigns an available vehicle of the category at the station, called by the rental-service at pick-up. The vehicle
-         becomes rented.
+        Assigns the vehicle of the category that has been available the longest at the station, called by the
+         rental-service at pick-up. The vehicle becomes rented. A rental has one vehicle: a request with the same key gets
+         the same assignment, and one with another key is a conflict. Roles: AGENT.
       operationId: assignVehicle
       parameters:
       - description: key that makes a repeated request return the same assignment
@@ -138,8 +139,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
-      summary: "Assigns an available vehicle of the category at the station, called\
-        \ by the rental-service at pick-up."
+      summary: |-
+        Assigns the vehicle of the category that has been available the longest at the station, called by the
+         rental-service at pick-up.
       tags:
       - Internal
   /stations:
