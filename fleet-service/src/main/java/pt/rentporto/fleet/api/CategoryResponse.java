@@ -1,5 +1,7 @@
 package pt.rentporto.fleet.api;
 
+import pt.rentporto.fleet.domain.VehicleCategory;
+
 /**
  * Vehicle category and its driver requirements.
  *
@@ -9,4 +11,12 @@ package pt.rentporto.fleet.api;
  * @param minimumLicenseYears minimum years since the driving licence was issued
  */
 public record CategoryResponse(String code, String name, int minimumAge, int minimumLicenseYears) {
+
+    static CategoryResponse from(VehicleCategory category) {
+        return new CategoryResponse(
+                category.code().value(),
+                category.name(),
+                category.requirements().minimumAge(),
+                category.requirements().minimumLicenseYears());
+    }
 }
