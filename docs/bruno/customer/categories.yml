@@ -1,0 +1,26 @@
+info:
+  name: Categories
+  type: http
+  seq: 6
+
+http:
+  method: GET
+  url: "{{baseUrl}}/categories"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("anyone sees the categories with their requirements", function () {
+          expect(res.status).to.equal(200);
+          const premium = res.body.find(category => category.code === "PDAR");
+          expect(premium.minimumAge).to.equal(25);
+          expect(premium.minimumLicenseYears).to.equal(2);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

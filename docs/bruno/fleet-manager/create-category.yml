@@ -1,0 +1,37 @@
+info:
+  name: Create category
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/categories"
+  headers:
+    - name: Idempotency-Key
+      value: bruno-category
+  body:
+    type: json
+    data: |-
+      {
+        "code": "SVMR",
+        "name": "Group F - Passenger Van",
+        "minimumAge": 23,
+        "minimumLicenseYears": 3
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the category exists", function () {
+          expect(res.status).to.equal(201);
+          expect(res.body.code).to.equal("SVMR");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

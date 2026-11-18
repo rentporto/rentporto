@@ -32,8 +32,9 @@ paths:
       tags:
       - Categories
     post:
-      description: "Creates a vehicle category and publishes <code>VehicleCategoryChanged</code>.\
-        \ Roles: FLEET_MANAGER."
+      description: |-
+        Creates a vehicle category and publishes <code>VehicleCategoryChanged</code>. The code must be an ACRISS code and the
+         requirements at least 21 years of age and 2 years of licence. Roles: FLEET_MANAGER.
       operationId: createCategory
       parameters:
       - description: key that makes a repeated request return the same category; optional
@@ -67,8 +68,9 @@ paths:
       - Categories
   /categories/{code}:
     put:
-      description: "Updates a vehicle category and publishes <code>VehicleCategoryChanged</code>.\
-        \ Roles: FLEET_MANAGER."
+      description: |-
+        Changes the name and the requirements of a vehicle category; publishes <code>VehicleCategoryChanged</code> when
+         something changes. Roles: FLEET_MANAGER.
       operationId: updateCategory
       parameters:
       - description: ACRISS code of the category
@@ -82,8 +84,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CategoryRequest"
-        description: category and its requirements
+              $ref: "#/components/schemas/CategoryUpdateRequest"
+        description: new name and requirements
         required: true
       responses:
         "200":
@@ -98,7 +100,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
-      summary: Updates a vehicle category and publishes <code>VehicleCategoryChanged</code>.
+      summary: |-
+        Changes the name and the requirements of a vehicle category; publishes <code>VehicleCategoryChanged</code> when
+         something changes.
       tags:
       - Categories
   /internal/vehicles/assignments:
@@ -361,7 +365,7 @@ components:
   schemas:
     CategoryRequest:
       type: object
-      description: Vehicle category a fleet manager creates or updates.
+      description: Vehicle category a fleet manager creates.
       properties:
         code:
           type: string
@@ -370,13 +374,12 @@ components:
         minimumAge:
           type: integer
           format: int32
-          description: minimum driver age
-          minimum: 0
+          description: "minimum driver age, at least 21"
         minimumLicenseYears:
           type: integer
           format: int32
-          description: minimum years since the driving licence was issued
-          minimum: 0
+          description: "minimum years since the driving licence was issued, at least\
+            \ 2"
         name:
           type: string
           description: "category name, e.g. <code>Group B - Economy</code>"
@@ -402,6 +405,26 @@ components:
         name:
           type: string
           description: "category name, e.g. <code>Group B - Economy</code>"
+    CategoryUpdateRequest:
+      type: object
+      description: New name and requirements of a vehicle category. The code is in
+        the path and does not change.
+      properties:
+        minimumAge:
+          type: integer
+          format: int32
+          description: "minimum driver age, at least 21"
+        minimumLicenseYears:
+          type: integer
+          format: int32
+          description: "minimum years since the driving licence was issued, at least\
+            \ 2"
+        name:
+          type: string
+          description: "category name, e.g. <code>Group B - Economy</code>"
+          minLength: 1
+      required:
+      - name
     ProblemDetail:
       type: object
       description: Error response (RFC 9457)

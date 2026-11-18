@@ -1,0 +1,24 @@
+info:
+  name: Stations
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}/stations"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("anyone sees the four stations", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.map(station => station.code)).to.include.members(["OPO", "CMP", "TRD", "MAT"]);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

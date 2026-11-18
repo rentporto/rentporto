@@ -30,7 +30,8 @@ public interface CategoriesApi {
     List<CategoryResponse> categories();
 
     /**
-     * Creates a vehicle category and publishes {@code VehicleCategoryChanged}. Roles: FLEET_MANAGER.
+     * Creates a vehicle category and publishes {@code VehicleCategoryChanged}. The code must be an ACRISS code and the
+     * requirements at least 21 years of age and 2 years of licence. Roles: FLEET_MANAGER.
      *
      * @param idempotencyKey key that makes a repeated request return the same category; optional
      * @param request        category and its requirements
@@ -43,13 +44,14 @@ public interface CategoriesApi {
             @Valid @RequestBody CategoryRequest request);
 
     /**
-     * Updates a vehicle category and publishes {@code VehicleCategoryChanged}. Roles: FLEET_MANAGER.
+     * Changes the name and the requirements of a vehicle category; publishes {@code VehicleCategoryChanged} when
+     * something changes. Roles: FLEET_MANAGER.
      *
      * @param code    ACRISS code of the category
-     * @param request category and its requirements
+     * @param request new name and requirements
      * @return the updated category
      */
     @PutMapping("/categories/{code}")
     CategoryResponse updateCategory(
-            @PathVariable @Pattern(regexp = "[A-Z]{4}") String code, @Valid @RequestBody CategoryRequest request);
+            @PathVariable @Pattern(regexp = "[A-Z]{4}") String code, @Valid @RequestBody CategoryUpdateRequest request);
 }
