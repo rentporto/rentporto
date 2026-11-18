@@ -1,0 +1,37 @@
+info:
+  name: Register vehicle with an older plate
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/vehicles"
+  headers:
+    - name: Idempotency-Key
+      value: bruno-older-vehicle
+  body:
+    type: json
+    data: |-
+      {
+        "licensePlate": "45-RT-12",
+        "categoryCode": "PDAR",
+        "station": "CMP",
+        "odometerKm": 86000
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("a plate from 2005 to 2020 is accepted", function () {
+          expect(res.status).to.equal(201);
+          expect(res.body.licensePlate).to.equal("45-RT-12");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

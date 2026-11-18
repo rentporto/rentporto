@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import pt.rentporto.fleet.domain.LicensePlate;
 
 /**
  * Vehicles of the fleet, their state and transfers between stations.
@@ -22,7 +23,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public interface VehiclesApi {
 
     /**
-     * Registers a vehicle at a station. Roles: FLEET_MANAGER.
+     * Registers a vehicle at a station: it starts available, with a full tank, and the new capacity of the station is
+     * published. Roles: FLEET_MANAGER.
      *
      * @param idempotencyKey key that makes a repeated request return the same vehicle; optional
      * @param request        vehicle to register
@@ -35,7 +37,7 @@ public interface VehiclesApi {
             @Valid @RequestBody VehicleRequest request);
 
     /**
-     * Lists the vehicles, optionally of one station and in one state. Roles: FLEET_MANAGER.
+     * Lists the vehicles by licence plate, optionally of one station and in one state. Roles: FLEET_MANAGER.
      *
      * @param station code of the station; optional
      * @param status  state of the vehicles; optional
@@ -47,7 +49,8 @@ public interface VehiclesApi {
             @RequestParam(required = false) VehicleStatus status);
 
     /**
-     * Sends a vehicle to maintenance, retires it or brings it back to service. Roles: FLEET_MANAGER.
+     * Sends a vehicle to maintenance, retires it or brings it back to service; asking for its current state changes
+     * nothing. Roles: FLEET_MANAGER.
      *
      * @param plate   licence plate of the vehicle
      * @param request new state
@@ -55,7 +58,7 @@ public interface VehiclesApi {
      */
     @PatchMapping("/vehicles/{plate}/status")
     VehicleResponse changeStatus(
-            @PathVariable @Pattern(regexp = "[A-Z]{2}-\\d{2}-[A-Z]{2}") String plate,
+            @PathVariable @Pattern(regexp = LicensePlate.FORMAT) String plate,
             @Valid @RequestBody VehicleStatusRequest request);
 
     /**
@@ -70,7 +73,7 @@ public interface VehiclesApi {
     @PostMapping("/vehicles/{plate}/transfers")
     @ResponseStatus(HttpStatus.CREATED)
     TransferResponse startTransfer(
-            @PathVariable @Pattern(regexp = "[A-Z]{2}-\\d{2}-[A-Z]{2}") String plate,
+            @PathVariable @Pattern(regexp = LicensePlate.FORMAT) String plate,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody TransferRequest request);
 
@@ -84,5 +87,5 @@ public interface VehiclesApi {
      */
     @PostMapping("/vehicles/{plate}/transfers/{id}/completion")
     TransferResponse completeTransfer(
-            @PathVariable @Pattern(regexp = "[A-Z]{2}-\\d{2}-[A-Z]{2}") String plate, @PathVariable UUID id);
+            @PathVariable @Pattern(regexp = LicensePlate.FORMAT) String plate, @PathVariable UUID id);
 }

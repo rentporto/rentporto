@@ -1,19 +1,24 @@
 info:
   name: Vehicles
   type: http
-  seq: 4
+  seq: 6
 
 http:
   method: GET
-  url: "{{baseUrl}}/vehicles"
+  url: "{{baseUrl}}/vehicles?station=OPO&status=AVAILABLE"
   auth: inherit
 
 runtime:
   scripts:
     - type: tests
       code: |-
-        test("the role of the actor is allowed", function () {
-          expect(res.status).to.not.be.oneOf([401, 403]);
+        test("the available vehicles of the airport are listed", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.map(vehicle => vehicle.licensePlate)).to.include("AQ-21-RP");
+          res.body.forEach(vehicle => {
+            expect(vehicle.station).to.equal("OPO");
+            expect(vehicle.status).to.equal("AVAILABLE");
+          });
         });
 
 settings:

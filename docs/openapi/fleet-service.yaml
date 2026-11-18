@@ -167,8 +167,8 @@ paths:
       - Stations
   /vehicles:
     get:
-      description: "Lists the vehicles, optionally of one station and in one state.\
-        \ Roles: FLEET_MANAGER."
+      description: "Lists the vehicles by licence plate, optionally of one station\
+        \ and in one state. Roles: FLEET_MANAGER."
       operationId: vehicles
       parameters:
       - description: code of the station; optional
@@ -205,11 +205,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
-      summary: "Lists the vehicles, optionally of one station and in one state."
+      summary: "Lists the vehicles by licence plate, optionally of one station and\
+        \ in one state."
       tags:
       - Vehicles
     post:
-      description: "Registers a vehicle at a station. Roles: FLEET_MANAGER."
+      description: |-
+        Registers a vehicle at a station: it starts available, with a full tank, and the new capacity of the station is
+         published. Roles: FLEET_MANAGER.
       operationId: registerVehicle
       parameters:
       - description: key that makes a repeated request return the same vehicle; optional
@@ -238,13 +241,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
-      summary: Registers a vehicle at a station.
+      summary: |-
+        Registers a vehicle at a station: it starts available, with a full tank, and the new capacity of the station is
+         published.
       tags:
       - Vehicles
   /vehicles/{plate}/status:
     patch:
-      description: "Sends a vehicle to maintenance, retires it or brings it back to\
-        \ service. Roles: FLEET_MANAGER."
+      description: |-
+        Sends a vehicle to maintenance, retires it or brings it back to service; asking for its current state changes
+         nothing. Roles: FLEET_MANAGER.
       operationId: changeStatus
       parameters:
       - description: licence plate of the vehicle
@@ -253,7 +259,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}"
+          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}|\\d{2}-[A-Z]{2}-\\d{2}|\\d{2}-\\d{2}-[A-Z]{2}"
       requestBody:
         content:
           application/json:
@@ -274,7 +280,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
-      summary: "Sends a vehicle to maintenance, retires it or brings it back to service."
+      summary: |-
+        Sends a vehicle to maintenance, retires it or brings it back to service; asking for its current state changes
+         nothing.
       tags:
       - Vehicles
   /vehicles/{plate}/transfers:
@@ -290,7 +298,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}"
+          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}|\\d{2}-[A-Z]{2}-\\d{2}|\\d{2}-\\d{2}-[A-Z]{2}"
       - description: key that makes a repeated request return the same transfer; optional
         in: header
         name: Idempotency-Key
@@ -335,7 +343,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}"
+          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}|\\d{2}-[A-Z]{2}-\\d{2}|\\d{2}-\\d{2}-[A-Z]{2}"
       - description: transfer identifier
         in: path
         name: id
@@ -539,8 +547,9 @@ components:
           pattern: "[A-Z]{4}"
         licensePlate:
           type: string
-          description: "licence plate, e.g. <code>AA-12-BB</code>"
-          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}"
+          description: "licence plate in one of the formats AA-00-AA, 00-AA-00 or\
+            \ 00-00-AA, e.g. <code>AA-12-BB</code>"
+          pattern: "[A-Z]{2}-\\d{2}-[A-Z]{2}|\\d{2}-[A-Z]{2}-\\d{2}|\\d{2}-\\d{2}-[A-Z]{2}"
         odometerKm:
           type: integer
           format: int64

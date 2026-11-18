@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -21,9 +20,10 @@ class FleetCatalogueTest {
     private static final DriverRequirements STANDARD = new DriverRequirements(21, 2);
 
     private final InMemoryVehicleCategories categories = new InMemoryVehicleCategories();
-    private final List<VehicleCategory> published = new ArrayList<>();
+    private final RecordedEvents events = new RecordedEvents();
+    private final List<VehicleCategory> published = events.categories;
     private final FleetCatalogue catalogue = new FleetCatalogue(
-            mock(Stations.class), categories, published::add, mock(PlatformTransactionManager.class));
+            mock(Stations.class), categories, events, mock(PlatformTransactionManager.class));
 
     @Test
     void creatingACategoryStoresItAndPublishesTheEvent() {
