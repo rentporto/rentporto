@@ -32,4 +32,11 @@ public interface VehicleAssignments {
      * @throws RentalAlreadyAssignedException if an assignment of the same rental was stored first
      */
     void add(VehicleAssignment assignment);
+
+    /**
+     * Stores the changes to an assignment.
+     *
+     * @param assignment the assignment
+     */
+    void update(VehicleAssignment assignment);
 }

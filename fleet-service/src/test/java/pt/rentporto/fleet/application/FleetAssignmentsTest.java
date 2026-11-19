@@ -8,10 +8,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +23,6 @@ import pt.rentporto.fleet.domain.UnknownCategoryException;
 import pt.rentporto.fleet.domain.UnknownStationException;
 import pt.rentporto.fleet.domain.Vehicle;
 import pt.rentporto.fleet.domain.VehicleAssignment;
-import pt.rentporto.fleet.domain.VehicleAssignments;
 import pt.rentporto.fleet.domain.VehicleCategory;
 import pt.rentporto.fleet.domain.VehicleStatus;
 
@@ -105,34 +101,5 @@ class FleetAssignmentsTest {
         assertThatThrownBy(() -> fleet.assign(RENTAL, new AcrissCode("CDMR"), "OPO", "key-1", "agente"))
                 .isInstanceOf(UnknownCategoryException.class);
         assertThat(assignments.forRental(RENTAL)).isEmpty();
-    }
-
-    /**
-     * Assignments in memory; remembers the rentals that were locked before their assignment was looked for.
-     */
-    private static final class InMemoryAssignments implements VehicleAssignments {
-
-        private final Map<UUID, VehicleAssignment> byRental = new HashMap<>();
-        private final List<UUID> lockedBeforeLookingFor = new ArrayList<>();
-        private UUID locked;
-
-        @Override
-        public void lock(UUID rentalId) {
-            locked = rentalId;
-        }
-
-        @Override
-        public Optional<VehicleAssignment> forRental(UUID rentalId) {
-            if (rentalId.equals(locked)) {
-                lockedBeforeLookingFor.add(rentalId);
-                locked = null;
-            }
-            return Optional.ofNullable(byRental.get(rentalId));
-        }
-
-        @Override
-        public void add(VehicleAssignment assignment) {
-            byRental.put(assignment.rentalId(), assignment);
-        }
     }
 }

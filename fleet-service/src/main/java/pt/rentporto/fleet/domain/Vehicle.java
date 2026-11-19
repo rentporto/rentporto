@@ -162,6 +162,34 @@ public class Vehicle {
     }
 
     /**
+     * Takes the vehicle back from a rental: it is available at the station where it was returned, with the odometer
+     * and the fuel level read there.
+     *
+     * @param returnStation    code of the station where it was returned
+     * @param odometerKm       odometer reading in kilometres
+     * @param fuelLevelEighths fuel level in eighths of a tank
+     * @throws InvalidStatusTransitionException if the vehicle is not rented
+     * @throws InconsistentReturnException      if the odometer is below the reading at pick-up
+     */
+    public void returnAt(String returnStation, long odometerKm, int fuelLevelEighths) {
+        Objects.requireNonNull(returnStation, "returnStation");
+        if (status != VehicleStatus.RENTED) {
+            throw new InvalidStatusTransitionException(plate, status, VehicleStatus.AVAILABLE);
+        }
+        if (odometerKm < this.odometerKm) {
+            throw new InconsistentReturnException("The vehicle " + plate + " was returned with " + odometerKm
+                    + " km, fewer than the " + this.odometerKm + " km it had");
+        }
+        if (fuelLevelEighths < 0 || fuelLevelEighths > FULL_TANK) {
+            throw new IllegalArgumentException("fuelLevelEighths must be between 0 and 8, was " + fuelLevelEighths);
+        }
+        moveTo(VehicleStatus.AVAILABLE);
+        station = returnStation;
+        this.odometerKm = odometerKm;
+        this.fuelLevelEighths = fuelLevelEighths;
+    }
+
+    /**
      * Tells whether the vehicle counts in the capacity of its station.
      *
      * @return {@code true} if its state is one of {@link VehicleStatus#countedInCapacity()}

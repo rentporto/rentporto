@@ -50,6 +50,11 @@ class JpaVehicleAssignments implements VehicleAssignments {
         }
     }
 
+    @Override
+    public void update(VehicleAssignment assignment) {
+        entityManager.flush();
+    }
+
     private static String constraintName(Throwable e) {
         for (Throwable cause = e; cause != null; cause = cause.getCause()) {
             if (cause instanceof ConstraintViolationException violation) {
