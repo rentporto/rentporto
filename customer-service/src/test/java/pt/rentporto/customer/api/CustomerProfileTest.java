@@ -18,11 +18,11 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import pt.rentporto.customer.CustomerServiceTest;
 import pt.rentporto.customer.TaxNumbers;
+import pt.rentporto.messaging.testing.MessagingRecords;
 import pt.rentporto.web.testing.TestJwt;
 
 /**
@@ -40,7 +40,7 @@ class CustomerProfileTest {
     private RabbitTemplate rabbit;
 
     @Autowired
-    private JdbcTemplate jdbc;
+    private MessagingRecords messaging;
 
     @Test
     void theFirstSaveCreatesTheProfileOfTheTokenAndPublishesCustomerRegistered() throws Exception {
@@ -163,11 +163,10 @@ class CustomerProfileTest {
         return event.get();
     }
 
-    private int eventsInTheOutbox(UUID id) {
-        return jdbc.queryForObject(
-                "SELECT count(*) FROM outbox WHERE routing_key = 'customer.registered'"
-                        + " AND payload -> 'payload' ->> 'customerId' = ?",
-                Integer.class, id.toString());
+    private long eventsInTheOutbox(UUID id) {
+        return messaging.outbox("customer.registered").stream()
+                .filter(event -> id.toString().equals(JsonPath.read(event, "$.payload.customerId")))
+                .count();
     }
 
     private static String token(UUID id) {

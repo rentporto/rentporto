@@ -16,16 +16,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import pt.rentporto.fleet.AcrissCodes;
+import pt.rentporto.fleet.FleetRecords;
 import pt.rentporto.fleet.FleetServiceTest;
 import pt.rentporto.fleet.LicensePlates;
 import pt.rentporto.fleet.application.FleetCatalogue;
 import pt.rentporto.fleet.domain.AcrissCode;
 import pt.rentporto.fleet.domain.DriverRequirements;
+import pt.rentporto.fleet.domain.StatusChange;
+import pt.rentporto.fleet.domain.VehicleStatus;
 import pt.rentporto.web.testing.TestJwt;
 
 /**
@@ -41,7 +43,7 @@ class TransfersTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private JdbcTemplate jdbc;
+    private FleetRecords records;
 
     @Autowired
     private FleetCatalogue catalogue;
@@ -72,9 +74,8 @@ class TransfersTest {
         assertThat(capacities("OPO", category)).containsExactly(1, 0);
         assertThat(capacities("MAT", category)).containsExactly(1);
         assertThat(vehicle(plate)).containsEntry("station", "MAT").containsEntry("status", "AVAILABLE");
-        assertThat(jdbc.queryForList(
-                "SELECT to_status FROM vehicle_status_changes WHERE license_plate = ? ORDER BY id", String.class, plate))
-                .containsExactly("AVAILABLE", "IN_TRANSFER", "AVAILABLE");
+        assertThat(records.history(plate)).extracting(StatusChange::to)
+                .containsExactly(VehicleStatus.AVAILABLE, VehicleStatus.IN_TRANSFER, VehicleStatus.AVAILABLE);
     }
 
     @Test
@@ -201,11 +202,6 @@ class TransfersTest {
     }
 
     private List<Integer> capacities(String station, String category) {
-        return jdbc.queryForList(
-                "SELECT (payload -> 'payload' ->> 'capacity')::int FROM outbox"
-                        + " WHERE routing_key = 'fleet.station-capacity-changed'"
-                        + " AND payload -> 'payload' ->> 'stationCode' = ?"
-                        + " AND payload -> 'payload' ->> 'categoryCode' = ? ORDER BY id",
-                Integer.class, station, category);
+        return records.capacities(station, category);
     }
 }
