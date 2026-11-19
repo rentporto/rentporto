@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,14 +52,16 @@ public interface RentalsApi {
     RentalAgreementResponse pickUp(@PathVariable UUID id, @Valid @RequestBody PickUpRequest request);
 
     /**
-     * Registers the return and starts the settlement of the deposit, which finishes asynchronously; the response has
-     * a {@code Location} header to follow the agreement. Roles: AGENT.
+     * Registers the return: works out the extra charges from the terms agreed at booking, publishes
+     * {@code VehicleReturned} and asks the payments to settle the deposit, which finishes asynchronously; the
+     * {@code Location} header points to the agreement. Roles: AGENT.
      *
      * @param id      rental agreement identifier
-     * @param request return station and inspection
-     * @return the returned agreement
+     * @param request return station, inspection and litres to fill the tank
+     * @return the returned agreement, with its extra charges
      */
     @PostMapping("/rentals/{id}/return")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    RentalAgreementResponse returnVehicle(@PathVariable UUID id, @Valid @RequestBody ReturnRequest request);
+    ResponseEntity<RentalAgreementResponse> returnVehicle(
+            @PathVariable UUID id, @Valid @RequestBody ReturnRequest request);
 }

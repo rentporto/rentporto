@@ -3,6 +3,7 @@ package pt.rentporto.rental.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -113,5 +114,71 @@ class RentalAgreementTest {
         AdditionalDriver driver = new AdditionalDriver("Rui Costa", "P-7654321 0", "B", "PT", issue, expiry);
 
         driver.requireValidLicenseOn(TODAY);
+    }
+
+    @Test
+    void aReturnRecordsTheInspectionAndTheChargesAndTheAmountDue() {
+        pickedUp();
+        ReturnInspection inspection = new ReturnInspection(12450, 3, new BigDecimal("18.5"),
+                List.of(new ReturnDamage("FRONT_BUMPER", "10 cm scratch", Money.ofCents(20000))), "Dirty");
+
+        agreement.returnAt("MAT", inspection, reservation.period().returnAt().plusSeconds(3600));
+
+        assertThat(agreement.status()).isEqualTo(RentalStatus.RETURNED);
+        assertThat(agreement.returnedAt()).isEqualTo(reservation.period().returnAt().plusSeconds(3600));
+        assertThat(agreement.returnOdometerKm()).isEqualTo(12450);
+        assertThat(agreement.returnFuelLevelEighths()).isEqualTo(3);
+        assertThat(agreement.returnLitresToFill()).isEqualByComparingTo("18.5");
+        assertThat(agreement.returnDamages()).isEqualTo(inspection.damages());
+        assertThat(agreement.returnNotes()).isEqualTo("Dirty");
+        assertThat(agreement.extraCharges()).extracting(ExtraCharge::amount)
+                .containsExactly(Money.ofCents(6150), Money.ofCents(6478), Money.ofCents(20000));
+        assertThat(agreement.amountDue()).isEqualTo(Money.ofCents(32628));
+    }
+
+    @Test
+    void aReturnWithNothingToChargeOwesNothing() {
+        pickedUp();
+
+        agreement.returnAt("MAT", new ReturnInspection(12000, 8, BigDecimal.ZERO, List.of(), null),
+                reservation.period().returnAt());
+
+        assertThat(agreement.extraCharges()).isEmpty();
+        assertThat(agreement.amountDue()).isEqualTo(Money.ofCents(0));
+    }
+
+    @Test
+    void theVehicleComesBackToTheStationAgreedWithTheOdometerNotBelowThePickUp() {
+        pickedUp();
+        Instant now = reservation.period().returnAt();
+
+        assertThatThrownBy(() -> agreement.returnAt(
+                        "OPO", new ReturnInspection(12450, 8, BigDecimal.ZERO, List.of(), null), now))
+                .isInstanceOf(WrongReturnStationException.class)
+                .extracting("code").isEqualTo("WRONG_RETURN_STATION");
+        assertThatThrownBy(() -> agreement.returnAt(
+                        "MAT", new ReturnInspection(11999, 8, BigDecimal.ZERO, List.of(), null), now))
+                .isInstanceOf(OdometerBelowPickupException.class)
+                .extracting("code").isEqualTo("ODOMETER_BELOW_PICKUP");
+        assertThat(agreement.status()).isEqualTo(RentalStatus.ACTIVE);
+        assertThat(agreement.extraCharges()).isEmpty();
+    }
+
+    @Test
+    void onlyAnActiveAgreementIsReturnedAndOnlyOnce() {
+        ReturnInspection inspection = new ReturnInspection(12450, 8, BigDecimal.ZERO, List.of(), null);
+        Instant now = reservation.period().returnAt();
+
+        assertThatThrownBy(() -> agreement.returnAt("MAT", inspection, now))
+                .isInstanceOf(InvalidRentalStatusException.class);
+        pickedUp();
+        agreement.returnAt("MAT", inspection, now);
+        assertThatThrownBy(() -> agreement.returnAt("MAT", inspection, now))
+                .isInstanceOf(InvalidRentalStatusException.class);
+    }
+
+    private void pickedUp() {
+        agreement.recordDeposit(UUID.randomUUID());
+        agreement.pickUp("AA-12-BB", 12000, List.of(), null, PICKED_UP_AT, TODAY);
     }
 }

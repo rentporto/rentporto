@@ -123,8 +123,9 @@ paths:
   /rentals/{id}/return:
     post:
       description: |-
-        Registers the return and starts the settlement of the deposit, which finishes asynchronously; the response has
-         a <code>Location</code> header to follow the agreement. Roles: AGENT.
+        Registers the return: works out the extra charges from the terms agreed at booking, publishes
+         <code>VehicleReturned</code> and asks the payments to settle the deposit, which finishes asynchronously; the
+         <code>Location</code> header points to the agreement. Roles: AGENT.
       operationId: returnVehicle
       parameters:
       - description: rental agreement identifier
@@ -139,7 +140,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ReturnRequest"
-        description: return station and inspection
+        description: "return station, inspection and litres to fill the tank"
         required: true
       responses:
         "202":
@@ -147,7 +148,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RentalAgreementResponse"
-          description: the returned agreement
+          description: "the returned agreement, with its extra charges"
         default:
           content:
             application/problem+json:
@@ -155,8 +156,9 @@ paths:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
       summary: |-
-        Registers the return and starts the settlement of the deposit, which finishes asynchronously; the response has
-         a <code>Location</code> header to follow the agreement.
+        Registers the return: works out the extra charges from the terms agreed at booking, publishes
+         <code>VehicleReturned</code> and asks the payments to settle the deposit, which finishes asynchronously; the
+         <code>Location</code> header points to the agreement.
       tags:
       - Rentals
 components:
@@ -422,9 +424,15 @@ components:
         inspection:
           $ref: "#/components/schemas/Inspection"
           description: return inspection
+        litresToFill:
+          type: number
+          description: "litres the agent put in to fill the tank, which left full;\
+            \ absent or zero when it came back full"
+          minimum: 0
         station:
           type: string
-          description: "code of the station where the vehicle was returned, e.g. <code>OPO</code>"
+          description: "code of the station where the vehicle was returned, the one\
+            \ agreed at booking, e.g. <code>MAT</code>"
           pattern: "[A-Z]{3}"
       required:
       - inspection

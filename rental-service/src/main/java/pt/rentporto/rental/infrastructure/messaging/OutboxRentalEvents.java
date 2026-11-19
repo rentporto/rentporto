@@ -9,14 +9,18 @@ import pt.rentporto.events.EventEnvelope;
 import pt.rentporto.events.Money;
 import pt.rentporto.events.RoutingKeys;
 import pt.rentporto.events.payment.SettleDeposit;
+import pt.rentporto.events.rental.Damage;
 import pt.rentporto.events.rental.RentalStarted;
+import pt.rentporto.events.rental.VehicleReturned;
 import pt.rentporto.messaging.outbox.OutboxWriter;
 import pt.rentporto.rental.application.RentalEvents;
 import pt.rentporto.rental.domain.RentalAgreement;
 
 /**
  * Writes the events and commands of the rental context to the outbox, which sends them to RabbitMQ after the commit
- * (ADR-07). The correlation id is the reservation, which follows the whole flow from booking to settlement.
+ * (ADR-07). The correlation id is the reservation, which follows the whole flow from booking to settlement. A returned
+ * vehicle goes back to the fleet with a full tank: it came back full or the agent filled it, and the level found stays
+ * in the agreement, for the charge.
  */
 @Component
 class OutboxRentalEvents implements RentalEvents {
@@ -41,8 +45,24 @@ class OutboxRentalEvents implements RentalEvents {
     }
 
     @Override
-    public void depositReleased(RentalAgreement agreement) {
-        SettleDeposit command = new SettleDeposit(agreement.id(), agreement.depositId(), Money.ofCents(0));
+    public void vehicleReturned(RentalAgreement agreement) {
+        VehicleReturned event = new VehicleReturned(
+                agreement.id(),
+                agreement.reservationId(),
+                agreement.licensePlate(),
+                agreement.returnStation(),
+                agreement.returnOdometerKm(),
+                RentalAgreement.FULL_TANK,
+                agreement.returnDamages().stream()
+                        .map(damage -> new Damage(damage.location(), damage.description()))
+                        .toList());
+        outbox.publish(RoutingKeys.VEHICLE_RETURNED, envelope(agreement, event));
+    }
+
+    @Override
+    public void settleDeposit(RentalAgreement agreement, pt.rentporto.rental.domain.Money amountDue) {
+        SettleDeposit command =
+                new SettleDeposit(agreement.id(), agreement.depositId(), Money.ofCents(amountDue.cents()));
         outbox.send(CommandQueues.SETTLE_DEPOSIT, envelope(agreement, command));
     }
 

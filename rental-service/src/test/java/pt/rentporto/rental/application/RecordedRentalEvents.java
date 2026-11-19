@@ -2,6 +2,7 @@ package pt.rentporto.rental.application;
 
 import java.util.ArrayList;
 import java.util.List;
+import pt.rentporto.rental.domain.Money;
 import pt.rentporto.rental.domain.RentalAgreement;
 
 /**
@@ -10,7 +11,8 @@ import pt.rentporto.rental.domain.RentalAgreement;
 final class RecordedRentalEvents implements RentalEvents {
 
     final List<RentalAgreement> started = new ArrayList<>();
-    final List<RentalAgreement> released = new ArrayList<>();
+    final List<RentalAgreement> returned = new ArrayList<>();
+    final List<String> settled = new ArrayList<>();
 
     @Override
     public void rentalStarted(RentalAgreement agreement) {
@@ -18,7 +20,12 @@ final class RecordedRentalEvents implements RentalEvents {
     }
 
     @Override
-    public void depositReleased(RentalAgreement agreement) {
-        released.add(agreement);
+    public void vehicleReturned(RentalAgreement agreement) {
+        returned.add(agreement);
+    }
+
+    @Override
+    public void settleDeposit(RentalAgreement agreement, Money amountDue) {
+        settled.add(agreement.id() + "=" + amountDue.cents());
     }
 }

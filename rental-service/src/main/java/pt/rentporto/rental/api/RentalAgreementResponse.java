@@ -48,7 +48,7 @@ public record RentalAgreementResponse(
                 agreement.pickupStation(),
                 agreement.returnStation(),
                 agreement.pickedUpAt() == null ? null : agreement.pickedUpAt().atOffset(ZoneOffset.UTC),
-                null,
+                agreement.returnedAt() == null ? null : agreement.returnedAt().atOffset(ZoneOffset.UTC),
                 new ContractTerms(
                         money(terms.dailyRate()),
                         terms.extras().stream()
@@ -60,7 +60,12 @@ public record RentalAgreementResponse(
                         money(terms.deposit()),
                         money(terms.fuelPricePerLitre()),
                         money(terms.refuellingFee())),
-                List.of(),
+                agreement.extraCharges().stream()
+                        .map(charge -> new ExtraCharge(
+                                ExtraCharge.Type.valueOf(charge.type().name()),
+                                charge.description(),
+                                money(charge.amount())))
+                        .toList(),
                 null);
     }
 

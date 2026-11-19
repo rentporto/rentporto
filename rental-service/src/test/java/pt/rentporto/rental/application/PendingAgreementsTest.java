@@ -54,7 +54,7 @@ class PendingAgreementsTest {
         pending.reservationDiscarded(reservation.reservationId(), DiscardReason.NO_SHOW);
         pending.reservationDiscarded(reservation.reservationId(), DiscardReason.NO_SHOW);
 
-        assertThat(events.released).containsExactly(agreement);
+        assertThat(events.settled).containsExactly(agreement.id() + "=0");
     }
 
     @Test
@@ -63,7 +63,7 @@ class PendingAgreementsTest {
 
         pending.reservationDiscarded(reservation.reservationId(), DiscardReason.CANCELLED);
 
-        assertThat(events.released).isEmpty();
+        assertThat(events.settled).isEmpty();
     }
 
     @Test
