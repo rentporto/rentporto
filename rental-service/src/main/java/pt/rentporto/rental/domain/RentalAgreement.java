@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -116,6 +117,31 @@ public class RentalAgreement {
     @OrderColumn(name = "driver_order")
     private List<AdditionalDriver> additionalDrivers = new ArrayList<>();
 
+    @Column(name = "returned_at")
+    private Instant returnedAt;
+
+    @Column(name = "return_odometer_km")
+    private Long returnOdometerKm;
+
+    @Column(name = "return_fuel_level_eighths")
+    private Integer returnFuelLevelEighths;
+
+    @Column(name = "return_litres_to_fill")
+    private BigDecimal returnLitresToFill;
+
+    @Column(name = "return_notes")
+    private String returnNotes;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "rental_agreement_damages", joinColumns = @JoinColumn(name = "rental_id"))
+    @OrderColumn(name = "damage_order")
+    private List<ReturnDamage> returnDamages = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "rental_agreement_charges", joinColumns = @JoinColumn(name = "rental_id"))
+    @OrderColumn(name = "charge_order")
+    private List<ExtraCharge> extraCharges = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -213,6 +239,51 @@ public class RentalAgreement {
         this.pickedUpAt = pickedUpAt;
         status = RentalStatus.ACTIVE;
         updatedAt = Instant.now();
+    }
+
+    /**
+     * Takes the vehicle back: records the return inspection and works out the extra charges, see
+     * {@link ReturnCharges}.
+     *
+     * @param station    code of the station where the vehicle is returned
+     * @param inspection state of the vehicle
+     * @param returnedAt when
+     * @throws InvalidRentalStatusException if the vehicle was not picked up or was already returned
+     * @throws WrongReturnStationException  if the station is not the one agreed at booking
+     * @throws OdometerBelowPickupException if the odometer is below its reading at pick-up
+     * @throws FuelMismatchException        if the litres to fill do not match the fuel level
+     */
+    public void returnAt(String station, ReturnInspection inspection, Instant returnedAt) {
+        Objects.requireNonNull(station, "station");
+        Objects.requireNonNull(inspection, "inspection");
+        Objects.requireNonNull(returnedAt, "returnedAt");
+        if (status != RentalStatus.ACTIVE) {
+            throw new InvalidRentalStatusException(id, status, RentalStatus.ACTIVE);
+        }
+        if (!returnStation.equals(station)) {
+            throw new WrongReturnStationException(station, returnStation);
+        }
+        if (inspection.odometerKm() < pickupOdometerKm) {
+            throw new OdometerBelowPickupException(inspection.odometerKm(), pickupOdometerKm);
+        }
+        extraCharges = new ArrayList<>(ReturnCharges.of(terms(), period, returnedAt, inspection));
+        this.returnedAt = returnedAt;
+        returnOdometerKm = inspection.odometerKm();
+        returnFuelLevelEighths = inspection.fuelLevelEighths();
+        returnLitresToFill = inspection.litresToFill();
+        returnDamages = new ArrayList<>(inspection.damages());
+        returnNotes = inspection.notes();
+        status = RentalStatus.RETURNED;
+        updatedAt = Instant.now();
+    }
+
+    /**
+     * What the customer owes on top of the advance payment: the sum of the extra charges.
+     *
+     * @return the amount, zero when there is nothing to charge
+     */
+    public Money amountDue() {
+        return Money.ofCents(extraCharges.stream().mapToLong(charge -> charge.amount().cents()).sum());
     }
 
     /**
@@ -316,5 +387,33 @@ public class RentalAgreement {
 
     public List<AdditionalDriver> additionalDrivers() {
         return List.copyOf(additionalDrivers);
+    }
+
+    public Instant returnedAt() {
+        return returnedAt;
+    }
+
+    public Long returnOdometerKm() {
+        return returnOdometerKm;
+    }
+
+    public Integer returnFuelLevelEighths() {
+        return returnFuelLevelEighths;
+    }
+
+    public BigDecimal returnLitresToFill() {
+        return returnLitresToFill;
+    }
+
+    public String returnNotes() {
+        return returnNotes;
+    }
+
+    public List<ReturnDamage> returnDamages() {
+        return List.copyOf(returnDamages);
+    }
+
+    public List<ExtraCharge> extraCharges() {
+        return List.copyOf(extraCharges);
     }
 }

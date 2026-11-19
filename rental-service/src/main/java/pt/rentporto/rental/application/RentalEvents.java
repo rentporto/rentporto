@@ -1,5 +1,6 @@
 package pt.rentporto.rental.application;
 
+import pt.rentporto.rental.domain.Money;
 import pt.rentporto.rental.domain.RentalAgreement;
 
 /**
@@ -16,9 +17,18 @@ public interface RentalEvents {
     void rentalStarted(RentalAgreement agreement);
 
     /**
-     * Sends {@code SettleDeposit} with nothing due, which releases the deposit of an agreement that will not start.
+     * Publishes {@code VehicleReturned}: the vehicle is back, with its odometer, its fuel and its new damages.
      *
-     * @param agreement the discarded agreement
+     * @param agreement the returned agreement
      */
-    void depositReleased(RentalAgreement agreement);
+    void vehicleReturned(RentalAgreement agreement);
+
+    /**
+     * Sends {@code SettleDeposit}: the payments capture what is due from the deposit of the agreement and release the
+     * rest; with nothing due, the whole deposit is released.
+     *
+     * @param agreement the agreement whose deposit is settled
+     * @param amountDue what the customer owes
+     */
+    void settleDeposit(RentalAgreement agreement, Money amountDue);
 }

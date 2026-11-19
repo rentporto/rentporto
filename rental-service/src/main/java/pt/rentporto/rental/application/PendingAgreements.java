@@ -7,6 +7,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import pt.rentporto.rental.domain.ConfirmedReservation;
 import pt.rentporto.rental.domain.DiscardReason;
 import pt.rentporto.rental.domain.InconsistentEventException;
+import pt.rentporto.rental.domain.Money;
 import pt.rentporto.rental.domain.RentalAgreement;
 import pt.rentporto.rental.domain.RentalAgreements;
 
@@ -62,7 +63,7 @@ public class PendingAgreements {
             }
             agreements.update(agreement);
             if (agreement.depositHeld()) {
-                events.depositReleased(agreement);
+                events.settleDeposit(agreement, Money.ofCents(0));
             }
             return true;
         }));
