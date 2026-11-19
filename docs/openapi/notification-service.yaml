@@ -10,7 +10,8 @@ security:
 paths:
   /notifications:
     get:
-      description: "Lists the notifications sent to a customer. Roles: ADMIN."
+      description: "Lists the notifications of a customer, the ones that failed included.\
+        \ Roles: ADMIN."
       operationId: notifications
       parameters:
       - description: customer whose notifications are listed
@@ -28,14 +29,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/NotificationResponse"
-          description: "the notifications, most recent first"
+          description: "the notifications, most recent attempt first"
         default:
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
-      summary: Lists the notifications sent to a customer.
+      summary: "Lists the notifications of a customer, the ones that failed included."
       tags:
       - Notifications
 components:
@@ -55,7 +56,7 @@ components:
         sentAt:
           type: string
           format: date-time
-          description: date-time the notification was sent
+          description: date-time of the last attempt to send it
         status:
           type: string
           description: outcome of the sending

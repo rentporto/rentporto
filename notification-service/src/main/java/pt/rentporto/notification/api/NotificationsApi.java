@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface NotificationsApi {
 
     /**
-     * Lists the notifications sent to a customer. Roles: ADMIN.
+     * Lists the notifications of a customer, the ones that failed included. Roles: ADMIN.
      *
      * @param customerId customer whose notifications are listed
-     * @return the notifications, most recent first
+     * @return the notifications, most recent attempt first
      */
     @GetMapping("/notifications")
     List<NotificationResponse> notifications(@RequestParam @NotNull UUID customerId);

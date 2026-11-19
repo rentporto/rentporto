@@ -9,19 +9,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
-import pt.rentporto.web.testing.TestJwtDecoder;
+import pt.rentporto.notification.NotificationServiceTest;
 
 /**
  * Fails when the generated OpenAPI document differs from the committed contract. To accept a change, run with
  * {@code -Dopenapi.update=true} and commit the file.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import(TestJwtDecoder.class)
+@NotificationServiceTest
 class OpenApiContractTest {
 
     private static final Path CONTRACT = Path.of("../docs/openapi/notification-service.yaml");
