@@ -7,20 +7,12 @@ import static org.mockito.Mockito.mock;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.PlatformTransactionManager;
 import pt.rentporto.notification.domain.Notification;
-import pt.rentporto.notification.domain.NotificationLog;
 import pt.rentporto.notification.domain.NotificationStatus;
 import pt.rentporto.notification.domain.Recipient;
-import pt.rentporto.notification.domain.Recipients;
 import pt.rentporto.notification.domain.UnknownRecipientException;
 
 class CustomerEmailsTest {
@@ -101,66 +93,5 @@ class CustomerEmailsTest {
 
     private static Notice notice(String type) {
         return new Notice(UUID.randomUUID(), ANA, type, "Subject of " + type, "Text of " + type);
-    }
-
-    /**
-     * Recipients in memory.
-     */
-    private static final class InMemoryRecipients implements Recipients {
-
-        private final Map<UUID, Recipient> byId = new HashMap<>();
-
-        @Override
-        public Optional<Recipient> withId(UUID customerId) {
-            return Optional.ofNullable(byId.get(customerId));
-        }
-
-        @Override
-        public void save(Recipient recipient) {
-            byId.put(recipient.id(), recipient);
-        }
-    }
-
-    /**
-     * Notification log in memory.
-     */
-    private static final class InMemoryLog implements NotificationLog {
-
-        private final Map<UUID, Notification> byEvent = new HashMap<>();
-
-        @Override
-        public Optional<Notification> forEvent(UUID eventId) {
-            return Optional.ofNullable(byEvent.get(eventId));
-        }
-
-        @Override
-        public List<Notification> forCustomer(UUID customerId) {
-            return byEvent.values().stream()
-                    .filter(notification -> notification.customerId().equals(customerId))
-                    .sorted(Comparator.comparing(Notification::attemptedAt).reversed())
-                    .toList();
-        }
-
-        @Override
-        public void save(Notification notification) {
-            byEvent.put(notification.eventId(), notification);
-        }
-    }
-
-    /**
-     * Mailer that keeps what it sends, or fails while {@code failing}.
-     */
-    private static final class FakeMailer implements Mailer {
-
-        private final List<Email> sent = new ArrayList<>();
-        private boolean failing;
-
-        @Override
-        public void send(Email email) {
-            if (failing) {
-                throw new EmailNotSentException("Mail server down", null);
-            }
-            sent.add(email);
-        }
     }
 }

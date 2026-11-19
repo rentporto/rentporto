@@ -15,7 +15,8 @@ import pt.rentporto.web.testing.TestJwtDecoder;
  * Starts the service against PostgreSQL, RabbitMQ and Mailpit, without a session open for the whole request, as in
  * {@code config/application.yml}, and with the schema checked against the entities and the tables of the outbox. The
  * mail host is set here so that the mail sender is configured; {@link MailpitContainer} then points it to the
- * container. Every test class uses the same settings, so they share one context, one database and one mailbox.
+ * container. The reminders due are searched for every second, so that a test does not wait for them. Every test class
+ * uses the same settings, so they share one context, one database and one mailbox.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -23,7 +24,8 @@ import pt.rentporto.web.testing.TestJwtDecoder;
         "spring.jpa.hibernate.ddl-auto=validate",
         "spring.jpa.open-in-view=false",
         "spring.flyway.locations=classpath:db/migration,classpath:db/messaging",
-        "spring.mail.host=localhost"})
+        "spring.mail.host=localhost",
+        "rentporto.notification.pickup-reminder.poll-interval=1s"})
 @AutoConfigureMockMvc
 @Import({TestJwtDecoder.class, MessagingContainers.class, MessagingRecords.class, MailpitContainer.class})
 public @interface NotificationServiceTest {

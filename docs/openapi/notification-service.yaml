@@ -68,7 +68,8 @@ components:
           description: subject of the email
         type:
           type: string
-          description: "event that triggered it, e.g. <code>ReservationConfirmed</code>"
+          description: "event that triggered it, e.g. <code>ReservationConfirmed</code>,\
+            \ or <code>PickupReminder</code>"
     ProblemDetail:
       type: object
       description: Error response (RFC 9457)

@@ -20,14 +20,17 @@ import pt.rentporto.events.reservation.ReservationConfirmed;
 import pt.rentporto.events.reservation.ReservationExpired;
 import pt.rentporto.events.reservation.ReservationNoShow;
 import pt.rentporto.notification.application.Notice;
+import pt.rentporto.notification.application.ReminderTemplate;
+import pt.rentporto.notification.domain.PickupReminder;
 
 /**
- * The plain text emails of the events, in English like every text the customers see, with the amounts in euro and
- * the dates in Lisbon.
+ * The plain text emails of the events and of the pick-up reminder, in English like every text the customers see, with
+ * the amounts in euro and the dates in Lisbon.
  */
 @Component
-class EmailTemplates {
+class EmailTemplates implements ReminderTemplate {
 
+    private static final String PICKUP_REMINDER = "PickupReminder";
     private static final String SIGNATURE = "\n\nRentPorto";
 
     private final DateTimeFormatter dates;
@@ -111,6 +114,14 @@ class EmailTemplates {
         return notice(event, closed.customerId(), "Your receipt",
                 "Your rental " + closed.rentalId() + " is closed.\n\n" + charges
                         + "\n\nFinal total: " + euros(closed.finalTotal()) + owed);
+    }
+
+    @Override
+    public Notice pickupReminder(PickupReminder reminder) {
+        return new Notice(reminder.noticeId(), reminder.customerId(), PICKUP_REMINDER, "Your pick-up is coming up",
+                "Your vehicle for the reservation " + reminder.reservationId() + " is waiting for you.\n\n"
+                        + "Pick-up: " + reminder.pickupStation() + ", " + dates.format(reminder.pickupAt())
+                        + "\nBring your driving licence and a payment card for the security deposit." + SIGNATURE);
     }
 
     private static Notice notice(EventEnvelope<?> event, UUID customerId, String subject, String text) {

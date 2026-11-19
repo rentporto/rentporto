@@ -6,3 +6,9 @@ spring:
   mail:
     host: ${rentporto.mailpit.host}
     port: 1025
+
+rentporto:
+  notification:
+    pickup-reminder:
+      before: 24h
+      poll-interval: 1m

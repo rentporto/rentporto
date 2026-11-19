@@ -10,7 +10,7 @@ import pt.rentporto.notification.domain.Notification;
  *
  * @param notificationId notification identifier
  * @param customerId     customer the notification was sent to
- * @param type           event that triggered it, e.g. {@code ReservationConfirmed}
+ * @param type           event that triggered it, e.g. {@code ReservationConfirmed}, or {@code PickupReminder}
  * @param subject        subject of the email
  * @param sentAt         date-time of the last attempt to send it
  * @param status         outcome of the sending
