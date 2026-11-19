@@ -12,16 +12,20 @@ import pt.rentporto.rental.domain.RentalAgreements;
 
 /**
  * Keeps the rental agreements in step with the reservations: a confirmed reservation gets an agreement waiting for
- * the pick-up, and a cancelled or not picked up one discards it. A reservation has one agreement.
+ * the pick-up, and a cancelled or not picked up one discards it, releasing the deposit a failed pick-up left held. A
+ * reservation has one agreement.
  */
 @Service
 public class PendingAgreements {
 
     private final RentalAgreements agreements;
+    private final RentalEvents events;
     private final TransactionTemplate transaction;
 
-    PendingAgreements(RentalAgreements agreements, PlatformTransactionManager transactionManager) {
+    PendingAgreements(
+            RentalAgreements agreements, RentalEvents events, PlatformTransactionManager transactionManager) {
         this.agreements = agreements;
+        this.events = events;
         this.transaction = new TransactionTemplate(transactionManager);
     }
 
@@ -57,6 +61,9 @@ public class PendingAgreements {
                 return false;
             }
             agreements.update(agreement);
+            if (agreement.depositHeld()) {
+                events.depositReleased(agreement);
+            }
             return true;
         }));
     }

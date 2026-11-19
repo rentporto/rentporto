@@ -12,13 +12,15 @@ import pt.rentporto.messaging.testing.MessagingRecords;
 import pt.rentporto.web.testing.TestJwtDecoder;
 
 /**
- * Starts the service against PostgreSQL and RabbitMQ, with the schema checked against the entities and the tables of
- * the outbox. Every test class uses the same settings, so they share one context and one database.
+ * Starts the service against PostgreSQL and RabbitMQ, without a session open for the whole request, as in
+ * {@code config/application.yml}, and with the schema checked against the entities and the tables of the outbox.
+ * Every test class uses the same settings, so they share one context and one database.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @SpringBootTest(properties = {
         "spring.jpa.hibernate.ddl-auto=validate",
+        "spring.jpa.open-in-view=false",
         "spring.flyway.locations=classpath:db/migration,classpath:db/messaging"})
 @AutoConfigureMockMvc
 @Import({TestJwtDecoder.class, MessagingContainers.class, MessagingRecords.class, FleetRecords.class})

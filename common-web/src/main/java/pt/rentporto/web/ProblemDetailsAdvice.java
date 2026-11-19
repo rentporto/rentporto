@@ -37,6 +37,7 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
             case NOT_FOUND -> HttpStatus.NOT_FOUND;
             case CONFLICT -> HttpStatus.CONFLICT;
             case UNPROCESSABLE -> HttpStatus.UNPROCESSABLE_CONTENT;
+            case UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
         };
         return problem(e, status, e.getMessage(), e.code(), request);
     }

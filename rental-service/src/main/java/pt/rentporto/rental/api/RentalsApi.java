@@ -39,11 +39,12 @@ public interface RentalsApi {
     RentalAgreementResponse rental(@PathVariable UUID id);
 
     /**
-     * Registers the pick-up: assigns a vehicle of the category, pre-authorises the security deposit and records the
-     * check-out inspection. Roles: AGENT.
+     * Registers the pick-up: pre-authorises the security deposit, then assigns a vehicle of the category booked, which
+     * leaves with the odometer the fleet knows and a full tank. A pick-up tried again after a failure goes on from
+     * where it stopped. Roles: AGENT.
      *
      * @param id      rental agreement identifier
-     * @param request additional drivers and check-out inspection
+     * @param request additional drivers and notes of the check-out inspection
      * @return the active agreement
      */
     @PostMapping("/rentals/{id}/pickup")

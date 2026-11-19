@@ -31,7 +31,7 @@ class ProblemDetailsAdviceTest {
             .build();
 
     @ParameterizedTest
-    @CsvSource({"NOT_FOUND, 404", "CONFLICT, 409", "UNPROCESSABLE, 422"})
+    @CsvSource({"NOT_FOUND, 404", "CONFLICT, 409", "UNPROCESSABLE, 422", "UNAVAILABLE, 503"})
     void answersABusinessErrorWithItsCode(BusinessException.Category category, int expectedStatus) throws Exception {
         mockMvc.perform(get("/business/{category}", category))
                 .andExpect(status().is(expectedStatus))
