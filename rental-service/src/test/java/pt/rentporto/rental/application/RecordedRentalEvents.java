@@ -12,6 +12,7 @@ final class RecordedRentalEvents implements RentalEvents {
 
     final List<RentalAgreement> started = new ArrayList<>();
     final List<RentalAgreement> returned = new ArrayList<>();
+    final List<RentalAgreement> closed = new ArrayList<>();
     final List<String> settled = new ArrayList<>();
 
     @Override
@@ -22,6 +23,11 @@ final class RecordedRentalEvents implements RentalEvents {
     @Override
     public void vehicleReturned(RentalAgreement agreement) {
         returned.add(agreement);
+    }
+
+    @Override
+    public void rentalClosed(RentalAgreement agreement) {
+        closed.add(agreement);
     }
 
     @Override

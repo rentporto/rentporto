@@ -9,35 +9,42 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pt.rentporto.rental.application.PickUps;
+import pt.rentporto.rental.application.RentalQueries;
 import pt.rentporto.rental.application.Returns;
 import pt.rentporto.rental.domain.AdditionalDriver;
 import pt.rentporto.rental.domain.Money;
 import pt.rentporto.rental.domain.RentalAgreement;
 import pt.rentporto.rental.domain.ReturnDamage;
 import pt.rentporto.rental.domain.ReturnInspection;
-import pt.rentporto.web.EndpointNotImplementedException;
 
 @RestController
 class RentalsController implements RentalsApi {
 
     private final PickUps pickUps;
     private final Returns returns;
+    private final RentalQueries queries;
 
-    RentalsController(PickUps pickUps, Returns returns) {
+    RentalsController(PickUps pickUps, Returns returns, RentalQueries queries) {
         this.pickUps = pickUps;
         this.returns = returns;
+        this.queries = queries;
     }
 
     @Override
     @PreAuthorize("hasRole('AGENT')")
     public List<RentalAgreementResponse> rentals(String station, RentalStatus status) {
-        throw new EndpointNotImplementedException();
+        pt.rentporto.rental.domain.RentalStatus state =
+                status == null ? null : pt.rentporto.rental.domain.RentalStatus.valueOf(status.name());
+        return queries.agreements(station, state).stream().map(RentalAgreementResponse::from).toList();
     }
 
     @Override
     @PreAuthorize("hasAnyRole('AGENT', 'CUSTOMER')")
     public RentalAgreementResponse rental(UUID id) {
-        throw new EndpointNotImplementedException();
+        RentalAgreement agreement = AuthenticatedUser.isAgent()
+                ? queries.agreement(id)
+                : queries.agreementOf(id, AuthenticatedUser.id());
+        return RentalAgreementResponse.from(agreement);
     }
 
     @Override

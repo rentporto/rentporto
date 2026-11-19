@@ -10,6 +10,8 @@ import pt.rentporto.events.Money;
 import pt.rentporto.events.RoutingKeys;
 import pt.rentporto.events.payment.SettleDeposit;
 import pt.rentporto.events.rental.Damage;
+import pt.rentporto.events.rental.ExtraCharge;
+import pt.rentporto.events.rental.RentalClosed;
 import pt.rentporto.events.rental.RentalStarted;
 import pt.rentporto.events.rental.VehicleReturned;
 import pt.rentporto.messaging.outbox.OutboxWriter;
@@ -57,6 +59,22 @@ class OutboxRentalEvents implements RentalEvents {
                         .map(damage -> new Damage(damage.location(), damage.description()))
                         .toList());
         outbox.publish(RoutingKeys.VEHICLE_RETURNED, envelope(agreement, event));
+    }
+
+    @Override
+    public void rentalClosed(RentalAgreement agreement) {
+        RentalClosed event = new RentalClosed(
+                agreement.id(),
+                agreement.customerId(),
+                agreement.extraCharges().stream()
+                        .map(charge -> new ExtraCharge(
+                                ExtraCharge.Type.valueOf(charge.type().name()),
+                                charge.description(),
+                                Money.ofCents(charge.amount().cents())))
+                        .toList(),
+                Money.ofCents(agreement.finalTotal().cents()),
+                Money.ofCents(agreement.settlement().outstanding().cents()));
+        outbox.publish(RoutingKeys.RENTAL_CLOSED, envelope(agreement, event));
     }
 
     @Override

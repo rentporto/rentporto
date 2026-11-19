@@ -24,6 +24,13 @@ public interface RentalEvents {
     void vehicleReturned(RentalAgreement agreement);
 
     /**
+     * Publishes {@code RentalClosed}: the agreement was settled, with its charges and what is still owed.
+     *
+     * @param agreement the closed agreement
+     */
+    void rentalClosed(RentalAgreement agreement);
+
+    /**
      * Sends {@code SettleDeposit}: the payments capture what is due from the deposit of the agreement and release the
      * rest; with nothing due, the whole deposit is released.
      *

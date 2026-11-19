@@ -66,7 +66,14 @@ public record RentalAgreementResponse(
                                 charge.description(),
                                 money(charge.amount())))
                         .toList(),
-                null);
+                settlement(agreement.settlement()));
+    }
+
+    private static Settlement settlement(pt.rentporto.rental.domain.Settlement settlement) {
+        return settlement == null
+                ? null
+                : new Settlement(
+                        money(settlement.captured()), money(settlement.released()), money(settlement.outstanding()));
     }
 
     private static Money money(pt.rentporto.rental.domain.Money money) {

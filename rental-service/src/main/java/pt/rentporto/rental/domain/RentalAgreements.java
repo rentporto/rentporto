@@ -1,5 +1,6 @@
 package pt.rentporto.rental.domain;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,6 +25,15 @@ public interface RentalAgreements {
      * @return the agreement, if there is one
      */
     Optional<RentalAgreement> lockWithId(UUID rentalId);
+
+    /**
+     * Lists the agreements that go through a station, picked up or returned there, in a state.
+     *
+     * @param station code of the station, or {@code null} for every station
+     * @param status  the state, or {@code null} for every state
+     * @return the agreements, by pick-up time
+     */
+    List<RentalAgreement> matching(String station, RentalStatus status);
 
     /**
      * Finds the agreement of a reservation.

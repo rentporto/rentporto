@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public interface RentalsApi {
 
     /**
-     * Lists the rental agreements of a station, optionally by status. Roles: AGENT.
+     * Lists the rental agreements that go through a station, picked up or returned there, optionally by status, by
+     * pick-up time. Roles: AGENT.
      *
      * @param station code of the station, e.g. {@code OPO}; all stations if absent
      * @param status  status of the agreements; all statuses if absent
@@ -31,7 +32,8 @@ public interface RentalsApi {
             @RequestParam(required = false) String station, @RequestParam(required = false) RentalStatus status);
 
     /**
-     * Reads a rental agreement with its charges and status. Roles: AGENT, CUSTOMER (owner).
+     * Reads a rental agreement with its charges, its settlement and its status; the agreement of another customer is
+     * not found. Roles: AGENT, CUSTOMER (owner).
      *
      * @param id rental agreement identifier
      * @return the agreement
