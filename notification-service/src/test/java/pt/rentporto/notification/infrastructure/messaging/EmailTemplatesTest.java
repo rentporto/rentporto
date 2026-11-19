@@ -20,6 +20,7 @@ import pt.rentporto.events.reservation.ReservationCancelled;
 import pt.rentporto.events.reservation.ReservationConfirmed;
 import pt.rentporto.events.reservation.ReservationNoShow;
 import pt.rentporto.notification.application.Notice;
+import pt.rentporto.notification.domain.PickupReminder;
 
 class EmailTemplatesTest {
 
@@ -69,6 +70,23 @@ class EmailTemplatesTest {
         assertThat(templates.started(envelope(new RentalStarted(UUID.randomUUID(), RESERVATION, CUSTOMER, "AA-12-BB",
                 OffsetDateTime.parse("2026-07-01T09:05:00Z")))).body())
                 .contains("You picked up the vehicle AA-12-BB on 1 Jul 2026, 10:05.");
+    }
+
+    @Test
+    void theReminderShowsTheStationAndTheTimeOfThePickUpInLisbon() {
+        PickupReminder reminder =
+                PickupReminder.pending(RESERVATION, CUSTOMER, "OPO", Instant.parse("2026-07-01T09:00:00Z"));
+
+        assertThat(templates.pickupReminder(reminder)).satisfies(notice -> {
+            assertThat(notice.eventId()).isEqualTo(reminder.noticeId());
+            assertThat(notice.customerId()).isEqualTo(CUSTOMER);
+            assertThat(notice.type()).isEqualTo("PickupReminder");
+            assertThat(notice.subject()).isEqualTo("Your pick-up is coming up");
+            assertThat(notice.body())
+                    .contains("reservation " + RESERVATION)
+                    .contains("Pick-up: OPO, 1 Jul 2026, 10:00")
+                    .endsWith("RentPorto");
+        });
     }
 
     @Test

@@ -13,11 +13,13 @@ import pt.rentporto.events.reservation.ReservationConfirmed;
 import pt.rentporto.events.reservation.ReservationExpired;
 import pt.rentporto.events.reservation.ReservationNoShow;
 import pt.rentporto.notification.application.CustomerEmails;
+import pt.rentporto.notification.application.UpcomingPickups;
 
 /**
- * Consumes the nine events the customers hear of, each from its own queue, and emails them. An event that cannot be
- * sent, because the customer is not known yet or the mail server failed, is tried again and goes to the dead letter
- * queue of its queue after its attempts.
+ * Consumes the nine events the customers hear of, each from its own queue, and emails them. The confirmation keeps
+ * the reminder of the pick-up, and the cancellation or the pick-up calls it off, before the email. An event that
+ * cannot be sent, because the customer is not known yet or the mail server failed, is tried again and goes to the dead
+ * letter queue of its queue after its attempts.
  */
 @Component
 class NotificationListeners {
@@ -34,10 +36,12 @@ class NotificationListeners {
 
     private final CustomerEmails emails;
     private final EmailTemplates templates;
+    private final UpcomingPickups pickups;
 
-    NotificationListeners(CustomerEmails emails, EmailTemplates templates) {
+    NotificationListeners(CustomerEmails emails, EmailTemplates templates, UpcomingPickups pickups) {
         this.emails = emails;
         this.templates = templates;
+        this.pickups = pickups;
     }
 
     @RabbitListener(queues = CUSTOMER_REGISTERED)
@@ -49,11 +53,15 @@ class NotificationListeners {
 
     @RabbitListener(queues = RESERVATION_CONFIRMED)
     void onReservationConfirmed(EventEnvelope<ReservationConfirmed> event) {
+        ReservationConfirmed confirmed = event.payload();
+        pickups.reservationConfirmed(confirmed.reservationId(), confirmed.customerId(), confirmed.pickupStation(),
+                confirmed.rentalPeriod().pickupAt().toInstant(), event.occurredAt());
         emails.send(templates.confirmed(event));
     }
 
     @RabbitListener(queues = RESERVATION_CANCELLED)
     void onReservationCancelled(EventEnvelope<ReservationCancelled> event) {
+        pickups.cancel(event.payload().reservationId(), event.payload().customerId());
         emails.send(templates.cancelled(event));
     }
 
@@ -79,6 +87,7 @@ class NotificationListeners {
 
     @RabbitListener(queues = RENTAL_STARTED)
     void onRentalStarted(EventEnvelope<RentalStarted> event) {
+        pickups.cancel(event.payload().reservationId(), event.payload().customerId());
         emails.send(templates.started(event));
     }
 
