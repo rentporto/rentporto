@@ -168,6 +168,65 @@ class VehicleTest {
     }
 
     @Test
+    void aReturnedVehicleIsAvailableWhereItWasReturnedWithTheOdometerAndFuelReadThere() {
+        vehicle.assignTo(UUID.randomUUID(), "key-7");
+
+        vehicle.returnAt("MAT", 12450, 3);
+
+        assertThat(vehicle.status()).isEqualTo(VehicleStatus.AVAILABLE);
+        assertThat(vehicle.station()).isEqualTo("MAT");
+        assertThat(vehicle.odometerKm()).isEqualTo(12450);
+        assertThat(vehicle.fuelLevelEighths()).isEqualTo(3);
+    }
+
+    @Test
+    void theOdometerOfAReturnedVehicleMayStayTheSameButNeverGoBack() {
+        vehicle.assignTo(UUID.randomUUID(), "key-7");
+
+        assertThatThrownBy(() -> vehicle.returnAt("OPO", 11999, 8)).isInstanceOf(InconsistentReturnException.class);
+        assertThat(vehicle.status()).isEqualTo(VehicleStatus.RENTED);
+        assertThat(vehicle.odometerKm()).isEqualTo(12000);
+
+        vehicle.returnAt("OPO", 12000, 8);
+        assertThat(vehicle.status()).isEqualTo(VehicleStatus.AVAILABLE);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"-1", "9"})
+    void aFuelLevelOutsideTheTankIsRejected(int fuelLevelEighths) {
+        vehicle.assignTo(UUID.randomUUID(), "key-7");
+
+        assertThatThrownBy(() -> vehicle.returnAt("OPO", 12000, fuelLevelEighths))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(vehicle.status()).isEqualTo(VehicleStatus.RENTED);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"AVAILABLE", "IN_MAINTENANCE", "IN_TRANSFER"})
+    void onlyARentedVehicleIsReturned(VehicleStatus status) {
+        if (status == VehicleStatus.IN_TRANSFER) {
+            vehicle.startTransfer("TRD", null);
+        } else {
+            moveTo(status);
+        }
+
+        assertThatThrownBy(() -> vehicle.returnAt("MAT", 12450, 3))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+        assertThat(vehicle.status()).isEqualTo(status);
+        assertThat(vehicle.station()).isEqualTo("OPO");
+    }
+
+    @Test
+    void anAssignmentIsClosedOnce() {
+        VehicleAssignment assignment = vehicle.assignTo(UUID.randomUUID(), "key-7");
+
+        assertThat(assignment.returned()).isFalse();
+        assertThat(assignment.close()).isTrue();
+        assertThat(assignment.returned()).isTrue();
+        assertThat(assignment.close()).isFalse();
+    }
+
+    @Test
     void onlyTheKeyOfTheRequestThatRegisteredItRepeatsIt() {
         assertThat(vehicle.registeredWith("key-1")).isTrue();
         assertThat(vehicle.registeredWith("key-2")).isFalse();

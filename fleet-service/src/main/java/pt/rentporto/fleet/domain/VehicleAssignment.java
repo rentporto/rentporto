@@ -12,7 +12,7 @@ import java.util.UUID;
 
 /**
  * Vehicle handed over to a rental at pick-up, with its odometer reading at that moment. A rental has one assignment,
- * made by {@link Vehicle#assignTo(UUID, String)}.
+ * made by {@link Vehicle#assignTo(UUID, String)} and closed when the vehicle is returned.
  */
 @Entity
 @Table(name = "vehicle_assignments")
@@ -41,6 +41,9 @@ public class VehicleAssignment {
     @Column(name = "assigned_at", nullable = false, updatable = false)
     private Instant assignedAt;
 
+    @Column(name = "returned_at")
+    private Instant returnedAt;
+
     protected VehicleAssignment() {
     }
 
@@ -54,6 +57,28 @@ public class VehicleAssignment {
         assignment.idempotencyKey = Objects.requireNonNull(idempotencyKey, "idempotencyKey");
         assignment.assignedAt = Instant.now();
         return assignment;
+    }
+
+    /**
+     * Closes the assignment when the vehicle is returned.
+     *
+     * @return {@code true} if it was closed now, {@code false} if the vehicle had already been returned
+     */
+    public boolean close() {
+        if (returnedAt != null) {
+            return false;
+        }
+        returnedAt = Instant.now();
+        return true;
+    }
+
+    /**
+     * Tells whether the vehicle was returned.
+     *
+     * @return {@code true} if the assignment is closed
+     */
+    public boolean returned() {
+        return returnedAt != null;
     }
 
     /**
