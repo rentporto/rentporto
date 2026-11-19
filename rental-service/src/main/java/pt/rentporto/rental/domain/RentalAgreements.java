@@ -9,6 +9,23 @@ import java.util.UUID;
 public interface RentalAgreements {
 
     /**
+     * Finds an agreement.
+     *
+     * @param rentalId identifier of the agreement
+     * @return the agreement, if there is one
+     */
+    Optional<RentalAgreement> withId(UUID rentalId);
+
+    /**
+     * Finds an agreement and locks it until the end of the transaction, so that two changes to it happen one after
+     * the other.
+     *
+     * @param rentalId identifier of the agreement
+     * @return the agreement, if there is one
+     */
+    Optional<RentalAgreement> lockWithId(UUID rentalId);
+
+    /**
      * Finds the agreement of a reservation.
      *
      * @param reservationId the reservation

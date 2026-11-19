@@ -8,11 +8,13 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -20,11 +22,15 @@ import java.util.UUID;
 
 /**
  * Rental agreement of a confirmed reservation. It keeps everything the pick-up and the settlement need, frozen at
- * booking, so it never asks the pricing or the customers again.
+ * booking, so it never asks the pricing or the customers again. The extras and the drivers are small and always
+ * needed, so they are loaded with the agreement.
  */
 @Entity
 @Table(name = "rental_agreements")
 public class RentalAgreement {
+
+    /** Fuel level of a full tank, in eighths. */
+    public static final int FULL_TANK = 8;
 
     @Id
     private UUID id;
@@ -51,7 +57,7 @@ public class RentalAgreement {
     @AttributeOverride(name = "cents", column = @Column(name = "daily_rate_cents", nullable = false))
     private Money dailyRate;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "rental_agreement_extras", joinColumns = @JoinColumn(name = "rental_id"))
     @OrderColumn(name = "extra_order")
     private List<ContractExtra> extras = new ArrayList<>();
@@ -86,6 +92,29 @@ public class RentalAgreement {
     @Enumerated(EnumType.STRING)
     @Column(name = "discard_reason")
     private DiscardReason discardReason;
+
+    @Column(name = "deposit_id")
+    private UUID depositId;
+
+    @Column(name = "license_plate")
+    private String licensePlate;
+
+    @Column(name = "picked_up_at")
+    private Instant pickedUpAt;
+
+    @Column(name = "pickup_odometer_km")
+    private Long pickupOdometerKm;
+
+    @Column(name = "pickup_fuel_level_eighths")
+    private Integer pickupFuelLevelEighths;
+
+    @Column(name = "pickup_notes")
+    private String pickupNotes;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "rental_agreement_drivers", joinColumns = @JoinColumn(name = "rental_id"))
+    @OrderColumn(name = "driver_order")
+    private List<AdditionalDriver> additionalDrivers = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -125,6 +154,74 @@ public class RentalAgreement {
         agreement.createdAt = Instant.now();
         agreement.updatedAt = agreement.createdAt;
         return agreement;
+    }
+
+    /**
+     * Checks that the vehicle was not picked up yet.
+     *
+     * @throws InvalidRentalStatusException if the agreement is not waiting for the pick-up
+     */
+    public void requireAwaitingPickup() {
+        if (status != RentalStatus.AWAITING_PICKUP) {
+            throw new InvalidRentalStatusException(id, status, RentalStatus.AWAITING_PICKUP);
+        }
+    }
+
+    /**
+     * Records the security deposit pre-authorised for the pick-up. It stays with the agreement, so that a pick-up
+     * tried again uses it, and is released if the agreement is discarded.
+     *
+     * @param depositId identifier of the deposit
+     * @throws InvalidRentalStatusException if the agreement is not waiting for the pick-up
+     */
+    public void recordDeposit(UUID depositId) {
+        Objects.requireNonNull(depositId, "depositId");
+        requireAwaitingPickup();
+        this.depositId = depositId;
+        updatedAt = Instant.now();
+    }
+
+    /**
+     * Hands the vehicle over to the customer. It leaves with the odometer the fleet knows and a full tank, as the
+     * full-to-full policy promises.
+     *
+     * @param plate      licence plate of the vehicle assigned
+     * @param odometerKm odometer reading in kilometres
+     * @param drivers    additional drivers, possibly none
+     * @param notes      notes of the check-out inspection, or {@code null}
+     * @param pickedUpAt when
+     * @param today      the day of the pick-up, in Lisbon
+     * @throws InvalidRentalStatusException   if the agreement is not waiting for the pick-up
+     * @throws DriverLicenseNotValidException if the licence of an additional driver cannot be used today
+     * @throws IllegalStateException          if there is no deposit yet
+     */
+    public void pickUp(
+            String plate, long odometerKm, List<AdditionalDriver> drivers, String notes, Instant pickedUpAt,
+            LocalDate today) {
+        Objects.requireNonNull(plate, "plate");
+        Objects.requireNonNull(pickedUpAt, "pickedUpAt");
+        requireAwaitingPickup();
+        if (depositId == null) {
+            throw new IllegalStateException("The rental " + id + " has no deposit");
+        }
+        drivers.forEach(driver -> driver.requireValidLicenseOn(today));
+        licensePlate = plate;
+        pickupOdometerKm = odometerKm;
+        pickupFuelLevelEighths = FULL_TANK;
+        additionalDrivers = new ArrayList<>(drivers);
+        pickupNotes = notes;
+        this.pickedUpAt = pickedUpAt;
+        status = RentalStatus.ACTIVE;
+        updatedAt = Instant.now();
+    }
+
+    /**
+     * Tells whether a security deposit is held for the agreement.
+     *
+     * @return {@code true} if one was pre-authorised
+     */
+    public boolean depositHeld() {
+        return depositId != null;
     }
 
     /**
@@ -191,5 +288,33 @@ public class RentalAgreement {
 
     public DiscardReason discardReason() {
         return discardReason;
+    }
+
+    public UUID depositId() {
+        return depositId;
+    }
+
+    public String licensePlate() {
+        return licensePlate;
+    }
+
+    public Instant pickedUpAt() {
+        return pickedUpAt;
+    }
+
+    public Long pickupOdometerKm() {
+        return pickupOdometerKm;
+    }
+
+    public Integer pickupFuelLevelEighths() {
+        return pickupFuelLevelEighths;
+    }
+
+    public String pickupNotes() {
+        return pickupNotes;
+    }
+
+    public List<AdditionalDriver> additionalDrivers() {
+        return List.copyOf(additionalDrivers);
     }
 }

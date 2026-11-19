@@ -83,8 +83,9 @@ paths:
   /rentals/{id}/pickup:
     post:
       description: |-
-        Registers the pick-up: assigns a vehicle of the category, pre-authorises the security deposit and records the
-         check-out inspection. Roles: AGENT.
+        Registers the pick-up: pre-authorises the security deposit, then assigns a vehicle of the category booked, which
+         leaves with the odometer the fleet knows and a full tank. A pick-up tried again after a failure goes on from
+         where it stopped. Roles: AGENT.
       operationId: pickUp
       parameters:
       - description: rental agreement identifier
@@ -99,7 +100,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/PickUpRequest"
-        description: additional drivers and check-out inspection
+        description: additional drivers and notes of the check-out inspection
         required: true
       responses:
         "200":
@@ -115,8 +116,8 @@ paths:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
       summary: |-
-        Registers the pick-up: assigns a vehicle of the category, pre-authorises the security deposit and records the
-         check-out inspection.
+        Registers the pick-up: pre-authorises the security deposit, then assigns a vehicle of the category booked, which
+         leaves with the odometer the fleet knows and a full tank.
       tags:
       - Rentals
   /rentals/{id}/return:
@@ -322,18 +323,19 @@ components:
           description: ISO 4217 currency code; always <code>EUR</code>
     PickUpRequest:
       type: object
-      description: Pick-up of the vehicle at the counter.
+      description: |-
+        Pick-up of the vehicle at the counter. The agent does not know the vehicle before the request: its odometer comes
+         from the fleet and it leaves with a full tank.
       properties:
         additionalDrivers:
           type: array
-          description: drivers besides the customer; possibly none
+          description: "drivers besides the customer, with a licence valid today;\
+            \ possibly none"
           items:
             $ref: "#/components/schemas/Driver"
-        inspection:
-          $ref: "#/components/schemas/Inspection"
-          description: check-out inspection
-      required:
-      - inspection
+        notes:
+          type: string
+          description: notes of the check-out inspection; optional
     ProblemDetail:
       type: object
       description: Error response (RFC 9457)

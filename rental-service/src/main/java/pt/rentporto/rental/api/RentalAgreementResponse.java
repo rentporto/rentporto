@@ -1,10 +1,14 @@
 package pt.rentporto.rental.api;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import pt.rentporto.events.Money;
 import pt.rentporto.events.rental.ExtraCharge;
+import pt.rentporto.events.reservation.ContractExtra;
 import pt.rentporto.events.reservation.ContractTerms;
+import pt.rentporto.rental.domain.RentalAgreement;
 
 /**
  * Rental agreement with its charges and status.
@@ -33,4 +37,34 @@ public record RentalAgreementResponse(
         ContractTerms terms,
         List<ExtraCharge> extraCharges,
         Settlement settlement) {
+
+    static RentalAgreementResponse from(RentalAgreement agreement) {
+        pt.rentporto.rental.domain.ContractTerms terms = agreement.terms();
+        return new RentalAgreementResponse(
+                agreement.id(),
+                agreement.reservationId(),
+                RentalStatus.valueOf(agreement.status().name()),
+                agreement.licensePlate(),
+                agreement.pickupStation(),
+                agreement.returnStation(),
+                agreement.pickedUpAt() == null ? null : agreement.pickedUpAt().atOffset(ZoneOffset.UTC),
+                null,
+                new ContractTerms(
+                        money(terms.dailyRate()),
+                        terms.extras().stream()
+                                .map(extra -> new ContractExtra(
+                                        extra.code(), money(extra.pricePerDay()), money(extra.cap())))
+                                .toList(),
+                        terms.coverage(),
+                        money(terms.excess()),
+                        money(terms.deposit()),
+                        money(terms.fuelPricePerLitre()),
+                        money(terms.refuellingFee())),
+                List.of(),
+                null);
+    }
+
+    private static Money money(pt.rentporto.rental.domain.Money money) {
+        return Money.ofCents(money.cents());
+    }
 }

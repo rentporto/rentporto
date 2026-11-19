@@ -1,6 +1,7 @@
 package pt.rentporto.rental.infrastructure.persistence;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
@@ -20,6 +21,16 @@ class JpaRentalAgreements implements RentalAgreements {
     JpaRentalAgreements(SpringDataRentalAgreements jpa, EntityManager entityManager) {
         this.jpa = jpa;
         this.entityManager = entityManager;
+    }
+
+    @Override
+    public Optional<RentalAgreement> withId(UUID rentalId) {
+        return jpa.findById(rentalId);
+    }
+
+    @Override
+    public Optional<RentalAgreement> lockWithId(UUID rentalId) {
+        return Optional.ofNullable(entityManager.find(RentalAgreement.class, rentalId, LockModeType.PESSIMISTIC_WRITE));
     }
 
     @Override

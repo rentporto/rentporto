@@ -49,6 +49,8 @@ public abstract class BusinessException extends RuntimeException {
         /** The request conflicts with the current state, e.g. a quote already used (409). */
         CONFLICT,
         /** The request is well formed but breaks a rule, e.g. a driver not eligible (422). */
-        UNPROCESSABLE
+        UNPROCESSABLE,
+        /** Another service the request needs did not answer; the client can try again (503). */
+        UNAVAILABLE
     }
 }

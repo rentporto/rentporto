@@ -7,20 +7,28 @@ import java.lang.annotation.Target;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.wiremock.spring.ConfigureWireMock;
+import org.wiremock.spring.EnableWireMock;
 import pt.rentporto.messaging.testing.MessagingContainers;
 import pt.rentporto.messaging.testing.MessagingRecords;
 import pt.rentporto.web.testing.TestJwtDecoder;
 
 /**
- * Starts the service against PostgreSQL and RabbitMQ, with the schema checked against the entities and the tables of
- * the outbox. Every test class uses the same settings, so they share one context and one database.
+ * Starts the service against PostgreSQL and RabbitMQ, without a session open for the whole request, as in
+ * {@code config/application.yml}, with the schema checked against the entities and the tables of the outbox, and with
+ * a WireMock server in the place of the fleet-service and of the booking-service. Every test class uses the same
+ * settings, so they share one context and one database.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @SpringBootTest(properties = {
         "spring.jpa.hibernate.ddl-auto=validate",
+        "spring.jpa.open-in-view=false",
         "spring.flyway.locations=classpath:db/migration,classpath:db/messaging"})
 @AutoConfigureMockMvc
 @Import({TestJwtDecoder.class, MessagingContainers.class, MessagingRecords.class})
+@EnableWireMock({
+        @ConfigureWireMock(name = "fleet-service", baseUrlProperties = "rentporto.services.fleet"),
+        @ConfigureWireMock(name = "booking-service", baseUrlProperties = "rentporto.services.booking")})
 public @interface RentalServiceTest {
 }
