@@ -1,0 +1,28 @@
+info:
+  name: Rentals of the station
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: "{{baseUrl}}/rentals?station=OPO"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the agreements picked up or returned at the airport are listed", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body).to.be.an("array");
+          res.body.forEach(rental => {
+            expect([rental.pickupStation, rental.returnStation]).to.include("OPO");
+          });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

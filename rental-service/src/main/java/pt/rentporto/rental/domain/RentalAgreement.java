@@ -142,6 +142,21 @@ public class RentalAgreement {
     @OrderColumn(name = "charge_order")
     private List<ExtraCharge> extraCharges = new ArrayList<>();
 
+    @Embedded
+    @AttributeOverride(name = "cents", column = @Column(name = "settlement_captured_cents"))
+    private Money settlementCaptured;
+
+    @Embedded
+    @AttributeOverride(name = "cents", column = @Column(name = "settlement_released_cents"))
+    private Money settlementReleased;
+
+    @Embedded
+    @AttributeOverride(name = "cents", column = @Column(name = "settlement_outstanding_cents"))
+    private Money settlementOutstanding;
+
+    @Column(name = "closed_at")
+    private Instant closedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -275,6 +290,47 @@ public class RentalAgreement {
         returnNotes = inspection.notes();
         status = RentalStatus.RETURNED;
         updatedAt = Instant.now();
+    }
+
+    /**
+     * Closes the agreement once its deposit is settled. The deposit released when a discarded agreement is settled
+     * changes nothing, and neither does a settlement that arrives again.
+     *
+     * @param depositId  the deposit that was settled
+     * @param settlement how it was settled
+     * @return {@code true} if the agreement was closed now
+     * @throws InconsistentEventException if the deposit is not the one of the agreement, or the vehicle was not
+     *                                    returned yet
+     */
+    public boolean close(UUID depositId, Settlement settlement) {
+        Objects.requireNonNull(depositId, "depositId");
+        Objects.requireNonNull(settlement, "settlement");
+        if (status == RentalStatus.CLOSED || status == RentalStatus.DISCARDED) {
+            return false;
+        }
+        if (status != RentalStatus.RETURNED) {
+            throw new InconsistentEventException("The rental " + id + " is " + status + " and cannot be closed");
+        }
+        if (!depositId.equals(this.depositId)) {
+            throw new InconsistentEventException(
+                    "The rental " + id + " has the deposit " + this.depositId + ", not " + depositId);
+        }
+        settlementCaptured = settlement.captured();
+        settlementReleased = settlement.released();
+        settlementOutstanding = settlement.outstanding();
+        closedAt = Instant.now();
+        status = RentalStatus.CLOSED;
+        updatedAt = closedAt;
+        return true;
+    }
+
+    /**
+     * What the rental costs in the end: the advance payment plus the extra charges.
+     *
+     * @return the amount
+     */
+    public Money finalTotal() {
+        return Money.ofCents(total.cents() + amountDue().cents());
     }
 
     /**
@@ -415,5 +471,20 @@ public class RentalAgreement {
 
     public List<ExtraCharge> extraCharges() {
         return List.copyOf(extraCharges);
+    }
+
+    /**
+     * How the deposit was settled.
+     *
+     * @return the settlement, or {@code null} until the agreement is closed
+     */
+    public Settlement settlement() {
+        return settlementCaptured == null
+                ? null
+                : new Settlement(settlementCaptured, settlementReleased, settlementOutstanding);
+    }
+
+    public Instant closedAt() {
+        return closedAt;
     }
 }

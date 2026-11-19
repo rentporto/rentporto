@@ -26,7 +26,7 @@ import pt.rentporto.web.testing.TestJwtDecoder;
         "spring.jpa.open-in-view=false",
         "spring.flyway.locations=classpath:db/migration,classpath:db/messaging"})
 @AutoConfigureMockMvc
-@Import({TestJwtDecoder.class, MessagingContainers.class, MessagingRecords.class})
+@Import({TestJwtDecoder.class, MessagingContainers.class, MessagingRecords.class, TestAgreements.class})
 @EnableWireMock({
         @ConfigureWireMock(name = "fleet-service", baseUrlProperties = "rentporto.services.fleet"),
         @ConfigureWireMock(name = "booking-service", baseUrlProperties = "rentporto.services.booking")})

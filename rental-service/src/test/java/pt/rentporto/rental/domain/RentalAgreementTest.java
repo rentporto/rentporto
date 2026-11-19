@@ -18,6 +18,8 @@ class RentalAgreementTest {
 
     private static final Instant PICKED_UP_AT = Instant.parse("2026-07-01T09:05:00Z");
     private static final LocalDate TODAY = LocalDate.of(2026, 7, 1);
+    private static final Settlement NOTHING_DUE =
+            new Settlement(Money.ofCents(0), Money.ofCents(60000), Money.ofCents(0));
     private static final AdditionalDriver RUI = new AdditionalDriver(
             "Rui Costa", "P-7654321 0", "B", "PT", LocalDate.of(2015, 3, 1), LocalDate.of(2030, 3, 1));
 
@@ -175,6 +177,55 @@ class RentalAgreementTest {
         agreement.returnAt("MAT", inspection, now);
         assertThatThrownBy(() -> agreement.returnAt("MAT", inspection, now))
                 .isInstanceOf(InvalidRentalStatusException.class);
+    }
+
+    @Test
+    void aReturnedAgreementIsClosedOnceWithItsSettlementAndItsFinalTotal() {
+        UUID deposit = returned();
+        Settlement settlement = new Settlement(Money.ofCents(6150), Money.ofCents(53850), Money.ofCents(0));
+
+        assertThat(agreement.close(deposit, settlement)).isTrue();
+        assertThat(agreement.status()).isEqualTo(RentalStatus.CLOSED);
+        assertThat(agreement.settlement()).isEqualTo(settlement);
+        assertThat(agreement.closedAt()).isNotNull();
+        assertThat(agreement.finalTotal()).isEqualTo(Money.ofCents(19680 + 6150));
+
+        assertThat(agreement.close(deposit, new Settlement(Money.ofCents(1), Money.ofCents(1), Money.ofCents(1))))
+                .isFalse();
+        assertThat(agreement.settlement()).isEqualTo(settlement);
+    }
+
+    @Test
+    void theSettlementOfADiscardedAgreementChangesNothing() {
+        agreement.recordDeposit(UUID.randomUUID());
+        agreement.discard(DiscardReason.NO_SHOW);
+
+        assertThat(agreement.close(agreement.depositId(), NOTHING_DUE)).isFalse();
+        assertThat(agreement.status()).isEqualTo(RentalStatus.DISCARDED);
+        assertThat(agreement.settlement()).isNull();
+    }
+
+    @Test
+    void anAgreementIsOnlyClosedAfterTheReturnAndWithItsOwnDeposit() {
+        agreement.recordDeposit(UUID.randomUUID());
+        assertThatThrownBy(() -> agreement.close(agreement.depositId(), NOTHING_DUE))
+                .isInstanceOf(InconsistentEventException.class);
+        agreement.pickUp("AA-12-BB", 12000, List.of(), null, PICKED_UP_AT, TODAY);
+        assertThatThrownBy(() -> agreement.close(agreement.depositId(), NOTHING_DUE))
+                .isInstanceOf(InconsistentEventException.class);
+        agreement.returnAt("MAT", new ReturnInspection(12450, 8, BigDecimal.ZERO, List.of(), null),
+                reservation.period().returnAt());
+
+        assertThatThrownBy(() -> agreement.close(UUID.randomUUID(), NOTHING_DUE))
+                .isInstanceOf(InconsistentEventException.class);
+        assertThat(agreement.status()).isEqualTo(RentalStatus.RETURNED);
+    }
+
+    private UUID returned() {
+        pickedUp();
+        agreement.returnAt("MAT", new ReturnInspection(12000, 8, BigDecimal.ZERO, List.of(), null),
+                reservation.period().returnAt().plusSeconds(3600));
+        return agreement.depositId();
     }
 
     private void pickedUp() {

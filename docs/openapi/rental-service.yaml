@@ -10,8 +10,9 @@ security:
 paths:
   /rentals:
     get:
-      description: "Lists the rental agreements of a station, optionally by status.\
-        \ Roles: AGENT."
+      description: |-
+        Lists the rental agreements that go through a station, picked up or returned there, optionally by status, by
+         pick-up time. Roles: AGENT.
       operationId: rentals
       parameters:
       - description: "code of the station, e.g. <code>OPO</code>; all stations if\
@@ -48,13 +49,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
-      summary: "Lists the rental agreements of a station, optionally by status."
+      summary: |-
+        Lists the rental agreements that go through a station, picked up or returned there, optionally by status, by
+         pick-up time.
       tags:
       - Rentals
   /rentals/{id}:
     get:
-      description: "Reads a rental agreement with its charges and status. Roles: AGENT,\
-        \ CUSTOMER (owner)."
+      description: |-
+        Reads a rental agreement with its charges, its settlement and its status; the agreement of another customer is
+         not found. Roles: AGENT, CUSTOMER (owner).
       operationId: rental
       parameters:
       - description: rental agreement identifier
@@ -77,7 +81,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
-      summary: Reads a rental agreement with its charges and status.
+      summary: |-
+        Reads a rental agreement with its charges, its settlement and its status; the agreement of another customer is
+         not found.
       tags:
       - Rentals
   /rentals/{id}/pickup:
