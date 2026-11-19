@@ -9,22 +9,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import pt.rentporto.notification.api.NotificationsApi;
 import pt.rentporto.web.testing.AllowedRoles;
 import pt.rentporto.web.testing.TestJwt;
-import pt.rentporto.web.testing.TestJwtDecoder;
 
 /**
  * The delivery history is only for administrators, also when called directly, without the gateway.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import(TestJwtDecoder.class)
+@NotificationServiceTest
 class AuthorizationTest {
 
     @Autowired
