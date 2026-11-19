@@ -14,8 +14,8 @@ import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import pt.rentporto.fleet.AcrissCodes;
+import pt.rentporto.fleet.FleetRecords;
 import pt.rentporto.fleet.FleetServiceTest;
 import pt.rentporto.fleet.LicensePlates;
 import pt.rentporto.fleet.domain.AcrissCode;
@@ -47,7 +47,7 @@ class ConcurrentChangesTest {
     private FleetCatalogue catalogue;
 
     @Autowired
-    private JdbcTemplate jdbc;
+    private FleetRecords records;
 
     @Test
     void simultaneousRegistrationsAtAStationPublishEachCapacityOnceInOrder() throws Exception {
@@ -70,9 +70,8 @@ class ConcurrentChangesTest {
         runTogether(i -> () -> fleet.changeStatus(plate, VehicleStatus.IN_MAINTENANCE, "Request " + i, "frota"));
 
         assertThat(capacities(category)).containsExactly(1, 0);
-        assertThat(jdbc.queryForObject(
-                "SELECT count(*) FROM vehicle_status_changes WHERE license_plate = ? AND to_status = 'IN_MAINTENANCE'",
-                Integer.class, plate.value())).isEqualTo(1);
+        assertThat(records.history(plate.value())).filteredOn(change -> change.to() == VehicleStatus.IN_MAINTENANCE)
+                .hasSize(1);
     }
 
     @Test
@@ -90,8 +89,7 @@ class ConcurrentChangesTest {
         });
 
         assertThat(capacities(category)).containsExactly(1, 0);
-        assertThat(jdbc.queryForObject(
-                "SELECT count(*) FROM transfers WHERE license_plate = ?", Integer.class, plate.value())).isEqualTo(1);
+        assertThat(records.transfers(plate.value())).isEqualTo(1);
     }
 
     @Test
@@ -125,9 +123,7 @@ class ConcurrentChangesTest {
                 i -> () -> assignments.assign(rental, category, "TRD", "key-" + rental, "agente").plate());
 
         assertThat(results.stream().distinct()).hasSize(1);
-        assertThat(jdbc.queryForObject(
-                "SELECT count(*) FROM vehicles WHERE category_code = ? AND status = 'RENTED'", Integer.class,
-                category.value())).isEqualTo(1);
+        assertThat(records.vehicles(category.value(), VehicleStatus.RENTED)).isEqualTo(1);
     }
 
     private AcrissCode newCategory() {
@@ -157,11 +153,6 @@ class ConcurrentChangesTest {
     }
 
     private List<Integer> capacities(AcrissCode category) {
-        return jdbc.queryForList(
-                "SELECT (payload -> 'payload' ->> 'capacity')::int FROM outbox"
-                        + " WHERE routing_key = 'fleet.station-capacity-changed'"
-                        + " AND payload -> 'payload' ->> 'stationCode' = 'TRD'"
-                        + " AND payload -> 'payload' ->> 'categoryCode' = ? ORDER BY id",
-                Integer.class, category.value());
+        return records.capacities("TRD", category.value());
     }
 }

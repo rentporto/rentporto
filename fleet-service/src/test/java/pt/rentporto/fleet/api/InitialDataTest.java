@@ -9,8 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.rentporto.fleet.FleetRecords;
 import pt.rentporto.fleet.FleetServiceTest;
 
 /**
@@ -26,7 +26,7 @@ class InitialDataTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private JdbcTemplate jdbc;
+    private FleetRecords records;
 
     @Test
     void theFourStationsExist() throws Exception {
@@ -56,12 +56,6 @@ class InitialDataTest {
 
     @Test
     void eachExampleCategoryIsPublishedOnce() {
-        List<String> published = jdbc.queryForList(
-                "SELECT payload ->> 'correlationId' FROM outbox WHERE routing_key = 'fleet.vehicle-category-changed'"
-                        + " AND payload ->> 'correlationId' IN ('MBMR', 'ECMR', 'CDMR', 'IFAR', 'PDAR')"
-                        + " ORDER BY 1",
-                String.class);
-
-        assertThat(published).isEqualTo(EXAMPLES);
+        assertThat(EXAMPLES).allSatisfy(code -> assertThat(records.categoryEvents(code)).hasSize(1));
     }
 }

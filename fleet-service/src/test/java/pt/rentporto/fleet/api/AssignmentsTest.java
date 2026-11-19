@@ -11,16 +11,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import pt.rentporto.fleet.AcrissCodes;
+import pt.rentporto.fleet.FleetRecords;
 import pt.rentporto.fleet.FleetServiceTest;
 import pt.rentporto.fleet.LicensePlates;
 import pt.rentporto.fleet.application.FleetCatalogue;
 import pt.rentporto.fleet.domain.AcrissCode;
 import pt.rentporto.fleet.domain.DriverRequirements;
+import pt.rentporto.fleet.domain.StatusChange;
+import pt.rentporto.fleet.domain.VehicleAssignment;
+import pt.rentporto.fleet.domain.VehicleStatus;
 import pt.rentporto.web.testing.TestJwt;
 
 /**
@@ -36,7 +39,7 @@ class AssignmentsTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private JdbcTemplate jdbc;
+    private FleetRecords records;
 
     @Autowired
     private FleetCatalogue catalogue;
@@ -55,22 +58,15 @@ class AssignmentsTest {
                 .andExpect(jsonPath("$.licensePlate").value(second))
                 .andExpect(jsonPath("$.odometerKm").value(500));
 
-        assertThat(jdbc.queryForObject(
-                "SELECT status FROM vehicles WHERE license_plate = ?", String.class, second)).isEqualTo("RENTED");
-        assertThat(jdbc.queryForMap(
-                "SELECT license_plate, station_code, category_code FROM vehicle_assignments WHERE rental_id = ?",
-                rental))
-                .containsEntry("license_plate", second)
-                .containsEntry("station_code", "OPO")
-                .containsEntry("category_code", category);
-        assertThat(jdbc.queryForMap(
-                "SELECT from_status, to_status, reason, changed_by FROM vehicle_status_changes"
-                        + " WHERE license_plate = ? ORDER BY id DESC LIMIT 1", second))
-                .containsEntry("from_status", "AVAILABLE")
-                .containsEntry("to_status", "RENTED")
-                .containsEntry("reason", "Rental " + rental)
-                .containsEntry("changed_by", "agente");
-        assertThat(capacityEvents(category)).isEqualTo(4);
+        assertThat(records.vehicle(second).status()).isEqualTo(VehicleStatus.RENTED);
+        VehicleAssignment assignment = records.assignment(rental);
+        assertThat(assignment.plate().value()).isEqualTo(second);
+        assertThat(assignment.station()).isEqualTo("OPO");
+        assertThat(assignment.category().value()).isEqualTo(category);
+        assertThat(records.history(second).getLast())
+                .extracting(StatusChange::from, StatusChange::to, StatusChange::reason, StatusChange::changedBy)
+                .containsExactly(VehicleStatus.AVAILABLE, VehicleStatus.RENTED, "Rental " + rental, "agente");
+        assertThat(records.capacities(category)).hasSize(4);
     }
 
     @Test
@@ -87,9 +83,7 @@ class AssignmentsTest {
         assign(rental, category, "CMP", "another-" + rental)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("RENTAL_ALREADY_ASSIGNED"));
-        assertThat(jdbc.queryForObject(
-                "SELECT count(*) FROM vehicles WHERE category_code = ? AND status = 'RENTED'", Integer.class, category))
-                .isEqualTo(1);
+        assertThat(records.vehicles(category, VehicleStatus.RENTED)).isEqualTo(1);
     }
 
     @Test
@@ -161,12 +155,5 @@ class AssignmentsTest {
             request.header("Idempotency-Key", key);
         }
         return mockMvc.perform(request);
-    }
-
-    private int capacityEvents(String category) {
-        return jdbc.queryForObject(
-                "SELECT count(*) FROM outbox WHERE routing_key = 'fleet.station-capacity-changed'"
-                        + " AND payload -> 'payload' ->> 'categoryCode' = ?",
-                Integer.class, category);
     }
 }

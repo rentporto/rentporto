@@ -18,10 +18,10 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import pt.rentporto.fleet.AcrissCodes;
+import pt.rentporto.fleet.FleetRecords;
 import pt.rentporto.fleet.FleetServiceTest;
 import pt.rentporto.web.testing.TestJwt;
 
@@ -41,7 +41,7 @@ class CategoriesTest {
     private RabbitTemplate rabbit;
 
     @Autowired
-    private JdbcTemplate jdbc;
+    private FleetRecords records;
 
     @Test
     void anyoneReadsTheCategoriesWithTheirRequirementsWithoutLoggingIn() throws Exception {
@@ -104,10 +104,7 @@ class CategoriesTest {
         change(code, "Group K - Large van", 25, 4).andExpect(status().isOk());
 
         assertThat(eventsInTheOutbox(code)).isEqualTo(2);
-        String last = jdbc.queryForObject(
-                "SELECT payload::text FROM outbox WHERE routing_key = 'fleet.vehicle-category-changed'"
-                        + " AND payload ->> 'correlationId' = ? ORDER BY id DESC LIMIT 1",
-                String.class, code);
+        String last = records.categoryEvents(code).getLast();
         assertThat(JsonPath.<String>read(last, "$.payload.name")).isEqualTo("Group K - Large van");
         assertThat(JsonPath.<Integer>read(last, "$.payload.minimumAge")).isEqualTo(25);
         assertThat(JsonPath.<Integer>read(last, "$.payload.minimumLicenseYears")).isEqualTo(4);
@@ -192,9 +189,6 @@ class CategoriesTest {
     }
 
     private int eventsInTheOutbox(String code) {
-        return jdbc.queryForObject(
-                "SELECT count(*) FROM outbox WHERE routing_key = 'fleet.vehicle-category-changed'"
-                        + " AND payload ->> 'correlationId' = ?",
-                Integer.class, code);
+        return records.categoryEvents(code).size();
     }
 }

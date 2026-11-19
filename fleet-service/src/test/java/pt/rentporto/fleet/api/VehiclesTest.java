@@ -1,6 +1,7 @@
 package pt.rentporto.fleet.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.awaitility.Awaitility.await;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -11,9 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,16 +23,21 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import pt.rentporto.fleet.AcrissCodes;
+import pt.rentporto.fleet.FleetRecords;
 import pt.rentporto.fleet.FleetServiceTest;
 import pt.rentporto.fleet.LicensePlates;
+import pt.rentporto.fleet.application.FleetAssignments;
 import pt.rentporto.fleet.application.FleetCatalogue;
+import pt.rentporto.fleet.application.FleetTransfers;
 import pt.rentporto.fleet.domain.AcrissCode;
 import pt.rentporto.fleet.domain.DriverRequirements;
+import pt.rentporto.fleet.domain.LicensePlate;
+import pt.rentporto.fleet.domain.StatusChange;
+import pt.rentporto.fleet.domain.VehicleStatus;
 import pt.rentporto.web.testing.TestJwt;
 
 /**
@@ -52,10 +57,16 @@ class VehiclesTest {
     private RabbitTemplate rabbit;
 
     @Autowired
-    private JdbcTemplate jdbc;
+    private FleetRecords records;
 
     @Autowired
     private FleetCatalogue catalogue;
+
+    @Autowired
+    private FleetAssignments assignments;
+
+    @Autowired
+    private FleetTransfers transfers;
 
     @Test
     void aRegisteredVehicleIsAvailableWithAFullTankAndRaisesTheCapacityOfItsStation() throws Exception {
@@ -166,13 +177,12 @@ class VehiclesTest {
                 .andExpect(jsonPath("$.status").value("AVAILABLE"));
 
         assertThat(capacities("MAT", category)).containsExactly(1, 0, 1);
-        assertThat(jdbc.queryForList(
-                "SELECT from_status, to_status, reason, changed_by FROM vehicle_status_changes"
-                        + " WHERE license_plate = ? ORDER BY id", plate))
+        assertThat(records.history(plate))
+                .extracting(StatusChange::from, StatusChange::to, StatusChange::reason, StatusChange::changedBy)
                 .containsExactly(
-                        historyEntry(null, "AVAILABLE", null),
-                        historyEntry("AVAILABLE", "IN_MAINTENANCE", "Brake service"),
-                        historyEntry("IN_MAINTENANCE", "AVAILABLE", null));
+                        tuple(null, VehicleStatus.AVAILABLE, null, "frota"),
+                        tuple(VehicleStatus.AVAILABLE, VehicleStatus.IN_MAINTENANCE, "Brake service", "frota"),
+                        tuple(VehicleStatus.IN_MAINTENANCE, VehicleStatus.AVAILABLE, null, "frota"));
     }
 
     @Test
@@ -203,15 +213,21 @@ class VehiclesTest {
                 .andExpect(jsonPath("$.status").value("AVAILABLE"));
 
         assertThat(capacities("OPO", category)).containsExactly(1);
-        assertThat(historyEntries(plate)).isEqualTo(1);
+        assertThat(records.history(plate)).hasSize(1);
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"RENTED", "IN_TRANSFER"})
     void aRentedVehicleOrOneInTransferOnlyBecomesAvailableThroughItsOwnFlow(String state) throws Exception {
+        String category = newCategory();
         String plate = LicensePlates.unique();
-        register(plate, newCategory(), "OPO", 0, null).andExpect(status().isCreated());
-        jdbc.update("UPDATE vehicles SET status = ? WHERE license_plate = ?", state, plate);
+        register(plate, category, "OPO", 0, null).andExpect(status().isCreated());
+        if (state.equals("RENTED")) {
+            assignments.assign(UUID.randomUUID(), new AcrissCode(category), "OPO", "assign-" + plate, "agente");
+        } else {
+            transfers.start(new LicensePlate(plate), "MAT", null, "frota");
+        }
+        assertThat(records.vehicle(plate).status()).hasToString(state);
 
         changeStatus(plate, "AVAILABLE", null)
                 .andExpect(status().isConflict())
@@ -271,26 +287,7 @@ class VehiclesTest {
     }
 
     private List<Integer> capacities(String station, String category) {
-        return jdbc.queryForList(
-                "SELECT (payload -> 'payload' ->> 'capacity')::int FROM outbox"
-                        + " WHERE routing_key = 'fleet.station-capacity-changed'"
-                        + " AND payload -> 'payload' ->> 'stationCode' = ?"
-                        + " AND payload -> 'payload' ->> 'categoryCode' = ? ORDER BY id",
-                Integer.class, station, category);
-    }
-
-    private int historyEntries(String plate) {
-        return jdbc.queryForObject(
-                "SELECT count(*) FROM vehicle_status_changes WHERE license_plate = ?", Integer.class, plate);
-    }
-
-    private static Map<String, Object> historyEntry(String from, String to, String reason) {
-        Map<String, Object> entry = new LinkedHashMap<>();
-        entry.put("from_status", from);
-        entry.put("to_status", to);
-        entry.put("reason", reason);
-        entry.put("changed_by", "frota");
-        return entry;
+        return records.capacities(station, category);
     }
 
     private String eventFor(String plate) {

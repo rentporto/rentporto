@@ -3,6 +3,7 @@ package pt.rentporto.fleet.infrastructure.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,7 +11,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import pt.rentporto.fleet.AcrissCodes;
@@ -41,15 +41,19 @@ class JpaVehiclesTest {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
-    @Autowired
-    private JdbcTemplate jdbc;
-
     @Test
     void theCapacityCountsTheAvailableAndTheRentedVehiclesOfTheCategoryAtTheStation() {
         AcrissCode category = newCategory();
         for (VehicleStatus status : VehicleStatus.values()) {
-            LicensePlate plate = add(category, "OPO");
-            jdbc.update("UPDATE vehicles SET status = ? WHERE license_plate = ?", status.name(), plate.value());
+            Vehicle vehicle = Vehicle.register(new LicensePlate(LicensePlates.unique()), category, "OPO", 0, null);
+            switch (status) {
+                case AVAILABLE -> { }
+                case RENTED -> vehicle.assignTo(UUID.randomUUID(), "key");
+                case IN_TRANSFER -> vehicle.startTransfer("MAT", null);
+                case IN_MAINTENANCE, RETIRED -> vehicle.changeStatus(status);
+            }
+            assertThat(vehicle.status()).isEqualTo(status);
+            add(vehicle);
         }
         add(category, "CMP");
         add(newCategory(), "OPO");
@@ -116,7 +120,10 @@ class JpaVehiclesTest {
     }
 
     private void add(LicensePlate plate, AcrissCode category, String station) {
-        new TransactionTemplate(transactionManager).executeWithoutResult(
-                status -> vehicles.add(Vehicle.register(plate, category, station, 0, null)));
+        add(Vehicle.register(plate, category, station, 0, null));
+    }
+
+    private void add(Vehicle vehicle) {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> vehicles.add(vehicle));
     }
 }
