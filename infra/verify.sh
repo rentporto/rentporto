@@ -32,6 +32,25 @@ bindings=$(curl -fsS -u rentporto:rentporto http://localhost:15672/api/exchanges
 echo "RabbitMQ: $queues queues and $bindings bindings loaded from definitions.json"
 
 curl -fsS http://localhost:9090/-/ready >/dev/null || { echo "FAIL: Prometheus is not ready"; exit 1; }
-curl -fsS -u "admin:${GRAFANA_PASSWORD:-rentporto}" http://localhost:3000/api/datasources/uid/prometheus/health \
+rabbitmq_up=""
+for _ in $(seq 1 15); do
+    rabbitmq_up=$(curl -fsS 'http://localhost:9090/api/v1/query?query=up%7Bjob%3D%22rabbitmq%22%7D' \
+        | sed -n 's/.*"value":\[[^,]*,"\([0-9]*\)".*/\1/p')
+    [[ "$rabbitmq_up" == "1" ]] && break
+    sleep 2
+done
+[[ "$rabbitmq_up" == "1" ]] || { echo "FAIL: Prometheus does not scrape the queues of RabbitMQ"; exit 1; }
+echo "Prometheus: scrapes the queues of RabbitMQ"
+
+grafana="admin:${GRAFANA_PASSWORD:-rentporto}"
+curl -fsS -u "$grafana" http://localhost:3000/api/datasources/uid/prometheus/health \
     | grep -q '"status":"OK"' || { echo "FAIL: the Prometheus datasource of Grafana is not working"; exit 1; }
-echo "Grafana: the Prometheus datasource is provisioned and working"
+curl -fsS -u "$grafana" http://localhost:3000/api/dashboards/uid/rentporto | grep -q '"uid":"rentporto"' \
+    || { echo "FAIL: the RentPorto dashboard is not provisioned in Grafana"; exit 1; }
+queries=0
+for query in $(python3 infra/grafana/dashboard-queries.py infra/grafana/dashboards/rentporto.json); do
+    curl -fsS "http://localhost:9090/api/v1/query?query=$query" 2>/dev/null | grep -q '"status":"success"' \
+        || { echo "FAIL: Prometheus rejects a query of the dashboard: $(python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))' "$query")"; exit 1; }
+    queries=$((queries + 1))
+done
+echo "Grafana: the Prometheus datasource and the RentPorto dashboard are provisioned; Prometheus accepts its $queries queries"

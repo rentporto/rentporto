@@ -36,6 +36,14 @@ public interface RentalAgreements {
     List<RentalAgreement> matching(String station, RentalStatus status);
 
     /**
+     * Counts the agreements in a state.
+     *
+     * @param status the state
+     * @return how many agreements are in it
+     */
+    long countIn(RentalStatus status);
+
+    /**
      * Finds the agreement of a reservation.
      *
      * @param reservationId the reservation

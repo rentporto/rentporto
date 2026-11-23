@@ -14,3 +14,12 @@ scrape_configs:
           - host.docker.internal:8084
           - host.docker.internal:8085
           - host.docker.internal:8086
+
+  - job_name: rabbitmq
+    metrics_path: /metrics/detailed
+    params:
+      family: [queue_coarse_metrics, queue_consumer_count]
+      vhost: ["/"]
+    static_configs:
+      - targets:
+          - rabbitmq:15692

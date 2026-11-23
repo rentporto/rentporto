@@ -49,6 +49,15 @@ class ConfigClientTest {
         }
     }
 
+    @ParameterizedTest
+    @CsvSource({"dev", "k8s"})
+    void recordsTheLatencyOfTheRequestsInAHistogramForTheDashboard(String profile) {
+        try (ConfigurableApplicationContext client = startClient(profile, "http://localhost:" + port)) {
+            assertThat(client.getEnvironment().getProperty(
+                    "management.metrics.distribution.percentiles-histogram.http.server.requests")).isEqualTo("true");
+        }
+    }
+
     @Test
     void doesNotStartWithoutTheConfigServer() throws IOException {
         String unavailable = "http://localhost:" + freePort();

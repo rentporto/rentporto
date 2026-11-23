@@ -25,3 +25,12 @@ scrape_configs:
         target_label: app
       - source_labels: [__meta_kubernetes_pod_name]
         target_label: pod
+
+  - job_name: rabbitmq
+    metrics_path: /metrics/detailed
+    params:
+      family: [queue_coarse_metrics, queue_consumer_count]
+      vhost: ["/"]
+    static_configs:
+      - targets:
+          - rabbitmq:15692

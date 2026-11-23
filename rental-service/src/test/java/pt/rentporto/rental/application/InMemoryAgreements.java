@@ -38,6 +38,11 @@ final class InMemoryAgreements implements RentalAgreements {
     }
 
     @Override
+    public long countIn(RentalStatus status) {
+        return byId.values().stream().filter(agreement -> agreement.status() == status).count();
+    }
+
+    @Override
     public Optional<RentalAgreement> forReservation(UUID reservationId) {
         return byId.values().stream().filter(agreement -> agreement.reservationId().equals(reservationId)).findFirst();
     }
