@@ -2,9 +2,9 @@
 # Deploys RentPorto to the k3d cluster "rentporto" (ADR-16, ADR-23): creates the cluster if needed, builds and imports
 # the images, creates the Secrets that do not exist yet, applies the k3d overlay, waits until every pod is ready,
 # logs in through the Ingress, checks the Swagger UI of the gateway, that Prometheus scrapes every application and
-# RabbitMQ, that Grafana has its datasource and the RentPorto dashboard, whose queries Prometheus accepts, and that
-# Zipkin has the trace of the login, and writes the administrator password for the k3d environment of the Bruno
-# collection.
+# RabbitMQ, that Grafana has its datasource and the RentPorto dashboard, whose queries Prometheus accepts, that
+# Zipkin has the trace of the login and that the autoscaler of the booking-service measures its CPU, and writes the
+# administrator password for the k3d environment of the Bruno collection.
 #
 # Usage: ./deploy.sh [--skip-build]
 #   --skip-build   import the images already built, without building them again
@@ -213,6 +213,23 @@ done
     || { echo "FAIL: Zipkin has no trace of the login through the gateway and the auth-service"; exit 1; }
 echo "OK: Zipkin has the trace of the login, through the gateway and the auth-service"
 
+step "Autoscaling"
+autoscaler() {
+    kube get hpa booking-service -o jsonpath="{$1}" 2>/dev/null || true
+}
+utilization=""
+for _ in $(seq 1 60); do
+    utilization=$(autoscaler '.status.currentMetrics[0].resource.current.averageUtilization')
+    [[ -n "$utilization" ]] && break
+    sleep 3
+done
+[[ -n "$utilization" ]] || { echo "FAIL: the autoscaler of the booking-service does not measure its CPU"; exit 1; }
+minimum=$(autoscaler '.spec.minReplicas')
+desired=$(autoscaler '.status.desiredReplicas')
+[[ "$desired" == "$minimum" ]] \
+    || { echo "FAIL: without load, the autoscaler wants $desired replicas of the booking-service, not $minimum"; exit 1; }
+echo "OK: the autoscaler of the booking-service measures its CPU ($utilization% of the request) and keeps $minimum replicas"
+
 printf 'ADMIN_PASSWORD=%s\n' "$admin_password" > docs/bruno/.env
 echo "Bruno: the k3d environment reads the administrator password from docs/bruno/.env"
 
@@ -229,4 +246,5 @@ echo "  kubectl --context k3d-$CLUSTER -n $NAMESPACE get secret auth-service -o 
 echo "Grafana: kubectl --context k3d-$CLUSTER -n $NAMESPACE port-forward svc/grafana 3000, then the RentPorto dashboard at http://localhost:3000/d/rentporto as admin; password:"
 echo "  kubectl --context k3d-$CLUSTER -n $NAMESPACE get secret grafana -o jsonpath='{.data.GF_SECURITY_ADMIN_PASSWORD}' | base64 --decode"
 echo "Zipkin: kubectl --context k3d-$CLUSTER -n $NAMESPACE port-forward svc/zipkin 9411, then http://localhost:9411"
+echo "Autoscaling: ./infra/k8s/load-booking.sh puts load on the booking-service and shows it scaling to 3 replicas"
 echo "Remove everything: k3d cluster delete $CLUSTER"
