@@ -13,7 +13,9 @@ import org.springframework.core.env.MapPropertySource;
  * <ul>
  *   <li>publisher confirms, so the outbox marks a row as published only after the broker accepted it;</li>
  *   <li>3 delivery attempts (1 + 2 retries) with exponential backoff, then reject without requeue, so the message is
- *       dead-lettered to {@code {queue}.dlq}.</li>
+ *       dead-lettered to {@code {queue}.dlq};</li>
+ *   <li>observation of the template and of the listeners, so a message carries the trace in its headers and its
+ *       consumer continues it (ADR-25).</li>
  * </ul>
  */
 public class MessagingDefaults implements EnvironmentPostProcessor {
@@ -26,7 +28,9 @@ public class MessagingDefaults implements EnvironmentPostProcessor {
             "spring.rabbitmq.listener.simple.retry.max-retries", "2",
             "spring.rabbitmq.listener.simple.retry.initial-interval", "1s",
             "spring.rabbitmq.listener.simple.retry.multiplier", "2",
-            "spring.rabbitmq.listener.simple.default-requeue-rejected", "false");
+            "spring.rabbitmq.listener.simple.default-requeue-rejected", "false",
+            "spring.rabbitmq.template.observation-enabled", "true",
+            "spring.rabbitmq.listener.simple.observation-enabled", "true");
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {

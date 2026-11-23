@@ -1,5 +1,7 @@
 package pt.rentporto.messaging;
 
+import io.micrometer.tracing.Tracer;
+import io.micrometer.tracing.propagation.Propagator;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -23,6 +25,7 @@ import pt.rentporto.messaging.lock.SchedulerLocks;
 import pt.rentporto.messaging.outbox.OutboxMessage;
 import pt.rentporto.messaging.outbox.OutboxProperties;
 import pt.rentporto.messaging.outbox.OutboxPublisher;
+import pt.rentporto.messaging.outbox.OutboxTracing;
 import pt.rentporto.messaging.outbox.OutboxWriter;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -66,8 +69,16 @@ public class MessagingAutoConfiguration {
     }
 
     @Bean
-    OutboxWriter outboxWriter(EntityManagerFactory entityManagerFactory, ObjectProvider<JsonMapper> jsonMapper) {
-        return new OutboxWriter(sharedEntityManager(entityManagerFactory), jsonMapper(jsonMapper));
+    OutboxTracing outboxTracing(
+            ObjectProvider<Tracer> tracer, ObjectProvider<Propagator> propagator, ObjectProvider<JsonMapper> jsonMapper) {
+        return new OutboxTracing(tracer.getIfAvailable(() -> Tracer.NOOP),
+                propagator.getIfAvailable(() -> Propagator.NOOP), jsonMapper(jsonMapper));
+    }
+
+    @Bean
+    OutboxWriter outboxWriter(
+            EntityManagerFactory entityManagerFactory, ObjectProvider<JsonMapper> jsonMapper, OutboxTracing tracing) {
+        return new OutboxWriter(sharedEntityManager(entityManagerFactory), jsonMapper(jsonMapper), tracing);
     }
 
     @Bean
@@ -76,13 +87,15 @@ public class MessagingAutoConfiguration {
             PlatformTransactionManager transactionManager,
             RabbitTemplate rabbitTemplate,
             SchedulerLocks schedulerLocks,
-            OutboxProperties properties) {
+            OutboxProperties properties,
+            OutboxTracing tracing) {
         return new OutboxPublisher(
                 sharedEntityManager(entityManagerFactory),
                 new TransactionTemplate(transactionManager),
                 rabbitTemplate,
                 schedulerLocks,
-                properties);
+                properties,
+                tracing);
     }
 
     @Bean

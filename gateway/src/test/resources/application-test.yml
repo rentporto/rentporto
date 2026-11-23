@@ -22,3 +22,11 @@ rentporto:
         period: 1m
     cors:
       allowed-origins: http://localhost:3000
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+    export:
+      zipkin:
+        enabled: false

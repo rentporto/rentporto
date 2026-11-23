@@ -36,6 +36,19 @@ class ConfigClientTest {
         }
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "dev, http://localhost:9411/api/v2/spans",
+            "k8s, http://zipkin:9411/api/v2/spans"})
+    void sendsEveryTraceToTheZipkinOfItsProfile(String profile, String zipkinEndpoint) {
+        try (ConfigurableApplicationContext client = startClient(profile, "http://localhost:" + port)) {
+            assertThat(client.getEnvironment().getProperty("management.tracing.export.zipkin.endpoint"))
+                    .isEqualTo(zipkinEndpoint);
+            assertThat(client.getEnvironment().getProperty("management.tracing.sampling.probability"))
+                    .isEqualTo("1.0");
+        }
+    }
+
     @Test
     void doesNotStartWithoutTheConfigServer() throws IOException {
         String unavailable = "http://localhost:" + freePort();

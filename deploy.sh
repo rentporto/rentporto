@@ -1,8 +1,9 @@
 #!/bin/bash
 # Deploys RentPorto to the k3d cluster "rentporto" (ADR-16, ADR-23): creates the cluster if needed, builds and imports
 # the images, creates the Secrets that do not exist yet, applies the k3d overlay, waits until every pod is ready,
-# logs in through the Ingress, checks that Prometheus scrapes every application and that Grafana has its datasource,
-# and writes the administrator password for the k3d environment of the Bruno collection.
+# logs in through the Ingress, checks that Prometheus scrapes every application, that Grafana has its datasource and
+# that Zipkin has the trace of the login, and writes the administrator password for the k3d environment of the Bruno
+# collection.
 #
 # Usage: ./deploy.sh [--skip-build]
 #   --skip-build   import the images already built, without building them again
@@ -118,7 +119,7 @@ fi
 
 step "Waiting for the pods"
 kube rollout status statefulset/postgres statefulset/rabbitmq --timeout=10m
-for app in mailpit prometheus grafana $APPS; do
+for app in mailpit prometheus grafana zipkin $APPS; do
     kube rollout status "deployment/$app" --timeout=10m
 done
 kube get pods
@@ -174,6 +175,19 @@ datasource=$(kube exec deployment/grafana -- wget -qO- \
 [[ "$datasource" == *'"status":"OK"'* ]] || { echo "FAIL: the Prometheus datasource of Grafana is not working"; exit 1; }
 echo "OK: Grafana has the Prometheus datasource provisioned and working"
 
+step "Traces"
+trace=""
+for _ in $(seq 1 30); do
+    trace=$(kube exec deployment/zipkin -- wget -qO- \
+        'http://localhost:9411/api/v2/traces?serviceName=auth-service&spanName=http%20post%20%2Fauth%2Flogin&limit=1' \
+        || true)
+    [[ "$trace" == *'"serviceName":"gateway"'* && "$trace" == *'"serviceName":"auth-service"'* ]] && break
+    sleep 2
+done
+[[ "$trace" == *'"serviceName":"gateway"'* && "$trace" == *'"serviceName":"auth-service"'* ]] \
+    || { echo "FAIL: Zipkin has no trace of the login through the gateway and the auth-service"; exit 1; }
+echo "OK: Zipkin has the trace of the login, through the gateway and the auth-service"
+
 printf 'ADMIN_PASSWORD=%s\n' "$admin_password" > docs/bruno/.env
 echo "Bruno: the k3d environment reads the administrator password from docs/bruno/.env"
 
@@ -189,4 +203,5 @@ echo "Administrator: $ADMIN_EMAIL; password:"
 echo "  kubectl --context k3d-$CLUSTER -n $NAMESPACE get secret auth-service -o jsonpath='{.data.AUTH_ADMIN_PASSWORD}' | base64 --decode"
 echo "Grafana: kubectl --context k3d-$CLUSTER -n $NAMESPACE port-forward svc/grafana 3000, then http://localhost:3000 as admin; password:"
 echo "  kubectl --context k3d-$CLUSTER -n $NAMESPACE get secret grafana -o jsonpath='{.data.GF_SECURITY_ADMIN_PASSWORD}' | base64 --decode"
+echo "Zipkin: kubectl --context k3d-$CLUSTER -n $NAMESPACE port-forward svc/zipkin 9411, then http://localhost:9411"
 echo "Remove everything: k3d cluster delete $CLUSTER"

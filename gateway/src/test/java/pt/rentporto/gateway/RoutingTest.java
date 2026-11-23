@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -26,8 +27,8 @@ import org.wiremock.spring.InjectWireMock;
 import pt.rentporto.web.testing.TestJwt;
 
 /**
- * Each resource of {@code /api/v1} reaches the service that owns it, without the prefix; {@code /internal} is not
- * reachable, and a service that cannot be reached is answered 503.
+ * Each resource of {@code /api/v1} reaches the service that owns it, without the prefix and in the trace of the
+ * request; {@code /internal} is not reachable, and a service that cannot be reached is answered 503.
  */
 @GatewayTest
 class RoutingTest {
@@ -100,6 +101,21 @@ class RoutingTest {
         owner.verify(getRequestedFor(urlPathEqualTo(path)).withHeader(HttpHeaders.AUTHORIZATION, equalTo(TOKEN)));
         services.values().stream().filter(other -> other != owner)
                 .forEach(other -> other.verify(0, anyRequestedFor(anyUrl())));
+    }
+
+    @Test
+    void continuesTheTraceOfTheRequestInTheCallToTheService() throws Exception {
+        String traceId = "4bf92f3577b34da6a3ce929d0e0e4736";
+        String clientSpanId = "00f067aa0ba902b7";
+        customer.stubFor(com.github.tomakehurst.wiremock.client.WireMock.get("/customers/me").willReturn(ok()));
+
+        mockMvc.perform(get("/api/v1/customers/me")
+                        .header(HttpHeaders.AUTHORIZATION, TOKEN)
+                        .header("traceparent", "00-" + traceId + "-" + clientSpanId + "-01"))
+                .andExpect(status().isOk());
+
+        customer.verify(getRequestedFor(urlPathEqualTo("/customers/me"))
+                .withHeader("traceparent", matching("00-" + traceId + "-(?!" + clientSpanId + ")[0-9a-f]{16}-01")));
     }
 
     @Test

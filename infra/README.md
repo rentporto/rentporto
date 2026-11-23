@@ -14,7 +14,7 @@ Sem `.env`, usam-se as passwords por omissão do `.env.example`.
 | Mailpit | SMTP em `localhost:1025`, caixa em http://localhost:8025 | — |
 | Prometheus | http://localhost:9090, raspa as aplicações que correm no host | — |
 | Grafana | http://localhost:3000, com a datasource Prometheus provisionada | `admin` / `rentporto` |
-| Zipkin | http://localhost:9411 | — |
+| Zipkin | http://localhost:9411, recebe todos os rastos das aplicações que correm no host | — |
 | WireMock | http://localhost:8089, mapeamentos em `infra/wiremock/mappings` | — |
 
 Portas dos serviços: gateway 8080, auth 8081, customer 8082, fleet 8083, booking 8084, rental 8085, notification 8086, config-server 8888.
@@ -73,6 +73,8 @@ Para abrir `http://rentporto.local` no browser, acrescentar ao `/etc/hosts` as d
 O Config Server do cluster lê o ramo `main` do GitHub (ADR-19). Para testar a configuração de um ramo já enviado para o GitHub: `CONFIG_LABEL=<ramo> ./deploy.sh`. A consola do RabbitMQ e a caixa do Mailpit abrem-se com `kubectl --context k3d-rentporto -n rentporto port-forward svc/rabbitmq 15672` e `port-forward svc/mailpit 8025`; a password do RabbitMQ está no Secret `rabbitmq`.
 
 O Prometheus raspa cada pod das aplicações e o Grafana já tem a datasource Prometheus (ADR-24). Abrem-se com `port-forward svc/prometheus 9090` e `port-forward svc/grafana 3000`; o utilizador do Grafana é `admin` e a password está no Secret `grafana`. O Ingress só encaminha `/api`, por isso as métricas não saem do cluster.
+
+As aplicações enviam todos os rastos para o Zipkin do cluster, que os guarda em memória (ADR-25): perdem-se quando o pod reinicia. Abre-se com `port-forward svc/zipkin 9411`.
 
 Os manifestos estão em `infra/k8s`: a base usa as imagens do GHCR e o overlay `k3d` as imagens locais (ADR-23). `./infra/k8s/check-manifests.sh` confirma que todos os contentores têm probes e limites.
 

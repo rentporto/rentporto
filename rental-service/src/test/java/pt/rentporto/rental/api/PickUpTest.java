@@ -2,11 +2,13 @@ package pt.rentporto.rental.api;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -15,12 +17,16 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.jayway.jsonpath.JsonPath;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
 import org.springframework.http.HttpHeaders;
@@ -44,7 +50,7 @@ import pt.rentporto.web.testing.TestJwt;
 
 /**
  * The agent at the counter registers the pick-up: the rental-service holds the deposit in the payments and gets a
- * vehicle from the fleet, both with the token of the agent.
+ * vehicle from the fleet, both with the token of the agent and in the trace of the request.
  */
 @RentalServiceTest
 class PickUpTest {
@@ -52,9 +58,13 @@ class PickUpTest {
     private static final String AGENT = TestJwt.bearer("agente", "AGENT");
     private static final String DEPOSITS = "/internal/deposits";
     private static final String ASSIGNMENTS = "/internal/vehicles/assignments";
+    private static final String RENTAL_STARTED_QUEUE = "notification.rental-started";
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private RabbitTemplate rabbit;
 
     @Autowired
     private PendingAgreements pending;
@@ -122,6 +132,27 @@ class PickUpTest {
                 .findFirst().orElseThrow();
         assertThat(JsonPath.<String>read(started, "$.payload.licensePlate")).isEqualTo("AA-12-BB");
         assertThat(JsonPath.<String>read(started, "$.correlationId")).isEqualTo(agreement.reservationId().toString());
+    }
+
+    @Test
+    void thePickUpPassesItsTraceToThePaymentsTheFleetAndTheRentalStarted() throws Exception {
+        RentalAgreement agreement = awaitingPickup();
+        depositHeld(agreement);
+        vehicleAssigned(agreement, "CC-34-DD", 8000);
+        String traceId = "4bf92f3577b34da6a3ce929d0e0e4736";
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/rentals/{id}/pickup", agreement.id())
+                        .header(HttpHeaders.AUTHORIZATION, AGENT)
+                        .header("traceparent", "00-" + traceId + "-00f067aa0ba902b7-01")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk());
+
+        String inTheTrace = "00-" + traceId + "-[0-9a-f]{16}-01";
+        payments.verify(postRequestedFor(urlEqualTo(DEPOSITS)).withHeader("traceparent", matching(inTheTrace)));
+        fleet.verify(postRequestedFor(urlEqualTo(ASSIGNMENTS)).withHeader("traceparent", matching(inTheTrace)));
+        assertThat(rentalStarted(agreement).getMessageProperties().<String>getHeader("traceparent"))
+                .matches(inTheTrace);
     }
 
     @Test
@@ -269,6 +300,19 @@ class PickUpTest {
         ConfirmedReservation reservation = Reservations.confirmed();
         pending.reservationConfirmed(reservation);
         return agreements.forReservation(reservation.reservationId()).orElseThrow();
+    }
+
+    private Message rentalStarted(RentalAgreement agreement) {
+        AtomicReference<Message> started = new AtomicReference<>();
+        await().atMost(Duration.ofSeconds(15)).until(() -> {
+            Message message = rabbit.receive(RENTAL_STARTED_QUEUE, 500);
+            if (message != null && agreement.id().toString().equals(
+                    JsonPath.read(new String(message.getBody(), StandardCharsets.UTF_8), "$.payload.rentalId"))) {
+                started.set(message);
+            }
+            return started.get() != null;
+        });
+        return started.get();
     }
 
     private UUID depositHeld(RentalAgreement agreement) {

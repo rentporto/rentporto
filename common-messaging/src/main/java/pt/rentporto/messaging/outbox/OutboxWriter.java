@@ -9,7 +9,7 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Records outgoing messages in the same transaction as the state change that produced them. The
  * {@link OutboxPublisher} sends them after the commit, so a message is never lost and never sent for a change that was
- * rolled back.
+ * rolled back. Each message keeps the trace of the request that wrote it.
  */
 public class OutboxWriter {
 
@@ -17,16 +17,19 @@ public class OutboxWriter {
 
     private final EntityManager entityManager;
     private final JsonMapper jsonMapper;
+    private final OutboxTracing tracing;
 
     /**
      * Creates a writer.
      *
      * @param entityManager shared entity manager of the service, bound to the current transaction
      * @param jsonMapper    mapper used to serialise the envelopes
+     * @param tracing       keeps the trace of the request with the message
      */
-    public OutboxWriter(EntityManager entityManager, JsonMapper jsonMapper) {
+    public OutboxWriter(EntityManager entityManager, JsonMapper jsonMapper, OutboxTracing tracing) {
         this.entityManager = entityManager;
         this.jsonMapper = jsonMapper;
+        this.tracing = tracing;
     }
 
     /**
@@ -55,7 +58,7 @@ public class OutboxWriter {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("The outbox must be written in the transaction of the state change");
         }
-        entityManager.persist(new OutboxMessage(
-                envelope.eventId(), exchange, routingKey, envelope.type(), jsonMapper.writeValueAsString(envelope)));
+        entityManager.persist(new OutboxMessage(envelope.eventId(), exchange, routingKey, envelope.type(),
+                jsonMapper.writeValueAsString(envelope), tracing.currentHeaders()));
     }
 }

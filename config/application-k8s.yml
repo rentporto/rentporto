@@ -3,6 +3,8 @@ rentporto:
     host: postgres
   mailpit:
     host: mailpit
+  zipkin:
+    host: zipkin
   services:
     auth: http://auth-service:8081
     customer: http://customer-service:8082
