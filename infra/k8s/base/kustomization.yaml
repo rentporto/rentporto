@@ -41,3 +41,9 @@ configMapGenerator:
   - name: grafana-datasources
     files:
       - prometheus.yml=../../grafana/provisioning/datasources/prometheus.yml
+  - name: grafana-dashboard-providers
+    files:
+      - rentporto.yml=../../grafana/provisioning/dashboards/rentporto.yml
+  - name: grafana-dashboards
+    files:
+      - rentporto.json=../../grafana/dashboards/rentporto.json

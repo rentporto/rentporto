@@ -1,9 +1,9 @@
 #!/bin/bash
 # Deploys RentPorto to the k3d cluster "rentporto" (ADR-16, ADR-23): creates the cluster if needed, builds and imports
 # the images, creates the Secrets that do not exist yet, applies the k3d overlay, waits until every pod is ready,
-# logs in through the Ingress, checks that Prometheus scrapes every application, that Grafana has its datasource and
-# that Zipkin has the trace of the login, and writes the administrator password for the k3d environment of the Bruno
-# collection.
+# logs in through the Ingress, checks that Prometheus scrapes every application and RabbitMQ, that Grafana has its
+# datasource and the RentPorto dashboard, whose queries Prometheus accepts, and that Zipkin has the trace of the login,
+# and writes the administrator password for the k3d environment of the Bruno collection.
 #
 # Usage: ./deploy.sh [--skip-build]
 #   --skip-build   import the images already built, without building them again
@@ -37,7 +37,7 @@ random_password() {
     openssl rand -hex 16
 }
 
-for tool in docker k3d kubectl openssl curl; do
+for tool in docker k3d kubectl openssl curl python3; do
     command -v "$tool" >/dev/null || { echo "Missing $tool"; exit 1; }
 done
 
@@ -158,22 +158,40 @@ expected=0
 for replicas in $(kube get deployment $APPS -o jsonpath='{.items[*].spec.replicas}'); do
     expected=$((expected + replicas))
 done
+prometheus_value() {
+    kube exec deployment/prometheus -- wget -qO- "http://localhost:9090/api/v1/query?query=$1" \
+        | sed -n 's/.*"value":\[[^,]*,"\([0-9]*\)".*/\1/p'
+}
 up=0
+rabbitmq_up=0
 for _ in $(seq 1 30); do
-    up=$(kube exec deployment/prometheus -- wget -qO- 'http://localhost:9090/api/v1/targets?state=active' \
-        | grep -o '"health":"up"' | wc -l | tr -d ' ')
-    [[ "$up" == "$expected" ]] && break
+    up=$(prometheus_value 'sum(up%7Bjob%3D%22rentporto%22%7D)')
+    rabbitmq_up=$(prometheus_value 'up%7Bjob%3D%22rabbitmq%22%7D')
+    [[ "$up" == "$expected" && "$rabbitmq_up" == "1" ]] && break
     sleep 2
 done
 [[ "$up" == "$expected" ]] || { echo "FAIL: $up of $expected application pods are UP in Prometheus"; exit 1; }
-echo "OK: the $expected application pods are UP in Prometheus"
+[[ "$rabbitmq_up" == "1" ]] || { echo "FAIL: Prometheus does not scrape the queues of RabbitMQ"; exit 1; }
+echo "OK: the $expected application pods and the queues of RabbitMQ are UP in Prometheus"
 
 grafana_password=$(kube get secret grafana -o jsonpath='{.data.GF_SECURITY_ADMIN_PASSWORD}' | base64 --decode)
-datasource=$(kube exec deployment/grafana -- wget -qO- \
-    --header "Authorization: Basic $(printf 'admin:%s' "$grafana_password" | base64)" \
+grafana_auth="Authorization: Basic $(printf 'admin:%s' "$grafana_password" | base64)"
+datasource=$(kube exec deployment/grafana -- wget -qO- --header "$grafana_auth" \
     http://localhost:3000/api/datasources/uid/prometheus/health || true)
 [[ "$datasource" == *'"status":"OK"'* ]] || { echo "FAIL: the Prometheus datasource of Grafana is not working"; exit 1; }
 echo "OK: Grafana has the Prometheus datasource provisioned and working"
+
+dashboard=$(kube exec deployment/grafana -- wget -qO- --header "$grafana_auth" \
+    http://localhost:3000/api/dashboards/uid/rentporto || true)
+[[ "$dashboard" == *'"uid":"rentporto"'* ]] || { echo "FAIL: the RentPorto dashboard is not provisioned in Grafana"; exit 1; }
+queries=0
+for query in $(python3 infra/grafana/dashboard-queries.py infra/grafana/dashboards/rentporto.json); do
+    answer=$(kube exec deployment/prometheus -- wget -qO- "http://localhost:9090/api/v1/query?query=$query" || true)
+    [[ "$answer" == *'"status":"success"'* ]] \
+        || { echo "FAIL: Prometheus rejects a query of the dashboard: $(python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))' "$query")"; exit 1; }
+    queries=$((queries + 1))
+done
+echo "OK: Grafana has the RentPorto dashboard, and Prometheus accepts its $queries queries"
 
 step "Traces"
 trace=""
@@ -201,7 +219,7 @@ fi
 echo
 echo "Administrator: $ADMIN_EMAIL; password:"
 echo "  kubectl --context k3d-$CLUSTER -n $NAMESPACE get secret auth-service -o jsonpath='{.data.AUTH_ADMIN_PASSWORD}' | base64 --decode"
-echo "Grafana: kubectl --context k3d-$CLUSTER -n $NAMESPACE port-forward svc/grafana 3000, then http://localhost:3000 as admin; password:"
+echo "Grafana: kubectl --context k3d-$CLUSTER -n $NAMESPACE port-forward svc/grafana 3000, then the RentPorto dashboard at http://localhost:3000/d/rentporto as admin; password:"
 echo "  kubectl --context k3d-$CLUSTER -n $NAMESPACE get secret grafana -o jsonpath='{.data.GF_SECURITY_ADMIN_PASSWORD}' | base64 --decode"
 echo "Zipkin: kubectl --context k3d-$CLUSTER -n $NAMESPACE port-forward svc/zipkin 9411, then http://localhost:9411"
 echo "Remove everything: k3d cluster delete $CLUSTER"

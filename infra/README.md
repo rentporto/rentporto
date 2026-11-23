@@ -12,8 +12,8 @@ Sem `.env`, usam-se as passwords por omissão do `.env.example`.
 | PostgreSQL | `localhost:5432` | uma base e um utilizador por serviço (`auth`, `customer`, `fleet`, `booking`, `rental`, `notification`); a password por omissão é o nome |
 | RabbitMQ | `localhost:5672`, consola em http://localhost:15672 | `rentporto` / `rentporto` |
 | Mailpit | SMTP em `localhost:1025`, caixa em http://localhost:8025 | — |
-| Prometheus | http://localhost:9090, raspa as aplicações que correm no host | — |
-| Grafana | http://localhost:3000, com a datasource Prometheus provisionada | `admin` / `rentporto` |
+| Prometheus | http://localhost:9090, raspa as aplicações que correm no host e as filas do RabbitMQ | — |
+| Grafana | http://localhost:3000, com a datasource Prometheus e o painel RentPorto (http://localhost:3000/d/rentporto) provisionados | `admin` / `rentporto` |
 | Zipkin | http://localhost:9411, recebe todos os rastos das aplicações que correm no host | — |
 | WireMock | http://localhost:8089, mapeamentos em `infra/wiremock/mappings` | — |
 
@@ -72,7 +72,9 @@ Para abrir `http://rentporto.local` no browser, acrescentar ao `/etc/hosts` as d
 
 O Config Server do cluster lê o ramo `main` do GitHub (ADR-19). Para testar a configuração de um ramo já enviado para o GitHub: `CONFIG_LABEL=<ramo> ./deploy.sh`. A consola do RabbitMQ e a caixa do Mailpit abrem-se com `kubectl --context k3d-rentporto -n rentporto port-forward svc/rabbitmq 15672` e `port-forward svc/mailpit 8025`; a password do RabbitMQ está no Secret `rabbitmq`.
 
-O Prometheus raspa cada pod das aplicações e o Grafana já tem a datasource Prometheus (ADR-24). Abrem-se com `port-forward svc/prometheus 9090` e `port-forward svc/grafana 3000`; o utilizador do Grafana é `admin` e a password está no Secret `grafana`. O Ingress só encaminha `/api`, por isso as métricas não saem do cluster.
+O Prometheus raspa cada pod das aplicações e as filas do RabbitMQ, e o Grafana já tem a datasource Prometheus e o painel RentPorto (ADR-24, ADR-26). Abrem-se com `port-forward svc/prometheus 9090` e `port-forward svc/grafana 3000`; o painel fica em http://localhost:3000/d/rentporto, o utilizador do Grafana é `admin` e a password está no Secret `grafana`. O Ingress só encaminha `/api`, por isso as métricas não saem do cluster.
+
+O painel RentPorto está em `infra/grafana/dashboards/rentporto.json` e não se edita no Grafana: muda-se o ficheiro, por pull request. O `infra/verify.sh` e o `deploy.sh` confirmam que está provisionado e que o Prometheus aceita todas as suas consultas.
 
 As aplicações enviam todos os rastos para o Zipkin do cluster, que os guarda em memória (ADR-25): perdem-se quando o pod reinicia. Abre-se com `port-forward svc/zipkin 9411`.
 

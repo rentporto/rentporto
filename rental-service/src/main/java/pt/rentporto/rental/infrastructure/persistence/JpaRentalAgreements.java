@@ -60,6 +60,11 @@ class JpaRentalAgreements implements RentalAgreements {
     }
 
     @Override
+    public long countIn(RentalStatus status) {
+        return jpa.countByStatus(status);
+    }
+
+    @Override
     public Optional<RentalAgreement> forReservation(UUID reservationId) {
         return jpa.findByReservationId(reservationId);
     }
