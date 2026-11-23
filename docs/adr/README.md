@@ -32,3 +32,4 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-24](0024-metricas-com-prometheus-e-grafana.md) | Métricas com Prometheus e Grafana: descoberta de pods e métricas só dentro do cluster | Aceite |
 | [ADR-25](0025-rastreio-distribuido-com-zipkin.md) | Rastreio distribuído com Zipkin: propagação W3C e contexto guardado no outbox | Aceite |
 | [ADR-26](0026-painel-do-grafana.md) | Painel do Grafana como código: histogramas, filas do RabbitMQ e estados do negócio | Aceite |
+| [ADR-27](0027-swagger-ui-agregado-no-gateway.md) | Swagger UI agregado no gateway, sem os endpoints internos e com os pedidos pelo gateway | Aceite |

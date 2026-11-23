@@ -1,9 +1,10 @@
 #!/bin/bash
 # Deploys RentPorto to the k3d cluster "rentporto" (ADR-16, ADR-23): creates the cluster if needed, builds and imports
 # the images, creates the Secrets that do not exist yet, applies the k3d overlay, waits until every pod is ready,
-# logs in through the Ingress, checks that Prometheus scrapes every application and RabbitMQ, that Grafana has its
-# datasource and the RentPorto dashboard, whose queries Prometheus accepts, and that Zipkin has the trace of the login,
-# and writes the administrator password for the k3d environment of the Bruno collection.
+# logs in through the Ingress, checks the Swagger UI of the gateway, that Prometheus scrapes every application and
+# RabbitMQ, that Grafana has its datasource and the RentPorto dashboard, whose queries Prometheus accepts, and that
+# Zipkin has the trace of the login, and writes the administrator password for the k3d environment of the Bruno
+# collection.
 #
 # Usage: ./deploy.sh [--skip-build]
 #   --skip-build   import the images already built, without building them again
@@ -142,15 +143,21 @@ for _ in $(seq 1 30); do
     status=$(curl -s -o /dev/null -w '%{http_code}' --resolve "$HOST:80:127.0.0.1" \
         -H "Authorization: Bearer $token" \
         "http://$HOST/api/v1/notifications?customerId=00000000-0000-0000-0000-000000000000")
-    [[ "$status" == "501" ]] && break
+    [[ "$status" == "200" ]] && break
     sleep 2
 done
-[[ "$status" == "501" ]] || { echo "FAIL: the token was not accepted ($status)"; exit 1; }
+[[ "$status" == "200" ]] || { echo "FAIL: the token was not accepted ($status)"; exit 1; }
 echo "OK: the administrator logged in and the gateway and the notification-service accepted the JWT"
 
 status=$(curl -s -o /dev/null -w '%{http_code}' --resolve "$HOST:80:127.0.0.1" "http://$HOST/actuator/prometheus")
 [[ "$status" == "404" ]] || { echo "FAIL: the Ingress exposes the metrics of the gateway ($status)"; exit 1; }
 echo "OK: the Ingress only routes /api, so the metrics stay inside the cluster"
+
+status=$(curl -s -o /dev/null -w '%{http_code}' -L --resolve "$HOST:80:127.0.0.1" "http://$HOST/api/docs")
+docs=$(curl -fsS --resolve "$HOST:80:127.0.0.1" "http://$HOST/api/docs/services/fleet-service" || true)
+[[ "$status" == "200" && "$docs" == *'"/stations"'* && "$docs" == *'"url":"/api/v1"'* && "$docs" != *'/internal/'* ]] \
+    || { echo "FAIL: the Swagger UI of the gateway or the public documents of the services are not reachable"; exit 1; }
+echo "OK: the Swagger UI is at http://$HOST/api/docs, with the services through the gateway and without /internal"
 
 step "Metrics"
 expected=0

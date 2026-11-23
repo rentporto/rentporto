@@ -26,10 +26,14 @@ class GatewaySecurity {
     private static final PathPatternRequestMatcher.Builder PATHS = PathPatternRequestMatcher.withDefaults();
 
     /**
-     * Endpoints open without a token, besides the API docs and the health probes. {@code /api/v1/internal/**} is here
-     * so that it is answered 404, with or without a token, since no route leads to it.
+     * Endpoints open without a token, besides the health probes: the Swagger UI ({@code /api/docs}, which redirects to
+     * {@code /api/swagger-ui}), the documents of the services, and the public endpoints of the catalogue.
+     * {@code /api/v1/internal/**} is here so that it is answered 404, with or without a token, since no route leads to
+     * it.
      */
     static final RequestMatcher PUBLIC = ResourceServerSecurity.publicEndpoints(
+            PATHS.matcher(HttpMethod.GET, "/api/docs/**"),
+            PATHS.matcher(HttpMethod.GET, "/api/swagger-ui/**"),
             PATHS.matcher(HttpMethod.POST, "/api/v1/auth/register"),
             PATHS.matcher(HttpMethod.POST, "/api/v1/auth/login"),
             PATHS.matcher(HttpMethod.GET, "/api/v1/auth/jwks"),
