@@ -4,6 +4,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
@@ -13,12 +14,14 @@ import pt.rentporto.web.testing.TestJwt;
 
 /**
  * Starts the gateway with a WireMock server in the place of each service; the auth-service one also serves the JWK
- * Set of {@link TestJwt}.
+ * Set of {@link TestJwt}. The tracing is on, with every trace sampled as in {@code config/application.yml}, without
+ * sending the spans to Zipkin ({@code application-test.yml}).
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @SpringBootTest
 @AutoConfigureMockMvc
+@AutoConfigureTracing
 @ActiveProfiles("test")
 @EnableWireMock({
         @ConfigureWireMock(name = "auth-service", baseUrlProperties = "rentporto.services.auth"),

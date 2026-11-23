@@ -23,7 +23,8 @@ import pt.rentporto.messaging.lock.SchedulerLocks;
  * Sends the pending outbox messages to RabbitMQ, in the order they were recorded and on one replica at a time.
  *
  * <p>A message is marked as published only after the broker confirms it; the first failure stops the run and the
- * next run starts again from that message, so a message may be sent more than once.
+ * next run starts again from that message, so a message may be sent more than once. Each message is sent in the trace
+ * of the request that wrote it.
  */
 public class OutboxPublisher implements SmartLifecycle {
 
@@ -36,6 +37,7 @@ public class OutboxPublisher implements SmartLifecycle {
     private final RabbitTemplate rabbitTemplate;
     private final SchedulerLocks schedulerLocks;
     private final OutboxProperties properties;
+    private final OutboxTracing tracing;
     private ScheduledExecutorService scheduler;
 
     /**
@@ -46,6 +48,7 @@ public class OutboxPublisher implements SmartLifecycle {
      * @param rabbitTemplate      template whose connection factory has publisher confirms enabled
      * @param schedulerLocks      locks that keep the publisher on a single replica
      * @param properties          polling and confirmation settings
+     * @param tracing             continues the trace of the request that wrote each message
      * @throws IllegalStateException if publisher confirms are disabled
      */
     public OutboxPublisher(
@@ -53,7 +56,8 @@ public class OutboxPublisher implements SmartLifecycle {
             TransactionTemplate transactionTemplate,
             RabbitTemplate rabbitTemplate,
             SchedulerLocks schedulerLocks,
-            OutboxProperties properties) {
+            OutboxProperties properties,
+            OutboxTracing tracing) {
         if (!rabbitTemplate.getConnectionFactory().isPublisherConfirms()) {
             throw new IllegalStateException(
                     "The outbox needs publisher confirms: set spring.rabbitmq.publisher-confirm-type=correlated");
@@ -63,6 +67,7 @@ public class OutboxPublisher implements SmartLifecycle {
         this.rabbitTemplate = rabbitTemplate;
         this.schedulerLocks = schedulerLocks;
         this.properties = properties;
+        this.tracing = tracing;
     }
 
     @Override
@@ -98,7 +103,7 @@ public class OutboxPublisher implements SmartLifecycle {
                 .setMaxResults(properties.batchSize())
                 .getResultList());
         for (OutboxMessage message : pending) {
-            if (!sendAndConfirm(message)) {
+            if (!tracing.publishInTrace(message.headers(), message.routingKey(), () -> sendAndConfirm(message))) {
                 return;
             }
             transactionTemplate.executeWithoutResult(status -> entityManager

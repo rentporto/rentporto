@@ -30,3 +30,4 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-22](0022-chamadas-entre-servicos-com-o-jwt-do-utilizador.md) | Chamadas entre serviços com o JWT do utilizador | Aceite |
 | [ADR-23](0023-disponibilizacao-no-k3d.md) | Disponibilização no k3d: segredos gerados no deploy, imagens por overlay e ordem de arranque | Aceite |
 | [ADR-24](0024-metricas-com-prometheus-e-grafana.md) | Métricas com Prometheus e Grafana: descoberta de pods e métricas só dentro do cluster | Aceite |
+| [ADR-25](0025-rastreio-distribuido-com-zipkin.md) | Rastreio distribuído com Zipkin: propagação W3C e contexto guardado no outbox | Aceite |

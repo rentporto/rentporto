@@ -60,14 +60,16 @@ public class OutboxMessage {
      * @param routingKey  routing key, or queue name for a command
      * @param messageType envelope type, e.g. {@code ReservationConfirmed}
      * @param payload     envelope serialised as JSON
+     * @param headers     trace propagation headers of the request that wrote it, as a JSON object
      */
-    OutboxMessage(UUID eventId, String exchange, String routingKey, String messageType, String payload) {
+    OutboxMessage(
+            UUID eventId, String exchange, String routingKey, String messageType, String payload, String headers) {
         this.eventId = eventId;
         this.exchange = exchange;
         this.routingKey = routingKey;
         this.messageType = messageType;
         this.payload = payload;
-        this.headers = "{}";
+        this.headers = headers;
         this.createdAt = Instant.now();
     }
 
@@ -93,5 +95,9 @@ public class OutboxMessage {
 
     String payload() {
         return payload;
+    }
+
+    String headers() {
+        return headers;
     }
 }
