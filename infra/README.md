@@ -80,6 +80,8 @@ O painel RentPorto está em `infra/grafana/dashboards/rentporto.json` e não se 
 
 As aplicações enviam todos os rastos para o Zipkin do cluster, que os guarda em memória (ADR-25): perdem-se quando o pod reinicia. Abre-se com `port-forward svc/zipkin 9411`.
 
+O booking-service escala sozinho entre 2 e 3 réplicas pela CPU (ADR-28); `kubectl --context k3d-rentporto -n rentporto get hpa` mostra a CPU e as réplicas. `./infra/k8s/load-booking.sh` põe carga no booking-service, de dentro do cluster, e mostra-o a chegar às 3 réplicas; com `--scale-down`, espera também que volte a 2, uns 5 minutos depois de a carga parar.
+
 Os manifestos estão em `infra/k8s`: a base usa as imagens do GHCR e o overlay `k3d` as imagens locais (ADR-23). `./infra/k8s/check-manifests.sh` confirma que todos os contentores têm probes e limites.
 
 ## Recomeçar do zero
