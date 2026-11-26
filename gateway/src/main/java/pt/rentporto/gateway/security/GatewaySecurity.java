@@ -43,7 +43,6 @@ class GatewaySecurity {
             PATHS.matcher(HttpMethod.GET, "/api/v1/coverages"),
             PATHS.matcher(HttpMethod.GET, "/api/v1/availability"),
             PATHS.matcher(HttpMethod.POST, "/api/v1/quotes"),
-            PATHS.matcher(HttpMethod.POST, "/api/v1/payments/stripe-webhook"),
             PATHS.matcher("/api/v1/internal/**"));
 
     @Bean

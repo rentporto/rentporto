@@ -41,7 +41,6 @@
         <springdoc-openapi.version>3.2.0</springdoc-openapi.version>
         <therapi.version>0.16.0</therapi.version>
         <json-schema-validator.version>3.0.9</json-schema-validator.version>
-        <stripe-java.version>34.1.0</stripe-java.version>
         <wiremock-spring-boot.version>4.4.3</wiremock-spring-boot.version>
         <archunit.version>1.4.2</archunit.version>
         <bucket4j.version>8.15.0</bucket4j.version>
@@ -111,11 +110,6 @@
                 <groupId>com.networknt</groupId>
                 <artifactId>json-schema-validator</artifactId>
                 <version>${json-schema-validator.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.stripe</groupId>
-                <artifactId>stripe-java</artifactId>
-                <version>${stripe-java.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wiremock.integrations</groupId>

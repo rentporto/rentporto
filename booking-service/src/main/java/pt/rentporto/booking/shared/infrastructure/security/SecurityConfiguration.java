@@ -11,9 +11,9 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import pt.rentporto.web.security.ResourceServerSecurity;
 
 /**
- * Quotes, availability, extras, coverages and the Stripe webhook are public; every other endpoint of the three
- * modules needs a JWT issued by the auth-service, the internal one included: the rental-service sends the token of the
- * agent at the counter (ADR-22). The roles are checked with {@code @PreAuthorize}.
+ * Quotes, availability, extras and coverages are public; every other endpoint of the three modules needs a JWT issued
+ * by the auth-service, the internal one included: the rental-service sends the token of the agent at the counter
+ * (ADR-22). The roles are checked with {@code @PreAuthorize}.
  */
 @Configuration(proxyBeanMethods = false)
 @EnableMethodSecurity
@@ -25,8 +25,7 @@ class SecurityConfiguration {
             PATHS.matcher(HttpMethod.POST, "/quotes"),
             PATHS.matcher(HttpMethod.GET, "/extras"),
             PATHS.matcher(HttpMethod.GET, "/coverages"),
-            PATHS.matcher(HttpMethod.GET, "/availability"),
-            PATHS.matcher(HttpMethod.POST, "/payments/stripe-webhook"));
+            PATHS.matcher(HttpMethod.GET, "/availability"));
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, ResourceServerSecurity resourceServer) {
