@@ -1,6 +1,6 @@
 package pt.rentporto.gateway.docs;
 
-import pt.rentporto.web.BusinessException;
+import pt.rentporto.web.error.BusinessException;
 
 /**
  * There is no service with an API by the name asked for.

@@ -4,8 +4,8 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import pt.rentporto.events.EventEnvelope;
 import pt.rentporto.events.rental.VehicleReturned;
-import pt.rentporto.fleet.application.FleetReturns;
-import pt.rentporto.fleet.domain.LicensePlate;
+import pt.rentporto.fleet.application.service.FleetReturns;
+import pt.rentporto.fleet.domain.model.LicensePlate;
 import pt.rentporto.messaging.consumer.IdempotentConsumer;
 
 /**

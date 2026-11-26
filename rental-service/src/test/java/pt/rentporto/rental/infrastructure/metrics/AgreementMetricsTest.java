@@ -8,9 +8,9 @@ import java.util.EnumMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import pt.rentporto.rental.RentalServiceTest;
-import pt.rentporto.rental.TestAgreements;
-import pt.rentporto.rental.domain.RentalStatus;
+import pt.rentporto.rental.domain.model.RentalStatus;
+import pt.rentporto.rental.testing.RentalServiceTest;
+import pt.rentporto.rental.testing.TestAgreements;
 
 /**
  * The metrics of the RentPorto dashboard: the agreements in each state, and the circuit breaker of the payments from

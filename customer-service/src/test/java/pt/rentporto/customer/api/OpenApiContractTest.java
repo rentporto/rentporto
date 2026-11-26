@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
-import pt.rentporto.customer.CustomerServiceTest;
+import pt.rentporto.customer.testing.CustomerServiceTest;
 
 /**
  * Fails when the generated OpenAPI document differs from the committed contract. To accept a change, run with

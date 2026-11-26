@@ -4,8 +4,8 @@ import java.nio.charset.StandardCharsets;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import pt.rentporto.auth.application.PasswordHasher;
-import pt.rentporto.auth.application.PasswordTooLongException;
+import pt.rentporto.auth.application.exception.PasswordTooLongException;
+import pt.rentporto.auth.application.port.PasswordHasher;
 
 /**
  * BCrypt, which only uses the first 72 bytes of a password.

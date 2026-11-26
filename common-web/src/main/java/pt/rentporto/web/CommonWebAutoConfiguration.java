@@ -6,6 +6,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import pt.rentporto.web.error.ProblemDetailsAdvice;
+import pt.rentporto.web.observation.NoActuatorObservations;
+import pt.rentporto.web.openapi.OpenApiContract;
 
 /**
  * Error format, OpenAPI setup and the actuator out of the observations, for a servlet web service.

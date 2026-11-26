@@ -6,9 +6,9 @@ import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.fleet.domain.RentalAlreadyAssignedException;
-import pt.rentporto.fleet.domain.VehicleAssignment;
-import pt.rentporto.fleet.domain.VehicleAssignments;
+import pt.rentporto.fleet.domain.exception.RentalAlreadyAssignedException;
+import pt.rentporto.fleet.domain.model.VehicleAssignment;
+import pt.rentporto.fleet.domain.repository.VehicleAssignments;
 
 /**
  * Assignments in PostgreSQL. The lock of a rental is a transaction-scoped advisory lock on its id; the rental is also

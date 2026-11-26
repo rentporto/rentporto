@@ -3,11 +3,11 @@ package pt.rentporto.customer.infrastructure.messaging;
 import java.time.Clock;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
-import pt.rentporto.customer.application.CustomerEvents;
-import pt.rentporto.customer.domain.Customer;
+import pt.rentporto.customer.application.port.CustomerEvents;
+import pt.rentporto.customer.domain.model.Customer;
 import pt.rentporto.events.EventEnvelope;
-import pt.rentporto.events.RoutingKeys;
 import pt.rentporto.events.customer.CustomerRegistered;
+import pt.rentporto.events.topology.RoutingKeys;
 import pt.rentporto.messaging.outbox.OutboxWriter;
 
 /**

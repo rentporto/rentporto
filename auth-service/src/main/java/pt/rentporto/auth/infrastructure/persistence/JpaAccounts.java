@@ -3,10 +3,10 @@ package pt.rentporto.auth.infrastructure.persistence;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.auth.domain.Account;
-import pt.rentporto.auth.domain.Accounts;
-import pt.rentporto.auth.domain.Email;
-import pt.rentporto.auth.domain.EmailAlreadyRegisteredException;
+import pt.rentporto.auth.domain.exception.EmailAlreadyRegisteredException;
+import pt.rentporto.auth.domain.model.Account;
+import pt.rentporto.auth.domain.model.Email;
+import pt.rentporto.auth.domain.repository.Accounts;
 
 /**
  * Accounts stored in PostgreSQL with Spring Data JPA.

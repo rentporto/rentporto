@@ -19,8 +19,8 @@ import pt.rentporto.events.reservation.ContractTerms;
 import pt.rentporto.events.reservation.ReservationCancelled;
 import pt.rentporto.events.reservation.ReservationConfirmed;
 import pt.rentporto.events.reservation.ReservationNoShow;
-import pt.rentporto.notification.application.Notice;
-import pt.rentporto.notification.domain.PickupReminder;
+import pt.rentporto.notification.application.model.Notice;
+import pt.rentporto.notification.domain.model.PickupReminder;
 
 class EmailTemplatesTest {
 

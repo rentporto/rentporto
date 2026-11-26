@@ -4,14 +4,14 @@ import java.time.Clock;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import pt.rentporto.events.EventEnvelope;
-import pt.rentporto.events.RoutingKeys;
 import pt.rentporto.events.fleet.StationCapacityChanged;
 import pt.rentporto.events.fleet.VehicleCategoryChanged;
-import pt.rentporto.fleet.application.FleetEvents;
-import pt.rentporto.fleet.domain.DriverRequirements;
-import pt.rentporto.fleet.domain.LicensePlate;
-import pt.rentporto.fleet.domain.StationCapacity;
-import pt.rentporto.fleet.domain.VehicleCategory;
+import pt.rentporto.events.topology.RoutingKeys;
+import pt.rentporto.fleet.application.port.FleetEvents;
+import pt.rentporto.fleet.domain.model.DriverRequirements;
+import pt.rentporto.fleet.domain.model.LicensePlate;
+import pt.rentporto.fleet.domain.model.StationCapacity;
+import pt.rentporto.fleet.domain.model.VehicleCategory;
 import pt.rentporto.messaging.outbox.OutboxWriter;
 
 /**

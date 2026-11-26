@@ -12,10 +12,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
-import pt.rentporto.fleet.api.CategoriesApi;
-import pt.rentporto.fleet.api.StationsApi;
-import pt.rentporto.fleet.api.VehicleAssignmentsApi;
-import pt.rentporto.fleet.api.VehiclesApi;
+import pt.rentporto.fleet.api.contract.CategoriesApi;
+import pt.rentporto.fleet.api.contract.StationsApi;
+import pt.rentporto.fleet.api.contract.VehicleAssignmentsApi;
+import pt.rentporto.fleet.api.contract.VehiclesApi;
+import pt.rentporto.fleet.testing.FleetServiceTest;
 import pt.rentporto.web.testing.AllowedRoles;
 import pt.rentporto.web.testing.TestJwt;
 

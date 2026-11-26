@@ -13,17 +13,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import pt.rentporto.fleet.AcrissCodes;
-import pt.rentporto.fleet.FleetServiceTest;
-import pt.rentporto.fleet.LicensePlates;
-import pt.rentporto.fleet.application.FleetCatalogue;
-import pt.rentporto.fleet.domain.AcrissCode;
-import pt.rentporto.fleet.domain.DriverRequirements;
-import pt.rentporto.fleet.domain.LicensePlate;
-import pt.rentporto.fleet.domain.Vehicle;
-import pt.rentporto.fleet.domain.VehicleAlreadyRegisteredException;
-import pt.rentporto.fleet.domain.VehicleStatus;
-import pt.rentporto.fleet.domain.Vehicles;
+import pt.rentporto.fleet.application.service.FleetCatalogue;
+import pt.rentporto.fleet.domain.exception.VehicleAlreadyRegisteredException;
+import pt.rentporto.fleet.domain.model.AcrissCode;
+import pt.rentporto.fleet.domain.model.DriverRequirements;
+import pt.rentporto.fleet.domain.model.LicensePlate;
+import pt.rentporto.fleet.domain.model.Vehicle;
+import pt.rentporto.fleet.domain.model.VehicleStatus;
+import pt.rentporto.fleet.domain.repository.Vehicles;
+import pt.rentporto.fleet.testing.AcrissCodes;
+import pt.rentporto.fleet.testing.FleetServiceTest;
+import pt.rentporto.fleet.testing.LicensePlates;
 
 /**
  * The capacity counts the available and the rented vehicles of a category at a station, the selection at pick-up

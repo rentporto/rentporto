@@ -3,8 +3,8 @@ package pt.rentporto.notification.infrastructure.persistence;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.notification.domain.Recipient;
-import pt.rentporto.notification.domain.Recipients;
+import pt.rentporto.notification.domain.model.Recipient;
+import pt.rentporto.notification.domain.repository.Recipients;
 
 /**
  * Recipients in PostgreSQL.

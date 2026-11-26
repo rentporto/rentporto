@@ -2,8 +2,8 @@ package pt.rentporto.fleet.infrastructure.persistence;
 
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.fleet.domain.StatusChange;
-import pt.rentporto.fleet.domain.StatusChanges;
+import pt.rentporto.fleet.domain.model.StatusChange;
+import pt.rentporto.fleet.domain.repository.StatusChanges;
 
 /**
  * History of the states of the vehicles in PostgreSQL.

@@ -3,7 +3,7 @@ package pt.rentporto.messaging.outbox;
 import jakarta.persistence.EntityManager;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import pt.rentporto.events.EventEnvelope;
-import pt.rentporto.events.Exchanges;
+import pt.rentporto.events.topology.Exchanges;
 import tools.jackson.databind.json.JsonMapper;
 
 /**

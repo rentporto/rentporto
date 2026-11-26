@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 import pt.rentporto.messaging.lock.SchedulerLocks;
-import pt.rentporto.notification.application.UpcomingPickups;
+import pt.rentporto.notification.application.service.UpcomingPickups;
 
 /**
  * Sends the reminders due at every poll interval, on one replica at a time (ADR-18).

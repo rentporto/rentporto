@@ -18,20 +18,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import pt.rentporto.events.EventEnvelope;
-import pt.rentporto.events.Exchanges;
 import pt.rentporto.events.Money;
 import pt.rentporto.events.RentalPeriod;
-import pt.rentporto.events.RoutingKeys;
 import pt.rentporto.events.customer.CustomerRegistered;
 import pt.rentporto.events.rental.RentalStarted;
 import pt.rentporto.events.reservation.ContractTerms;
 import pt.rentporto.events.reservation.ReservationCancelled;
 import pt.rentporto.events.reservation.ReservationConfirmed;
-import pt.rentporto.notification.Mailbox;
-import pt.rentporto.notification.NotificationServiceTest;
-import pt.rentporto.notification.domain.PickupReminder;
-import pt.rentporto.notification.domain.PickupReminderStatus;
-import pt.rentporto.notification.domain.PickupReminders;
+import pt.rentporto.events.topology.Exchanges;
+import pt.rentporto.events.topology.RoutingKeys;
+import pt.rentporto.notification.domain.model.PickupReminder;
+import pt.rentporto.notification.domain.model.PickupReminderStatus;
+import pt.rentporto.notification.domain.repository.PickupReminders;
+import pt.rentporto.notification.testing.Mailbox;
+import pt.rentporto.notification.testing.NotificationServiceTest;
 import pt.rentporto.web.testing.TestJwt;
 
 /**

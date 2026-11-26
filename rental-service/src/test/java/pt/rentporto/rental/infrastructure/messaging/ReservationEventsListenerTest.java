@@ -18,20 +18,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import pt.rentporto.events.EventEnvelope;
-import pt.rentporto.events.Exchanges;
-import pt.rentporto.events.RoutingKeys;
 import pt.rentporto.events.reservation.ReservationCancelled;
 import pt.rentporto.events.reservation.ReservationConfirmed;
 import pt.rentporto.events.reservation.ReservationNoShow;
+import pt.rentporto.events.topology.Exchanges;
+import pt.rentporto.events.topology.RoutingKeys;
 import pt.rentporto.messaging.testing.MessagingRecords;
-import pt.rentporto.rental.RentalServiceTest;
-import pt.rentporto.rental.Reservations;
-import pt.rentporto.rental.domain.ConfirmedReservation;
-import pt.rentporto.rental.domain.ContractTerms;
-import pt.rentporto.rental.domain.Money;
-import pt.rentporto.rental.domain.RentalAgreement;
-import pt.rentporto.rental.domain.RentalAgreements;
-import pt.rentporto.rental.domain.RentalStatus;
+import pt.rentporto.rental.domain.model.ConfirmedReservation;
+import pt.rentporto.rental.domain.model.ContractTerms;
+import pt.rentporto.rental.domain.model.Money;
+import pt.rentporto.rental.domain.model.RentalAgreement;
+import pt.rentporto.rental.domain.model.RentalStatus;
+import pt.rentporto.rental.domain.repository.RentalAgreements;
+import pt.rentporto.rental.testing.RentalServiceTest;
+import pt.rentporto.rental.testing.Reservations;
 
 /**
  * The reservation module publishes the life of a reservation and the rental-service keeps its agreement in step.
