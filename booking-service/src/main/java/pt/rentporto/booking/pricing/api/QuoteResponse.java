@@ -21,7 +21,7 @@ import pt.rentporto.events.RentalPeriod;
  * @param vat             VAT on the sum of the lines
  * @param total           amount to pay in advance, VAT included
  * @param excess          maximum the customer pays for damages
- * @param securityDeposit amount pre-authorised on the card at pick-up
+ * @param securityDeposit amount held on the card at pick-up
  */
 public record QuoteResponse(
         UUID quoteId,

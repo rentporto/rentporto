@@ -94,15 +94,6 @@ services:
     volumes:
       - ./infra/wiremock:/home/wiremock
 
-  stripe-cli:
-    image: stripe/stripe-cli:v1.55.11
-    profiles: [stripe]
-    command: ["listen", "--forward-to", "http://host.docker.internal:8084/payments/stripe-webhook"]
-    environment:
-      STRIPE_API_KEY: ${STRIPE_API_KEY:-}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
 volumes:
   postgres-data:
   rabbitmq-data:

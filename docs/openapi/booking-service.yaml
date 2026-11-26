@@ -221,8 +221,8 @@ paths:
   /internal/deposits:
     post:
       description: |-
-        Pre-authorises the security deposit at pick-up, called by the rental-service while the customer waits at the
-         desk.
+        Holds the security deposit on the card of the reservation at pick-up, without charging it; called by the
+         rental-service while the customer waits at the desk.
       operationId: authorizeDeposit
       parameters:
       - description: optional key that makes a repeated request return the same deposit
@@ -244,7 +244,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DepositResponse"
-          description: the deposit pre-authorised
+          description: the deposit held
         default:
           content:
             application/problem+json:
@@ -252,8 +252,8 @@ paths:
                 $ref: "#/components/schemas/ProblemDetail"
           description: Error
       summary: |-
-        Pre-authorises the security deposit at pick-up, called by the rental-service while the customer waits at the
-         desk.
+        Holds the security deposit on the card of the reservation at pick-up, without charging it; called by the
+         rental-service while the customer waits at the desk.
       tags:
       - Internal
   /payments:
@@ -287,41 +287,6 @@ paths:
       summary: Lists the payments of a reservation.
       tags:
       - Payments
-  /payments/stripe-webhook:
-    post:
-      description: |-
-        Receives an event from Stripe, e.g. a payment that succeeded. Public, verified by the <code>Stripe-Signature</code>
-         header.
-      operationId: receive
-      parameters:
-      - description: signature of the payload computed by Stripe
-        in: header
-        name: Stripe-Signature
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-        description: "Stripe event, as sent"
-        required: true
-      responses:
-        "200":
-          description: OK
-        default:
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-          description: Error
-      security: []
-      summary: |-
-        Receives an event from Stripe, e.g. a payment that succeeded. Public, verified by the <code>Stripe-Signature</code>
-         header.
-      tags:
-      - Stripe webhook
   /quotes:
     post:
       description: "Issues a quote for a rental, valid for 15 minutes. Public."
@@ -699,7 +664,7 @@ components:
           - FULL
         deposit:
           $ref: "#/components/schemas/Money"
-          description: security deposit pre-authorised at pick-up
+          description: security deposit held on the card at pick-up
         excess:
           $ref: "#/components/schemas/Money"
           description: maximum the customer pays for damages
@@ -713,11 +678,14 @@ components:
       - pricePerDay
     CreateReservationRequest:
       type: object
-      description: Booking of a quote.
+      description: |-
+        Booking of a quote, paid with a test card of the simulated payment provider (ADR-29): <code>card_ok</code> approves,
+         <code>card_declined</code> declines, <code>card_no_extra</code> declines only the charges above the deposit and
+         <code>card_slow</code> does not answer in time.
       properties:
         paymentMethodId:
           type: string
-          description: "Stripe test payment method, e.g. <code>pm_card_visa</code>"
+          description: "test card, e.g. <code>card_ok</code>"
           minLength: 1
         quoteId:
           type: string
@@ -728,12 +696,12 @@ components:
       - quoteId
     DepositRequest:
       type: object
-      description: "Pre-authorisation of the security deposit at pick-up, on the card\
-        \ used for the advance payment."
+      description: "Security deposit to hold at pick-up, on the card used for the\
+        \ advance payment."
       properties:
         amount:
           $ref: "#/components/schemas/Money"
-          description: amount to pre-authorise
+          description: amount to hold
         rentalId:
           type: string
           format: uuid
@@ -748,19 +716,15 @@ components:
       - reservationId
     DepositResponse:
       type: object
-      description: Security deposit pre-authorised on the card.
+      description: Security deposit held on the card of the reservation.
       properties:
         amount:
           $ref: "#/components/schemas/Money"
-          description: amount pre-authorised
+          description: amount held
         depositId:
           type: string
           format: uuid
           description: "deposit identifier, used later to settle it"
-        expiresAt:
-          type: string
-          format: date-time
-          description: instant the pre-authorisation lapses unless renewed
         status:
           type: string
           description: current state
@@ -1014,7 +978,7 @@ components:
           description: code of the return station
         securityDeposit:
           $ref: "#/components/schemas/Money"
-          description: amount pre-authorised on the card at pick-up
+          description: amount held on the card at pick-up
         total:
           $ref: "#/components/schemas/Money"
           description: "amount to pay in advance, VAT included"

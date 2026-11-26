@@ -1,6 +1,6 @@
 # ADR-12: Stripe em modo de teste atrás de uma Anti-Corruption Layer, com um adaptador WireMock
 
-- **Estado:** Aceite
+- **Estado:** Substituída pela ADR-29
 - **Data:** 2026-11-14
 - **Decisores:** Nuno Soares, Vitor Sousa
 - **Referências:** Proposta §5, §8.3, §9.2

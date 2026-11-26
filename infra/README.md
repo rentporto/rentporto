@@ -15,7 +15,7 @@ Sem `.env`, usam-se as passwords por omissão do `.env.example`.
 | Prometheus | http://localhost:9090, raspa as aplicações que correm no host e as filas do RabbitMQ | — |
 | Grafana | http://localhost:3000, com a datasource Prometheus e o painel RentPorto (http://localhost:3000/d/rentporto) provisionados | `admin` / `rentporto` |
 | Zipkin | http://localhost:9411, recebe todos os rastos das aplicações que correm no host | — |
-| WireMock | http://localhost:8089, mapeamentos em `infra/wiremock/mappings` | — |
+| WireMock | http://localhost:8089, faz de outro serviço nas execuções manuais (por exemplo, a caução do booking-service enquanto não existe); mapeamentos em `infra/wiremock/mappings` | — |
 
 Portas dos serviços: gateway 8080, auth 8081, customer 8082, fleet 8083, booking 8084, rental 8085, notification 8086, config-server 8888.
 
@@ -39,16 +39,17 @@ A documentação de todos os serviços fica numa só página, o Swagger UI do ga
 
 No perfil `dev`, o auth-service cria no arranque o administrador `admin@rentporto.pt` com a password `rentporto-admin`, e assina os JWT com uma chave gerada nesse arranque: depois de o reiniciar, é preciso fazer login de novo. No `k8s`, a chave e o administrador vêm de um Secret (ADR-20).
 
-## Stripe
+## Pagamentos
 
-Copiar o `.env.example` para `.env`, pôr a chave de teste em `STRIPE_API_KEY` e arrancar com o perfil `stripe`:
+Não há fornecedor de pagamentos externo: o módulo `payment` do booking-service simula-o (ADR-29). O cartão de teste que o cliente indica no `paymentMethodId` da reserva decide a resposta em todas as operações dessa reserva:
 
-```
-docker compose --profile stripe up -d --wait
-docker compose logs stripe-cli
-```
-
-O Stripe CLI reencaminha os webhooks para o booking-service em `localhost:8084`; o segredo do webhook (`whsec_...`) aparece no log.
+| Cartão | Resposta |
+|---|---|
+| `card_ok` | aprova tudo |
+| `card_declined` | recusa tudo (`CARD_DECLINED`) |
+| `card_no_extra` | aprova a cobrança e a caução; recusa a cobrança acima da caução, que fica em dívida |
+| `card_slow` | não responde dentro do timeout (`PROVIDER_UNAVAILABLE`); faz abrir o circuit breaker `payment-provider` |
+| outro qualquer | recusa (`UNKNOWN_CARD`) |
 
 ## RabbitMQ
 

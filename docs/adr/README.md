@@ -17,7 +17,7 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-09](0009-termos-contratuais-no-reservation-confirmed.md) | Termos contratuais congelados no ReservationConfirmed | Aceite |
 | [ADR-10](0010-reservar-por-categoria.md) | Reservar por categoria e atribuir a viatura no levantamento | Aceite |
 | [ADR-11](0011-monorepo.md) | Monorepo com um módulo, uma imagem e um pipeline por serviço | Aceite |
-| [ADR-12](0012-stripe-com-anti-corruption-layer.md) | Stripe em modo de teste atrás de uma Anti-Corruption Layer, com um adaptador WireMock | Aceite |
+| [ADR-12](0012-stripe-com-anti-corruption-layer.md) | Stripe em modo de teste atrás de uma Anti-Corruption Layer, com um adaptador WireMock | Substituída pela ADR-29 |
 | [ADR-13](0013-sem-frontend.md) | Sem frontend: interação pela API | Aceite |
 | [ADR-14](0014-montantes-e-arredondamento.md) | Montantes e arredondamento | Proposta |
 | [ADR-15](0015-estrutura-modular-do-booking-service.md) | Arquitetura hexagonal nos serviços e módulos do booking-service | Aceite |
@@ -34,3 +34,4 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-26](0026-painel-do-grafana.md) | Painel do Grafana como código: histogramas, filas do RabbitMQ e estados do negócio | Aceite |
 | [ADR-27](0027-swagger-ui-agregado-no-gateway.md) | Swagger UI agregado no gateway, sem os endpoints internos e com os pedidos pelo gateway | Aceite |
 | [ADR-28](0028-escala-automatica-do-booking-service.md) | Escala automática do booking-service pela CPU, entre 2 e 3 réplicas | Aceite |
+| [ADR-29](0029-pagamentos-simulados.md) | Pagamentos com um fornecedor simulado e cartões de teste, em vez do Stripe | Aceite |

@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public interface DepositsApi {
 
     /**
-     * Pre-authorises the security deposit at pick-up, called by the rental-service while the customer waits at the
-     * desk.
+     * Holds the security deposit on the card of the reservation at pick-up, without charging it; called by the
+     * rental-service while the customer waits at the desk.
      *
      * @param idempotencyKey optional key that makes a repeated request return the same deposit
      * @param request        rental, reservation and amount
-     * @return the deposit pre-authorised
+     * @return the deposit held
      */
     @PostMapping("/internal/deposits")
     @ResponseStatus(HttpStatus.CREATED)

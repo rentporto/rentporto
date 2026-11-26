@@ -18,7 +18,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import pt.rentporto.booking.payment.api.DepositsApi;
 import pt.rentporto.booking.payment.api.PaymentsApi;
 import pt.rentporto.booking.payment.api.ReceiptsApi;
-import pt.rentporto.booking.payment.api.StripeWebhookApi;
 import pt.rentporto.booking.pricing.api.PriceListApi;
 import pt.rentporto.booking.pricing.api.QuotesApi;
 import pt.rentporto.booking.reservation.api.AvailabilityApi;
@@ -58,9 +57,6 @@ class AuthorizationTest {
     private DepositsApi deposits;
 
     @Autowired
-    private StripeWebhookApi stripeWebhook;
-
-    @Autowired
     private ReceiptsApi receipts;
 
     @Test
@@ -96,7 +92,6 @@ class AuthorizationTest {
         assertThat(AllowedRoles.of(() -> payments.payments(null)))
                 .containsExactlyInAnyOrder("CUSTOMER", "AGENT", "ADMIN");
         assertThat(AllowedRoles.of(() -> deposits.authorizeDeposit(null, null))).containsExactly("AGENT");
-        assertThat(AllowedRoles.of(() -> stripeWebhook.receive(null, null))).hasSameElementsAs(TestJwt.ROLES);
         assertThat(AllowedRoles.of(() -> receipts.receipt(null))).containsExactly("CUSTOMER");
     }
 
