@@ -9,7 +9,7 @@ import org.springframework.cloud.client.circuitbreaker.Customizer;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import pt.rentporto.rental.application.DepositDeclinedException;
+import pt.rentporto.rental.application.exception.DepositDeclinedException;
 
 /**
  * Clients of the other services. The circuit breaker of the payments opens when half of the last ten calls failed,

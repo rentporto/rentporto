@@ -7,10 +7,10 @@ import java.util.Optional;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.fleet.domain.AcrissCode;
-import pt.rentporto.fleet.domain.CategoryAlreadyExistsException;
-import pt.rentporto.fleet.domain.VehicleCategories;
-import pt.rentporto.fleet.domain.VehicleCategory;
+import pt.rentporto.fleet.domain.exception.CategoryAlreadyExistsException;
+import pt.rentporto.fleet.domain.model.AcrissCode;
+import pt.rentporto.fleet.domain.model.VehicleCategory;
+import pt.rentporto.fleet.domain.repository.VehicleCategories;
 
 /**
  * Vehicle categories in PostgreSQL. Each change is flushed at once, so that two requests creating the same code at

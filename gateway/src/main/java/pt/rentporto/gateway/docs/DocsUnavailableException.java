@@ -1,6 +1,6 @@
 package pt.rentporto.gateway.docs;
 
-import pt.rentporto.web.BusinessException;
+import pt.rentporto.web.error.BusinessException;
 
 /**
  * A service did not answer with its OpenAPI document, so its documentation cannot be shown now.

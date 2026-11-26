@@ -5,9 +5,9 @@ import org.springframework.stereotype.Component;
 import pt.rentporto.events.EventEnvelope;
 import pt.rentporto.events.payment.DepositSettled;
 import pt.rentporto.messaging.consumer.IdempotentConsumer;
-import pt.rentporto.rental.application.Settlements;
-import pt.rentporto.rental.domain.Money;
-import pt.rentporto.rental.domain.Settlement;
+import pt.rentporto.rental.application.service.Settlements;
+import pt.rentporto.rental.domain.model.Money;
+import pt.rentporto.rental.domain.model.Settlement;
 
 /**
  * Consumes the events of the payment module of the booking-service. Each event is applied once, in the transaction

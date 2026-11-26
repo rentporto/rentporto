@@ -8,9 +8,9 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Component;
-import pt.rentporto.auth.application.TokenSigner;
-import pt.rentporto.auth.domain.Account;
-import pt.rentporto.auth.domain.Role;
+import pt.rentporto.auth.application.port.TokenSigner;
+import pt.rentporto.auth.domain.model.Account;
+import pt.rentporto.auth.domain.model.Role;
 import pt.rentporto.web.security.CommonSecurityAutoConfiguration;
 
 /**

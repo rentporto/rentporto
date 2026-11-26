@@ -22,18 +22,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import pt.rentporto.events.EventEnvelope;
-import pt.rentporto.events.Exchanges;
 import pt.rentporto.events.Money;
-import pt.rentporto.events.RoutingKeys;
 import pt.rentporto.events.payment.DepositSettled;
+import pt.rentporto.events.topology.Exchanges;
+import pt.rentporto.events.topology.RoutingKeys;
 import pt.rentporto.messaging.testing.MessagingRecords;
-import pt.rentporto.rental.RentalServiceTest;
-import pt.rentporto.rental.TestAgreements;
-import pt.rentporto.rental.application.PendingAgreements;
-import pt.rentporto.rental.domain.DiscardReason;
-import pt.rentporto.rental.domain.RentalAgreement;
-import pt.rentporto.rental.domain.RentalAgreements;
-import pt.rentporto.rental.domain.RentalStatus;
+import pt.rentporto.rental.application.service.PendingAgreements;
+import pt.rentporto.rental.domain.model.DiscardReason;
+import pt.rentporto.rental.domain.model.RentalAgreement;
+import pt.rentporto.rental.domain.model.RentalStatus;
+import pt.rentporto.rental.domain.repository.RentalAgreements;
+import pt.rentporto.rental.testing.RentalServiceTest;
+import pt.rentporto.rental.testing.TestAgreements;
 import pt.rentporto.web.testing.TestJwt;
 
 /**

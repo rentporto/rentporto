@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.rental.domain.RentalAgreement;
-import pt.rentporto.rental.domain.RentalAgreements;
-import pt.rentporto.rental.domain.RentalStatus;
+import pt.rentporto.rental.domain.model.RentalAgreement;
+import pt.rentporto.rental.domain.model.RentalStatus;
+import pt.rentporto.rental.domain.repository.RentalAgreements;
 
 /**
  * Rental agreements in PostgreSQL. The reservation is unique, so a second agreement of the same reservation fails on

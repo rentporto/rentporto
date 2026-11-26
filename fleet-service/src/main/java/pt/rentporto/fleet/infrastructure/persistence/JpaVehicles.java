@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Optional;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.fleet.domain.AcrissCode;
-import pt.rentporto.fleet.domain.LicensePlate;
-import pt.rentporto.fleet.domain.StationCapacity;
-import pt.rentporto.fleet.domain.Vehicle;
-import pt.rentporto.fleet.domain.VehicleAlreadyRegisteredException;
-import pt.rentporto.fleet.domain.VehicleStatus;
-import pt.rentporto.fleet.domain.Vehicles;
+import pt.rentporto.fleet.domain.exception.VehicleAlreadyRegisteredException;
+import pt.rentporto.fleet.domain.model.AcrissCode;
+import pt.rentporto.fleet.domain.model.LicensePlate;
+import pt.rentporto.fleet.domain.model.StationCapacity;
+import pt.rentporto.fleet.domain.model.Vehicle;
+import pt.rentporto.fleet.domain.model.VehicleStatus;
+import pt.rentporto.fleet.domain.repository.Vehicles;
 
 /**
  * Vehicles in PostgreSQL. Each change is flushed at once, so that two requests registering the same plate fail here,

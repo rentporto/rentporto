@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.notification.domain.Notification;
-import pt.rentporto.notification.domain.NotificationLog;
+import pt.rentporto.notification.domain.model.Notification;
+import pt.rentporto.notification.domain.repository.NotificationLog;
 
 /**
  * Notification log in PostgreSQL, with the event unique.

@@ -4,19 +4,19 @@ import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
-import pt.rentporto.events.CommandQueues;
 import pt.rentporto.events.EventEnvelope;
 import pt.rentporto.events.Money;
-import pt.rentporto.events.RoutingKeys;
 import pt.rentporto.events.payment.SettleDeposit;
 import pt.rentporto.events.rental.Damage;
 import pt.rentporto.events.rental.ExtraCharge;
 import pt.rentporto.events.rental.RentalClosed;
 import pt.rentporto.events.rental.RentalStarted;
 import pt.rentporto.events.rental.VehicleReturned;
+import pt.rentporto.events.topology.CommandQueues;
+import pt.rentporto.events.topology.RoutingKeys;
 import pt.rentporto.messaging.outbox.OutboxWriter;
-import pt.rentporto.rental.application.RentalEvents;
-import pt.rentporto.rental.domain.RentalAgreement;
+import pt.rentporto.rental.application.port.RentalEvents;
+import pt.rentporto.rental.domain.model.RentalAgreement;
 
 /**
  * Writes the events and commands of the rental context to the outbox, which sends them to RabbitMQ after the commit
@@ -78,7 +78,7 @@ class OutboxRentalEvents implements RentalEvents {
     }
 
     @Override
-    public void settleDeposit(RentalAgreement agreement, pt.rentporto.rental.domain.Money amountDue) {
+    public void settleDeposit(RentalAgreement agreement, pt.rentporto.rental.domain.model.Money amountDue) {
         SettleDeposit command =
                 new SettleDeposit(agreement.id(), agreement.depositId(), Money.ofCents(amountDue.cents()));
         outbox.send(CommandQueues.SETTLE_DEPOSIT, envelope(agreement, command));

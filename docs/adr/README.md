@@ -35,3 +35,4 @@ Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte
 | [ADR-27](0027-swagger-ui-agregado-no-gateway.md) | Swagger UI agregado no gateway, sem os endpoints internos e com os pedidos pelo gateway | Aceite |
 | [ADR-28](0028-escala-automatica-do-booking-service.md) | Escala automática do booking-service pela CPU, entre 2 e 3 réplicas | Aceite |
 | [ADR-29](0029-pagamentos-simulados.md) | Pagamentos com um fornecedor simulado e cartões de teste, em vez do Stripe | Aceite |
+| [ADR-30](0030-organizacao-dos-pacotes.md) | Organização dos pacotes por tipo de ficheiro em todas as camadas, nas bibliotecas comuns e nos testes | Aceite |

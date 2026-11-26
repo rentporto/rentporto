@@ -4,9 +4,9 @@ import feign.FeignException;
 import feign.RetryableException;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
-import pt.rentporto.rental.application.Fleet;
-import pt.rentporto.rental.application.FleetUnavailableException;
-import pt.rentporto.rental.application.NoVehicleAvailableException;
+import pt.rentporto.rental.application.exception.FleetUnavailableException;
+import pt.rentporto.rental.application.exception.NoVehicleAvailableException;
+import pt.rentporto.rental.application.port.Fleet;
 import tools.jackson.databind.json.JsonMapper;
 
 /**

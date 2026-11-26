@@ -10,7 +10,7 @@ import static org.mockito.Mockito.verify;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import pt.rentporto.auth.application.PasswordTooLongException;
+import pt.rentporto.auth.application.exception.PasswordTooLongException;
 
 class BcryptPasswordHasherTest {
 

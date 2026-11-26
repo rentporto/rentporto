@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.fleet.domain.Station;
-import pt.rentporto.fleet.domain.Stations;
+import pt.rentporto.fleet.domain.model.Station;
+import pt.rentporto.fleet.domain.repository.Stations;
 
 /**
  * Stations in PostgreSQL. The lock is a {@code SELECT … FOR UPDATE} on the row of the station.

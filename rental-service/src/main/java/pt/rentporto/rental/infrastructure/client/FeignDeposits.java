@@ -5,9 +5,9 @@ import java.util.UUID;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.stereotype.Component;
 import pt.rentporto.events.Money;
-import pt.rentporto.rental.application.DepositDeclinedException;
-import pt.rentporto.rental.application.Deposits;
-import pt.rentporto.rental.application.PaymentUnavailableException;
+import pt.rentporto.rental.application.exception.DepositDeclinedException;
+import pt.rentporto.rental.application.exception.PaymentUnavailableException;
+import pt.rentporto.rental.application.port.Deposits;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -30,7 +30,7 @@ class FeignDeposits implements Deposits {
     }
 
     @Override
-    public UUID authorize(UUID rentalId, UUID reservationId, pt.rentporto.rental.domain.Money amount) {
+    public UUID authorize(UUID rentalId, UUID reservationId, pt.rentporto.rental.domain.model.Money amount) {
         String authorization = CurrentAuthorization.header();
         PaymentClient.DepositRequest request =
                 new PaymentClient.DepositRequest(rentalId, reservationId, Money.ofCents(amount.cents()));

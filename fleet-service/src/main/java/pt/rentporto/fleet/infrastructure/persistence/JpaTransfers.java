@@ -4,9 +4,9 @@ import jakarta.persistence.EntityManager;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.fleet.domain.LicensePlate;
-import pt.rentporto.fleet.domain.Transfer;
-import pt.rentporto.fleet.domain.Transfers;
+import pt.rentporto.fleet.domain.model.LicensePlate;
+import pt.rentporto.fleet.domain.model.Transfer;
+import pt.rentporto.fleet.domain.repository.Transfers;
 
 /**
  * Transfers in PostgreSQL. A partial unique index keeps at most one open transfer per vehicle, as a safety net under

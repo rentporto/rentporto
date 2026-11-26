@@ -4,8 +4,8 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import org.springframework.stereotype.Component;
-import pt.rentporto.rental.domain.RentalAgreements;
-import pt.rentporto.rental.domain.RentalStatus;
+import pt.rentporto.rental.domain.model.RentalStatus;
+import pt.rentporto.rental.domain.repository.RentalAgreements;
 
 /**
  * The agreements in each state, for the RentPorto dashboard of Grafana (ADR-26). Each gauge counts in the database when

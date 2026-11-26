@@ -12,8 +12,8 @@ import pt.rentporto.events.reservation.ReservationCancelled;
 import pt.rentporto.events.reservation.ReservationConfirmed;
 import pt.rentporto.events.reservation.ReservationExpired;
 import pt.rentporto.events.reservation.ReservationNoShow;
-import pt.rentporto.notification.application.CustomerEmails;
-import pt.rentporto.notification.application.UpcomingPickups;
+import pt.rentporto.notification.application.service.CustomerEmails;
+import pt.rentporto.notification.application.service.UpcomingPickups;
 
 /**
  * Consumes the nine events the customers hear of, each from its own queue, and emails them. The confirmation keeps

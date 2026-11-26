@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.notification.domain.PickupReminder;
-import pt.rentporto.notification.domain.PickupReminderStatus;
-import pt.rentporto.notification.domain.PickupReminders;
+import pt.rentporto.notification.domain.model.PickupReminder;
+import pt.rentporto.notification.domain.model.PickupReminderStatus;
+import pt.rentporto.notification.domain.repository.PickupReminders;
 
 /**
  * Pick-up reminders in PostgreSQL, keyed by the reservation.

@@ -6,13 +6,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import pt.rentporto.fleet.AcrissCodes;
-import pt.rentporto.fleet.FleetServiceTest;
-import pt.rentporto.fleet.domain.AcrissCode;
-import pt.rentporto.fleet.domain.CategoryAlreadyExistsException;
-import pt.rentporto.fleet.domain.DriverRequirements;
-import pt.rentporto.fleet.domain.VehicleCategories;
-import pt.rentporto.fleet.domain.VehicleCategory;
+import pt.rentporto.fleet.domain.exception.CategoryAlreadyExistsException;
+import pt.rentporto.fleet.domain.model.AcrissCode;
+import pt.rentporto.fleet.domain.model.DriverRequirements;
+import pt.rentporto.fleet.domain.model.VehicleCategory;
+import pt.rentporto.fleet.domain.repository.VehicleCategories;
+import pt.rentporto.fleet.testing.AcrissCodes;
+import pt.rentporto.fleet.testing.FleetServiceTest;
 
 /**
  * The primary key of the table becomes a domain exception, so the application can tell a repeated code apart.

@@ -7,9 +7,9 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
-import pt.rentporto.auth.domain.Account;
-import pt.rentporto.auth.domain.Email;
-import pt.rentporto.auth.domain.EmailAlreadyRegisteredException;
+import pt.rentporto.auth.domain.exception.EmailAlreadyRegisteredException;
+import pt.rentporto.auth.domain.model.Account;
+import pt.rentporto.auth.domain.model.Email;
 
 class JpaAccountsTest {
 

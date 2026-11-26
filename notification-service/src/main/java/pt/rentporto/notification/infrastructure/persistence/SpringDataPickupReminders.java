@@ -4,8 +4,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
-import pt.rentporto.notification.domain.PickupReminder;
-import pt.rentporto.notification.domain.PickupReminderStatus;
+import pt.rentporto.notification.domain.model.PickupReminder;
+import pt.rentporto.notification.domain.model.PickupReminderStatus;
 
 interface SpringDataPickupReminders extends JpaRepository<PickupReminder, UUID> {
 

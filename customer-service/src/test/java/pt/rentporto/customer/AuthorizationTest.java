@@ -11,8 +11,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
-import pt.rentporto.customer.api.CustomersApi;
-import pt.rentporto.customer.api.DriverProfilesApi;
+import pt.rentporto.customer.api.contract.CustomersApi;
+import pt.rentporto.customer.api.contract.DriverProfilesApi;
+import pt.rentporto.customer.testing.CustomerServiceTest;
 import pt.rentporto.web.testing.AllowedRoles;
 import pt.rentporto.web.testing.TestJwt;
 

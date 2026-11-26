@@ -7,13 +7,13 @@ import pt.rentporto.events.reservation.ReservationCancelled;
 import pt.rentporto.events.reservation.ReservationConfirmed;
 import pt.rentporto.events.reservation.ReservationNoShow;
 import pt.rentporto.messaging.consumer.IdempotentConsumer;
-import pt.rentporto.rental.application.PendingAgreements;
-import pt.rentporto.rental.domain.ConfirmedReservation;
-import pt.rentporto.rental.domain.ContractExtra;
-import pt.rentporto.rental.domain.ContractTerms;
-import pt.rentporto.rental.domain.DiscardReason;
-import pt.rentporto.rental.domain.Money;
-import pt.rentporto.rental.domain.RentalPeriod;
+import pt.rentporto.rental.application.service.PendingAgreements;
+import pt.rentporto.rental.domain.model.ConfirmedReservation;
+import pt.rentporto.rental.domain.model.ContractExtra;
+import pt.rentporto.rental.domain.model.ContractTerms;
+import pt.rentporto.rental.domain.model.DiscardReason;
+import pt.rentporto.rental.domain.model.Money;
+import pt.rentporto.rental.domain.model.RentalPeriod;
 
 /**
  * Consumes the events of the reservation module of the booking-service and translates them into the rental domain.

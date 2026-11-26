@@ -1,2 +1,2 @@
 org.springframework.boot.EnvironmentPostProcessor=\
-pt.rentporto.web.WebDefaults
+pt.rentporto.web.openapi.WebDefaults

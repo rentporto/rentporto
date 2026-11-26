@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Component;
-import pt.rentporto.notification.application.EmailNotSentException;
-import pt.rentporto.notification.application.Mailer;
+import pt.rentporto.notification.application.exception.EmailNotSentException;
+import pt.rentporto.notification.application.port.Mailer;
 
 /**
  * Sends the emails by SMTP, to Mailpit in development and in k3d. The message keeps the {@code Message-ID} it is

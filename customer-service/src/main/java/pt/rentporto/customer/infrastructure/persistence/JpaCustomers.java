@@ -6,11 +6,11 @@ import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Repository;
-import pt.rentporto.customer.domain.Customer;
-import pt.rentporto.customer.domain.CustomerAlreadyRegisteredException;
-import pt.rentporto.customer.domain.Customers;
-import pt.rentporto.customer.domain.TaxNumber;
-import pt.rentporto.customer.domain.TaxNumberAlreadyRegisteredException;
+import pt.rentporto.customer.domain.exception.CustomerAlreadyRegisteredException;
+import pt.rentporto.customer.domain.exception.TaxNumberAlreadyRegisteredException;
+import pt.rentporto.customer.domain.model.Customer;
+import pt.rentporto.customer.domain.model.TaxNumber;
+import pt.rentporto.customer.domain.repository.Customers;
 
 /**
  * Customer profiles in PostgreSQL. Each change is flushed at once, so that a broken unique constraint fails here, as a

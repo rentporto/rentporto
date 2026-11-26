@@ -19,9 +19,9 @@ import pt.rentporto.events.reservation.ReservationCancelled;
 import pt.rentporto.events.reservation.ReservationConfirmed;
 import pt.rentporto.events.reservation.ReservationExpired;
 import pt.rentporto.events.reservation.ReservationNoShow;
-import pt.rentporto.notification.application.Notice;
-import pt.rentporto.notification.application.ReminderTemplate;
-import pt.rentporto.notification.domain.PickupReminder;
+import pt.rentporto.notification.application.model.Notice;
+import pt.rentporto.notification.application.port.ReminderTemplate;
+import pt.rentporto.notification.domain.model.PickupReminder;
 
 /**
  * The plain text emails of the events and of the pick-up reminder, in English like every text the customers see, with
