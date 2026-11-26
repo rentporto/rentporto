@@ -1,29 +1,29 @@
-# ADR-13: Sem frontend: interação pela API
+# ADR-13: No frontend: interaction through the API
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §1.6, §8.2
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §1.6, §8.2
 
-## Contexto
+## Context
 
-A cadeira avalia a arquitetura de microsserviços. O esforço disponível é de cerca de 28 dias-pessoa.
+The focus of the project is the microservices architecture. The available effort is about 28 person-days.
 
-## Decisão
+## Decision
 
-Não há frontend. Todos os atores usam a API através do Swagger UI agregado no gateway e de uma coleção Bruno com o fluxo completo de cada ator. Os pagamentos são confirmados no servidor com métodos de pagamento de teste do Stripe (`pm_card_visa`, `pm_card_chargeDeclined`).
+There is no frontend. Every actor uses the API through the Swagger UI aggregated in the gateway and a Bruno collection with the complete flow of each actor. Payments are confirmed on the server with Stripe test payment methods (`pm_card_visa`, `pm_card_chargeDeclined`).
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Frontend em React com TypeScript** — retiraria cerca de 3,5 dias-pessoa aos serviços core e à infraestrutura.
+- **A React frontend with TypeScript** — would take about 3.5 person-days away from the core services and the infrastructure.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Mais tempo para os serviços core, a resiliência e a observabilidade.
+- More time for the core services, resilience and observability.
 
-### Negativas
+### Negative
 
-- Sem fluxo de 3-D Secure.
-- O `paymentMethodId` no pedido é um atalho de teste: em produção viria do Stripe.js no browser, e os dados do cartão nunca passariam pela nossa API.
+- No 3-D Secure flow.
+- The `paymentMethodId` in the request is a test shortcut: in production it would come from Stripe.js in the browser, and the card details would never pass through our API.

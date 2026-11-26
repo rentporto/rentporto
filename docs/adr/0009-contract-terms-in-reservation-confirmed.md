@@ -1,30 +1,30 @@
-# ADR-09: Termos contratuais congelados no ReservationConfirmed
+# ADR-09: Contract terms frozen in ReservationConfirmed
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §7, §11.2
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §7, §11.2
 
-## Contexto
+## Context
 
-As tarifas mudam todas as semanas. Na devolução, o contrato de aluguer tem de ser liquidado com as condições acordadas na reserva: tarifa diária, extras, cobertura, franquia, caução, preço do litro e taxa de serviço.
+Rates change every week. At return, the rental agreement must be settled with the terms agreed at booking: daily rate, extras, coverage, excess, deposit, price per litre and service fee.
 
-## Decisão
+## Decision
 
-Os `ContractTerms` são congelados no momento da reserva, a partir da cotação, e viajam no evento `ReservationConfirmed`. O `rental-service` guarda-os no contrato e faz a liquidação sem chamar o `booking-service` nem o `customer-service`.
+The `ContractTerms` are frozen at booking time, from the quote, and travel in the `ReservationConfirmed` event. The `rental-service` stores them in the rental agreement and does the settlement without calling the `booking-service` or the `customer-service`.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **O Aluguer consulta as Tarifas na devolução** — aplica as tarifas de hoje a um contrato acordado no passado e acopla o `rental-service` ao `booking-service`.
+- **Rental looks up Pricing at return** — applies today's rates to an agreement made in the past, and couples the `rental-service` to the `booking-service`.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Segue a regra real do negócio: uma alteração de preço nunca afeta uma reserva existente.
-- Menos acoplamento entre o Aluguer e as Tarifas.
+- Follows the real business rule: a price change never affects an existing reservation.
+- Less coupling between Rental and Pricing.
 
-### Negativas
+### Negative
 
-- Eventos maiores e dados duplicados de propósito.
-- Alterações ao esquema do evento exigem versionamento.
+- Larger events and data duplicated on purpose.
+- Changes to the event schema require versioning.

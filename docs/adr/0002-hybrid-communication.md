@@ -1,39 +1,39 @@
-# ADR-02: Comunicação híbrida: REST para decisões imediatas, mensagens para mudanças de estado
+# ADR-02: Hybrid communication: REST for immediate decisions, messages for state changes
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §9.1, §9.4
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §9.1, §9.4
 
-## Contexto
+## Context
 
-Algumas interações precisam de uma resposta antes de quem pede poder continuar: o cliente espera que a reserva seja aceite, ou o agente espera ao balcão pela matrícula. Outras apenas propagam uma mudança de estado que pode interessar a outros contextos. Com os pagamentos online, um fornecedor externo entra no fluxo, e um fornecedor lento não pode bloquear a pesquisa nem as cotações.
+Some interactions need an answer before the caller can continue: the customer waits for the reservation to be accepted, or the agent waits at the counter for the licence plate. Others only propagate a state change that may matter to other contexts. With online payments, an external provider enters the flow, and a slow provider must not block search or quotes.
 
-## Decisão
+## Decision
 
-Entre serviços:
+Between services:
 
-- **REST síncrono (OpenFeign)** apenas quando quem chama precisa da resposta para decidir agora: o módulo `reservation` pede o perfil do condutor ao `customer-service`; no levantamento, o `rental-service` pede a atribuição da viatura ao `fleet-service` e a pré-autorização da caução ao `booking-service`.
-- **Comandos** numa fila dedicada com um único consumidor quando um serviço pede a outro que faça algo: `SettleDeposit` (do `rental-service` para o `booking-service`).
-- **Eventos** no topic exchange para tudo o que aconteceu: `ReservationConfirmed`, `VehicleReturned`, etc.
+- **Synchronous REST (OpenFeign)** only when the caller needs the answer to decide now: the `reservation` module asks the `customer-service` for the driver profile; at pick-up, the `rental-service` asks the `fleet-service` to assign a vehicle and the `booking-service` for the deposit pre-authorisation.
+- **Commands** on a dedicated queue with a single consumer when one service asks another to do something: `SettleDeposit` (from the `rental-service` to the `booking-service`).
+- **Events** on the topic exchange for everything that has happened: `ReservationConfirmed`, `VehicleReturned`, etc.
 
-Dentro do `booking-service`, os módulos comunicam por chamadas às interfaces `application` e por eventos internos (ADR-15), não pelo RabbitMQ.
+Inside the `booking-service`, the modules communicate through calls to the `application` interfaces and through internal events (ADR-15), not through RabbitMQ.
 
-Todas as chamadas síncronas entre serviços têm timeout e circuit breaker (Resilience4j).
+Every synchronous call between services has a timeout and a circuit breaker (Resilience4j).
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Tudo por REST** — cria acoplamento temporal e falhas em cascata; um fornecedor de pagamentos lento prendia threads e parava a pesquisa.
-- **Tudo assíncrono** — obriga o utilizador a consultar o estado de decisões que têm de ser tomadas de imediato, como a elegibilidade do condutor, e acrescenta complexidade sem benefício.
+- **Everything over REST** — creates temporal coupling and cascading failures; a slow payment provider would hold threads and stop search.
+- **Everything asynchronous** — forces the user to check the status of decisions that must be made immediately, such as driver eligibility, and adds complexity without benefit.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Pouco acoplamento temporal, sem tornar assíncrono o que o utilizador espera ver de imediato.
-- As falhas do fornecedor de pagamentos ficam contidas no módulo `payment`.
+- Low temporal coupling, without making asynchronous what the user expects to see immediately.
+- Failures of the payment provider stay contained in the `payment` module.
 
-### Negativas
+### Negative
 
-- Consistência eventual entre serviços.
-- Exige mensagens fiáveis (ADR-07) e consumidores idempotentes.
+- Eventual consistency between services.
+- Requires reliable messaging (ADR-07) and idempotent consumers.

@@ -1,35 +1,35 @@
-# ADR-07: Transactional outbox e consumidores idempotentes
+# ADR-07: Transactional outbox and idempotent consumers
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §9.6
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §9.6
 
-## Contexto
+## Context
 
-Um serviço que atualiza a sua base de dados e depois publica no broker pode falhar entre as duas escritas: perde o evento, ou publica um evento de uma alteração que foi revertida. O RabbitMQ entrega pelo menos uma vez, por isso um consumidor pode receber a mesma mensagem mais de uma vez. Os webhooks do Stripe também podem chegar repetidos.
+A service that updates its database and then publishes to the broker can fail between the two writes: it loses the event, or it publishes an event for a change that was rolled back. RabbitMQ delivers at least once, so a consumer can receive the same message more than once. Stripe webhooks can also arrive more than once.
 
-## Decisão
+## Decision
 
-- Cada serviço grava os eventos e comandos que saem para o RabbitMQ numa tabela `outbox`, na mesma transação da mudança de estado; um publisher envia-os para o broker.
-- Os eventos internos entre módulos do `booking-service` são persistidos pelo registo de eventos do Spring Modulith e reprocessados se o serviço cair antes de os tratar (ADR-15).
-- Cada consumidor regista o `eventId` em `processed_events` e ignora repetidos. Os webhooks do Stripe são deduplicados pelo id do evento do Stripe.
-- Todas as mensagens externas usam o envelope comum: `eventId`, `type`, `version`, `occurredAt`, `correlationId`, `payload`. O `traceId` do Micrometer viaja nos headers.
+- Each service writes the events and commands it sends to RabbitMQ to an `outbox` table, in the same transaction as the state change; a publisher sends them to the broker.
+- The Spring Modulith event publication registry persists the internal events between the modules of the `booking-service`, and reprocesses them if the service goes down before handling them (ADR-15).
+- Each consumer records the `eventId` in `processed_events` and ignores duplicates. Stripe webhooks are deduplicated by the Stripe event id.
+- Every external message uses the common envelope: `eventId`, `type`, `version`, `occurredAt`, `correlationId`, `payload`. The Micrometer `traceId` travels in the headers.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Publicar diretamente depois do commit** — perde o evento se o serviço cair entre o commit e a publicação.
-- **Publicar antes do commit** — pode publicar eventos de alterações que nunca aconteceram.
+- **Publishing directly after the commit** — loses the event if the service goes down between the commit and the publication.
+- **Publishing before the commit** — can publish events for changes that never happened.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Nenhuma mensagem perdida ou inventada, entre serviços e entre módulos.
-- Retries seguros em todo o sistema.
+- No lost or invented messages, between services or between modules.
+- Safe retries across the whole system.
 
-### Negativas
+### Negative
 
-- Uma tabela e um publisher por serviço.
-- Pequeno atraso entre o commit e a publicação.
-- As tabelas `outbox`, `processed_events` e o registo de eventos precisam de limpeza periódica.
+- One table and one publisher per service.
+- A small delay between the commit and the publication.
+- The `outbox` and `processed_events` tables and the event publication registry need periodic cleanup.

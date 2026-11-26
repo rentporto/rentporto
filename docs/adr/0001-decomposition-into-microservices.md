@@ -1,19 +1,19 @@
-# ADR-01: Decomposição em microsserviços por bounded context
+# ADR-01: Decomposition into microservices by bounded context
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §3, §5, §7
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §3, §5, §7
 
-## Contexto
+## Context
 
-O sistema atual é um monolítico modular com oito módulos sobre uma única base de dados PostgreSQL. Os módulos leem e escrevem nas tabelas uns dos outros, por isso não podem ser escalados nem instalados separadamente. Um Event Storming simplificado e a análise da linguagem ubíqua identificaram oito bounded contexts. O sinal de fronteira mais forte foi a polissemia: «viatura» e «cliente» querem dizer coisas diferentes na Frota, nas Reservas, no Aluguer, nas Tarifas e nos Pagamentos.
+The current system is a modular monolith with eight modules on a single PostgreSQL database. The modules read and write each other's tables, so they cannot be scaled or deployed separately. A simplified Event Storming and an analysis of the ubiquitous language found eight bounded contexts. The strongest boundary signal was polysemy: "vehicle" and "customer" mean different things in Fleet, Reservations, Rental, Pricing and Payments.
 
-Reservas, Tarifas e Pagamentos participam no mesmo fluxo: cotação, reserva e pagamento antecipado. Com um serviço por contexto, cada reserva atravessaria três processos, com chamadas síncronas, comandos e compensações entre eles. O argumento para instalar as Tarifas à parte (as tarifas mudam todas as semanas) também não obriga a um serviço próprio: as tarifas são dados alterados pela API, não código, por isso mudam sem novo deploy. A equipa tem duas pessoas e o cluster local tem um orçamento de cerca de 10 GB de memória.
+Reservations, Pricing and Payments take part in the same flow: quote, reservation and prepayment. With one service per context, each reservation would cross three processes, with synchronous calls, commands and compensations between them. The argument for deploying Pricing on its own (rates change every week) does not require a service of its own either: rates are data changed through the API, not code, so they change without a new deployment. The team has two people, and the local cluster has a memory budget of about 10 GB.
 
-## Decisão
+## Decision
 
-Os oito bounded contexts ficam em seis microsserviços. Cada serviço é dono dos seus dados:
+The eight bounded contexts go into six microservices. Each service owns its data:
 
 | Service | Bounded contexts |
 |---|---|
@@ -24,26 +24,26 @@ Os oito bounded contexts ficam em seis microsserviços. Cada serviço é dono do
 | `rental-service` | Rental |
 | `notification-service` | Notifications |
 
-Dentro do `booking-service`, cada contexto é um módulo (`reservation`, `pricing`, `payment`) com fronteiras verificadas por testes e um esquema próprio na base de dados (ADR-15). A inspeção e os danos ficam dentro do `rental-service`, e os recibos dentro do módulo `payment`, porque partilham o ciclo de vida do respetivo agregado. A faturação certificada pela AT fica no monolítico residual e está fora de âmbito.
+Inside the `booking-service`, each context is a module (`reservation`, `pricing`, `payment`) with boundaries checked by tests and its own database schema (ADR-15). The inspection and the damages stay inside the `rental-service`, and the receipts inside the `payment` module, because they share the life cycle of their aggregate. Invoicing certified by the Portuguese Tax Authority (AT) stays in the remaining monolith and is out of scope.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Um serviço por bounded context (8 serviços)** — isola os Pagamentos e permite instalar as Tarifas sozinhas, mas cada reserva atravessa três processos, com chamadas remotas, comandos e compensações, e há mais duas JVM no k3d.
-- **Um serviço por entidade (Vehicle, Inspection, Receipt…)** — cria nano serviços que se chamam constantemente e precisam de transações distribuídas para um único ciclo de vida.
-- **Divisão por camada técnica (API, negócio, dados)** — mantém o acoplamento pela base de dados partilhada, que é o problema de origem.
+- **One service per bounded context (8 services)** — isolates Payments and lets Pricing be deployed alone, but each reservation crosses three processes, with remote calls, commands and compensations, and there are two more JVMs in k3d.
+- **One service per entity (Vehicle, Inspection, Receipt…)** — creates nano-services that call each other constantly and need distributed transactions for a single life cycle.
+- **Split by technical layer (API, business, data)** — keeps the coupling through the shared database, which is the original problem.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- As fronteiras seguem a linguagem do domínio, por isso são estáveis.
-- O fluxo cotação, reserva e pagamento corre num só processo: a validação da cotação e a sua marcação como usada acontecem na mesma transação da reserva.
-- Menos chamadas remotas, menos mensagens e menos peças para instalar e observar.
-- Os contextos continuam separados como módulos, por isso o `booking-service` pode ser dividido mais tarde sem reescrever o domínio.
+- The boundaries follow the language of the domain, so they are stable.
+- The quote, reservation and payment flow runs in a single process: validating the quote and marking it as used happen in the same transaction as the reservation.
+- Fewer remote calls, fewer messages and fewer parts to deploy and observe.
+- The contexts stay separate as modules, so the `booking-service` can be split later without rewriting the domain.
 
-### Negativas
+### Negative
 
-- Os Pagamentos, um subdomínio genérico com dependência externa, vivem junto do core; ficam protegidos apenas pela Anti-Corruption Layer e pelo bulkhead (ADR-12).
-- Reservas e Tarifas escalam e são instaladas em conjunto.
-- As fronteiras entre módulos dependem de disciplina e de testes de arquitetura (ADR-15).
-- Os dois elementos do grupo partilham o mesmo deployable: Nuno nos módulos `reservation` e `payment`, Vitor no módulo `pricing`.
+- Payments, a generic subdomain with an external dependency, live next to the core; only the Anti-Corruption Layer and the bulkhead protect them (ADR-12).
+- Reservations and Pricing scale and are deployed together.
+- The boundaries between modules depend on discipline and on architecture tests (ADR-15).
+- The two team members share the same deployable: Nuno on the `reservation` and `payment` modules, Vitor on the `pricing` module.

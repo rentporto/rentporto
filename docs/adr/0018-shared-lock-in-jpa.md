@@ -1,37 +1,37 @@
-# ADR-18: Lock partilhado em JPA em vez do ShedLock
+# ADR-18: Shared lock in JPA instead of ShedLock
 
-- **Estado:** Aceite
-- **Data:** 2026-11-15
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** ADR-06, ADR-07; backlog RP-05, RP-60
+- **Status:** Accepted
+- **Date:** 2026-11-15
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** ADR-06, ADR-07; backlog RP-05, RP-60
 
-## Contexto
+## Context
 
-Com várias réplicas, o publisher do outbox (ADR-07) e os schedulers da reserva (ADR-06) têm de correr numa só réplica de cada vez. O ADR-06 previa o ShedLock sobre o PostgreSQL, mas o fornecedor do ShedLock para PostgreSQL usa JDBC, e a persistência do projeto é feita em JPA.
+With several replicas, the outbox publisher (ADR-07) and the reservation schedulers (ADR-06) must run on only one replica at a time. ADR-06 planned ShedLock on PostgreSQL, but the ShedLock provider for PostgreSQL uses JDBC, and the project's persistence is done in JPA.
 
-## Decisão
+## Decision
 
-- A biblioteca `common-messaging` tem um lock partilhado em JPA: a entidade `SchedulerLock`, na tabela `scheduler_lock`, guarda o nome do lock, até quando está ocupado e que réplica o tem.
-- Uma réplica obtém o lock com um `UPDATE` em JPQL que só altera a linha se o lock estiver livre ou expirado. Se a linha ainda não existir, a réplica cria-a, e a chave primária impede que duas réplicas a criem ao mesmo tempo.
-- No fim da tarefa, a réplica liberta o lock. Se cair antes, o lock expira ao fim do tempo máximo indicado.
-- O publisher do outbox e os schedulers do booking-service usam o mesmo lock (`SchedulerLocks.runOnOneReplica`).
-- Esta decisão substitui o ShedLock referido no ADR-06. O resto do ADR-06 mantém-se.
+- The `common-messaging` library has a shared lock in JPA: the `SchedulerLock` entity, in the `scheduler_lock` table, stores the name of the lock, until when it is held and which replica holds it.
+- A replica acquires the lock with a JPQL `UPDATE` that only changes the row if the lock is free or expired. If the row does not exist yet, the replica creates it, and the primary key prevents two replicas from creating it at the same time.
+- At the end of the task, the replica releases the lock. If the replica goes down before that, the lock expires after the given maximum time.
+- The outbox publisher and the booking-service schedulers use the same lock (`SchedulerLocks.runOnOneReplica`).
+- This decision replaces the ShedLock mentioned in ADR-06. The rest of ADR-06 still stands.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **ShedLock sobre o PostgreSQL** — é uma biblioteca testada, mas o fornecedor para PostgreSQL usa JDBC, ao lado da persistência em JPA.
-- **`SELECT … FOR UPDATE SKIP LOCKED` nas linhas do outbox** — dispensa o lock global, mas as réplicas publicam por ordens diferentes e a transação fica aberta enquanto se espera pela confirmação do broker.
-- **Lock pessimista numa linha, mantido durante a tarefa** — é o mais simples, mas prende uma ligação à base de dados durante todo o envio.
+- **ShedLock on PostgreSQL** — a proven library, but its PostgreSQL provider uses JDBC, alongside the JPA persistence.
+- **`SELECT … FOR UPDATE SKIP LOCKED` on the outbox rows** — removes the need for the global lock, but the replicas publish in different orders and the transaction stays open while waiting for the broker's confirmation.
+- **A pessimistic lock on a row, held during the task** — the simplest option, but it ties up a database connection for the whole send.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Toda a persistência do projeto fica em JPA.
-- As transações são curtas, e as mensagens do outbox saem pela ordem em que foram gravadas.
-- Menos uma dependência.
+- All the project's persistence stays in JPA.
+- Transactions are short, and the outbox messages go out in the order they were written.
+- One dependency fewer.
 
-### Negativas
+### Negative
 
-- O código do lock é nosso e precisa de testes próprios.
-- O prazo do lock usa o relógio da aplicação, por isso as réplicas têm de ter os relógios acertados; no k3d correm na mesma máquina.
+- The lock code is ours and needs its own tests.
+- The lock deadline uses the application clock, so the replicas must have synchronised clocks; in k3d they run on the same machine.

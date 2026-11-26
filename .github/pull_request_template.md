@@ -1,11 +1,11 @@
 Closes #
 
-## O que muda
+## What changes
 
-## Como testar
+## How to test
 
 ## Definition of Done
-- [ ] Critérios de aceitação da issue verificados
-- [ ] Testes cobrem a alteração
-- [ ] Nova ADR se houve uma decisão de arquitetura
-- [ ] Nenhum segredo no repositório
+- [ ] Acceptance criteria of the issue verified
+- [ ] Tests cover the change
+- [ ] New ADR if there was an architecture decision
+- [ ] No secrets in the repository

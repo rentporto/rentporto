@@ -1,62 +1,62 @@
-# ADR-29: Pagamentos com um fornecedor simulado
+# ADR-29: Payments with a simulated provider
 
-- **Estado:** Aceite
-- **Data:** 2026-11-26
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** substitui o ADR-12; ADR-01, ADR-02, ADR-06, ADR-07, ADR-13, ADR-15, ADR-16, ADR-17, ADR-26; backlog RP-36 a RP-43, RP-53
+- **Status:** Accepted
+- **Date:** 2026-11-26
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** supersedes ADR-12; ADR-01, ADR-02, ADR-06, ADR-07, ADR-13, ADR-15, ADR-16, ADR-17, ADR-26; backlog RP-36 to RP-43, RP-53
 
-## Contexto
+## Context
 
-O ADR-12 pôs o Stripe em modo de teste atrás de uma porta `PaymentProvider`, com um segundo adaptador em WireMock. O sistema não processa pagamentos reais: o que interessa mostrar é o fluxo dos pagamentos (a cobrança antecipada na saga da reserva, a caução no levantamento, a sua liquidação e os reembolsos) e a resiliência perante um fornecedor lento, não a integração com um fornecedor concreto.
+ADR-12 put Stripe in test mode behind a `PaymentProvider` port, with a second adapter in WireMock. The system does not process real payments: what matters is to show the payment flow (the prepayment in the reservation saga, the deposit at pick-up, its settlement and the refunds) and the resilience to a slow provider, not the integration with a specific provider.
 
-- **Custo do Stripe:** uma conta e chaves de teste para cada membro da equipa, o Stripe CLI a correr no cluster para os webhooks chegarem ao k3d (ADR-16), a verificação das assinaturas dos webhooks e a renovação das pré-autorizações dos alugueres longos.
-- **Reprodutibilidade:** os cenários da demonstração (pagamento recusado, cobrança acima da caução recusada, fornecedor lento) têm de se repetir sempre da mesma maneira, sem depender de um serviço externo nem da rede.
-- **Estado do código:** o módulo `payment` do booking-service ainda só tem os contratos da API; o rental-service e o notification-service já usam os contratos de pagamento (`POST /internal/deposits`, `SettleDeposit`, `DepositSettled`, `PaymentFailed`, `PaymentRefunded`), que não dependem do fornecedor.
+- **Cost of Stripe:** an account and test keys for each team member, the Stripe CLI running in the cluster so that the webhooks reach k3d (ADR-16), the verification of the webhook signatures and the renewal of the pre-authorisations of long rentals.
+- **Reproducibility:** the demonstration scenarios (payment declined, charge above the deposit declined, slow provider) have to repeat the same way every time, without depending on an external service or on the network.
+- **State of the code:** the booking-service's `payment` module only has the API contracts so far; the rental-service and the notification-service already use the payment contracts (`POST /internal/deposits`, `SettleDeposit`, `DepositSettled`, `PaymentFailed`, `PaymentRefunded`), which do not depend on the provider.
 
-## Decisão
+## Decision
 
-- **Um fornecedor simulado:** o módulo `payment` do booking-service mantém a porta `PaymentProvider` (ADR-15), com um só adaptador, `SimulatedPaymentProvider`, que corre no próprio serviço. Não há Stripe, webhooks, Stripe CLI nem WireMock como fornecedor.
-- **Cartões de teste:** o cliente indica no `paymentMethodId` da reserva um cartão de teste, que decide a resposta do fornecedor em todas as operações dessa reserva (cobrança, caução, cobrança acima da caução e reembolso):
+- **A simulated provider:** the booking-service's `payment` module keeps the `PaymentProvider` port (ADR-15), with a single adapter, `SimulatedPaymentProvider`, which runs inside the service itself. There is no Stripe, no webhooks, no Stripe CLI and no WireMock as a provider.
+- **Test cards:** in the reservation's `paymentMethodId`, the customer gives a test card, which decides the provider's response in every operation of that reservation (charge, deposit, charge above the deposit and refund):
 
-  | Cartão | Resposta |
+  | Card | Response |
   |---|---|
-  | `card_ok` | aprova tudo |
-  | `card_declined` | recusa tudo (`CARD_DECLINED`) |
-  | `card_no_extra` | aprova a cobrança e a caução; recusa a cobrança acima da caução, que fica em dívida (`outstanding` no `DepositSettled`) |
-  | `card_slow` | não responde dentro do timeout (`PROVIDER_UNAVAILABLE`) |
-  | outro qualquer | recusa (`UNKNOWN_CARD`) |
+  | `card_ok` | approves everything |
+  | `card_declined` | declines everything (`CARD_DECLINED`) |
+  | `card_no_extra` | approves the charge and the deposit; declines the charge above the deposit, which stays outstanding (`outstanding` in `DepositSettled`) |
+  | `card_slow` | does not respond within the timeout (`PROVIDER_UNAVAILABLE`) |
+  | any other | declines (`UNKNOWN_CARD`) |
 
-- **Cobrança da reserva:** o módulo `payment` trata o `ReservationPaymentRequested` (ADR-15), chama o fornecedor e publica o evento interno `PaymentCompleted` ou `PaymentFailed`. O resultado vem na resposta do fornecedor, sem webhook. Cada reserva é cobrada uma só vez, mesmo que o pedido chegue repetido.
-- **Caução:** `POST /internal/deposits` retém a caução no cartão da reserva, sem débito. O `SettleDeposit` captura o devido, liberta o resto e cobra a diferença ao mesmo cartão; se essa cobrança for recusada, o `DepositSettled` indica o valor em dívida. A retenção não expira.
-- **Reembolsos:** o fornecedor regista o reembolso total ou parcial e o módulo publica `PaymentRefunded`. Não há cobranças pendentes para cancelar, porque o fornecedor responde dentro do timeout; um pagamento concluído depois de a reserva expirar é reembolsado.
-- **Resiliência:** as chamadas ao fornecedor correm num thread pool próprio e limitado (bulkhead), com timeout e um circuit breaker `payment-provider`, criado no arranque para aparecer no painel do Grafana (ADR-26). O `card_slow` faz abrir o circuit breaker, enquanto a pesquisa e as cotações continuam a responder. Não há retries: um fornecedor no próprio processo não tem falhas de rede transitórias.
-- **O que muda nos outros ADRs** (o resto de cada um mantém-se):
-  - **ADR-01 e ADR-02:** o fornecedor de pagamentos deixa de ser uma dependência externa; o bulkhead e o circuit breaker protegem a pesquisa e as cotações de um fornecedor lento simulado.
-  - **ADR-06:** no passo 2 o pagamento é feito no fornecedor simulado, e no passo 3 o `PaymentCompleted` ou o `PaymentFailed` vêm da resposta do fornecedor, não de um webhook.
-  - **ADR-07:** deixa de haver webhooks do Stripe a deduplicar.
-  - **ADR-13:** os métodos de pagamento de teste passam a ser os cartões acima, em vez de `pm_card_visa` e `pm_card_chargeDeclined`.
-  - **ADR-15:** a porta `PaymentProvider` isola o fornecedor simulado; trocá-lo por um fornecedor real só mexe num adaptador.
-  - **ADR-16:** o cluster deixa de contar com o Stripe CLI e com o WireMock.
-  - **ADR-17:** deixa de haver chaves do Stripe a proteger.
+- **Reservation charge:** the `payment` module handles `ReservationPaymentRequested` (ADR-15), calls the provider and publishes the internal event `PaymentCompleted` or `PaymentFailed`. The result comes in the provider's response, without a webhook. Each reservation is charged only once, even if the request arrives more than once.
+- **Deposit:** `POST /internal/deposits` holds the deposit on the reservation's card, without debiting it. `SettleDeposit` captures the amount due, releases the rest and charges the difference to the same card; if that charge is declined, `DepositSettled` states the outstanding amount. The hold does not expire.
+- **Refunds:** the provider records the full or partial refund and the module publishes `PaymentRefunded`. There are no pending charges to cancel, because the provider responds within the timeout; a payment completed after the reservation has expired is refunded.
+- **Resilience:** the calls to the provider run on their own bounded thread pool (bulkhead), with a timeout and a `payment-provider` circuit breaker, created at startup so that it appears on the Grafana dashboard (ADR-26). `card_slow` makes the circuit breaker open, while search and quotes keep responding. There are no retries: a provider in the same process has no transient network failures.
+- **What changes in the other ADRs** (the rest of each one stays as it is):
+  - **ADR-01 and ADR-02:** the payment provider is no longer an external dependency; the bulkhead and the circuit breaker protect search and quotes from a slow simulated provider.
+  - **ADR-06:** in step 2 the payment is made with the simulated provider, and in step 3 `PaymentCompleted` or `PaymentFailed` come from the provider's response, not from a webhook.
+  - **ADR-07:** there are no longer Stripe webhooks to deduplicate.
+  - **ADR-13:** the test payment methods become the cards above, instead of `pm_card_visa` and `pm_card_chargeDeclined`.
+  - **ADR-15:** the `PaymentProvider` port isolates the simulated provider; replacing it with a real provider only touches one adapter.
+  - **ADR-16:** the cluster no longer includes the Stripe CLI or WireMock.
+  - **ADR-17:** there are no longer Stripe keys to protect.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Stripe em modo de teste (ADR-12)** — mostra pagamentos reais no dashboard do Stripe, mas obriga a contas, chaves, ao Stripe CLI no cluster e à renovação das pré-autorizações, e os cenários de falha dependem do Stripe e da rede.
-- **WireMock como fornecedor externo** — dá latência e falhas por configuração, mas é mais um serviço a correr e a configurar, e as respostas teriam de ser montadas à mão para cada operação.
-- **Aprovar sempre** — é o mais simples, mas perde os pagamentos recusados, a dívida na liquidação da caução e a demonstração do circuit breaker.
-- **Falhas e latência por configuração** — dispensa os cartões de teste, mas um cenário da demonstração obriga a mudar a configuração e a reiniciar o serviço, e afeta todas as reservas ao mesmo tempo.
+- **Stripe in test mode (ADR-12)** — shows real payments in the Stripe dashboard, but requires accounts, keys, the Stripe CLI in the cluster and the renewal of pre-authorisations, and the failure scenarios depend on Stripe and on the network.
+- **WireMock as an external provider** — gives latency and failures through configuration, but it is one more service to run and configure, and the responses would have to be built by hand for each operation.
+- **Always approving** — it is the simplest, but it loses the declined payments, the outstanding amount in the deposit settlement and the circuit breaker demonstration.
+- **Failures and latency through configuration** — avoids the test cards, but a demonstration scenario requires changing the configuration and restarting the service, and it affects every reservation at the same time.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Os cenários de pagamento repetem-se sempre da mesma maneira, sem rede, contas nem chaves.
-- Menos infraestrutura: sem Stripe CLI, sem segredos do Stripe e sem webhooks a expor.
-- A saga, a caução, os reembolsos e o circuit breaker continuam a demonstrar-se como antes.
-- Os contratos que o rental-service e o notification-service já usam não mudam.
+- The payment scenarios repeat the same way every time, with no network, accounts or keys.
+- Less infrastructure: no Stripe CLI, no Stripe secrets and no webhooks to expose.
+- The saga, the deposit, the refunds and the circuit breaker can still be demonstrated as before.
+- The contracts that the rental-service and the notification-service already use do not change.
 
-### Negativas
+### Negative
 
-- Não se mostra uma integração com um fornecedor de pagamentos real, nem a verificação de webhooks.
-- Os resultados dependem de cartões combinados entre nós, não do comportamento de um fornecedor real.
-- O isolamento continua ao nível das threads, não do processo: uma falha grave na JVM afeta os três módulos do booking-service.
+- No integration with a real payment provider is shown, nor any webhook verification.
+- The results depend on cards agreed among ourselves, not on the behaviour of a real provider.
+- The isolation is still at the thread level, not the process level: a serious failure in the JVM affects the three modules of the booking-service.

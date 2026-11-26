@@ -1,28 +1,28 @@
-# ADR-NN: Título
+# ADR-NN: Title
 
-- **Estado:** Proposta | Aceite | Substituída pela ADR-NN
-- **Data:** AAAA-MM-DD
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §X
+- **Status:** Proposed | Accepted | Superseded by ADR-NN
+- **Date:** YYYY-MM-DD
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §X
 
-## Contexto
+## Context
 
-Que problema ou força torna esta decisão necessária?
+What problem or force makes this decision necessary?
 
-## Decisão
+## Decision
 
-O que decidimos fazer, dito de forma clara.
+What we decided to do, stated clearly.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Alternativa** — porque não foi escolhida.
+- **Alternative** — why it was not chosen.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
 -
 
-### Negativas
+### Negative
 
 -

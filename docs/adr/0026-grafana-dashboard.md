@@ -1,48 +1,48 @@
-# ADR-26: Painel do Grafana como código
+# ADR-26: Grafana dashboard as code
 
-- **Estado:** Aceite
-- **Data:** 2026-11-23
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** ADR-03, ADR-16, ADR-24, ADR-25; backlog RP-51
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** ADR-03, ADR-16, ADR-24, ADR-25; backlog RP-51
 
-## Contexto
+## Context
 
-O Prometheus já recolhe as métricas de todas as aplicações (ADR-24), mas não há painéis: para mostrar o comportamento do sistema, alguém teria de os montar à mão no Grafana, em cada cluster, e perdiam-se quando o pod reiniciasse.
+Prometheus already collects the metrics of every application (ADR-24), but there are no dashboards: to show the system's behaviour, someone would have to build them by hand in Grafana, in each cluster, and they would be lost when the pod restarted.
 
-- **O que mostrar:** a latência por endpoint, o estado dos circuit breakers, as filas e as DLQs do RabbitMQ, e os contratos e as reservas por estado.
-- **Fontes:** a latência e os circuit breakers vêm das aplicações; as filas só o RabbitMQ as conhece; os estados do negócio estão nas bases de dados dos serviços.
-- **Reservas:** o booking-service ainda não tem as reservas, por isso o painel tem de estar pronto antes de haver dados.
+- **What to show:** the latency per endpoint, the state of the circuit breakers, the RabbitMQ queues and DLQs, and the rental agreements and reservations by status.
+- **Sources:** the latency and the circuit breakers come from the applications; only RabbitMQ knows the queues; the business states are in the services' databases.
+- **Reservations:** the booking-service does not have reservations yet, so the dashboard has to be ready before there is data.
 
-## Decisão
+## Decision
 
-- **Painel como código:** um só painel, RentPorto, em `infra/grafana/dashboards/rentporto.json`, provisionado por ficheiro no compose e no k3d, como a datasource (ADR-24). Não se edita na UI; muda-se o ficheiro por pull request.
-- **Latência:** o `http.server.requests` regista um histograma (`config/application.yml`), para o Prometheus calcular o p50, o p95 e o p99 de cada endpoint. A mesma métrica dá os pedidos por segundo e os erros 5xx.
-- **Circuit breakers:** as métricas `resilience4j_circuitbreaker_*` do Micrometer. Um serviço cria os seus circuit breakers no arranque, para o painel os mostrar antes da primeira chamada.
-- **Filas e DLQs:** o plugin `rabbitmq_prometheus`, que já vem ligado na imagem do RabbitMQ. O Prometheus lê as métricas de cada fila em `/metrics/detailed` (porta 15692), no compose e no k3d.
-- **Negócio:**
-  - cada serviço expõe um gauge por estado, que conta na base de dados quando o Prometheus o lê: `rentporto.rental.agreements` no rental-service e, quando houver reservas, `rentporto.booking.reservations` no booking-service;
-  - com várias réplicas, todas contam a mesma base, por isso o painel usa `max by (status)`.
-- **Verificação:** o `infra/verify.sh` e o `deploy.sh` confirmam que o painel está provisionado e pedem ao Prometheus cada consulta do painel, para apanhar um nome de métrica ou uma consulta errada.
+- **Dashboard as code:** a single dashboard, RentPorto, in `infra/grafana/dashboards/rentporto.json`, provisioned from a file in compose and on k3d, like the datasource (ADR-24). It is not edited in the UI; the file is changed through a pull request.
+- **Latency:** `http.server.requests` records a histogram (`config/application.yml`), so Prometheus can compute the p50, p95 and p99 of each endpoint. The same metric gives the requests per second and the 5xx errors.
+- **Circuit breakers:** the Micrometer `resilience4j_circuitbreaker_*` metrics. A service creates its circuit breakers at startup, so the dashboard shows them before the first call.
+- **Queues and DLQs:** the `rabbitmq_prometheus` plugin, which already comes enabled in the RabbitMQ image. Prometheus reads the metrics of each queue at `/metrics/detailed` (port 15692), in compose and on k3d.
+- **Business:**
+  - each service exposes a gauge per status, which counts in the database when Prometheus reads it: `rentporto.rental.agreements` in the rental-service and, once there are reservations, `rentporto.booking.reservations` in the booking-service;
+  - with several replicas, all of them count the same database, so the dashboard uses `max by (status)`.
+- **Verification:** `infra/verify.sh` and `deploy.sh` confirm that the dashboard is provisioned and run each of the dashboard's queries against Prometheus, to catch a wrong metric name or query.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Painéis feitos na UI e exportados de vez em quando** — é mais rápido no início, mas o que está no cluster deixa de coincidir com o repositório e perde-se num deploy limpo.
-- **Painéis da comunidade** (Spring Boot, RabbitMQ) — mostram dezenas de métricas genéricas, mas não os estados do negócio nem as DLQs, e dependem de nomes e etiquetas que não são os nossos.
-- **Contadores atualizados pelos eventos** — evitam ler a base de dados, mas começam do zero quando o serviço reinicia e divergem entre réplicas. Um `COUNT` por estado a cada 15 segundos é barato e dá sempre o valor certo.
-- **Grafonnet ou outro gerador de JSON** — torna o painel mais legível como código, mas acrescenta uma ferramenta e um passo de geração para um só painel.
+- **Dashboards built in the UI and exported now and then** — faster at first, but what is in the cluster stops matching the repository and is lost in a clean deploy.
+- **Community dashboards** (Spring Boot, RabbitMQ) — show dozens of generic metrics, but not the business states or the DLQs, and depend on names and labels that are not ours.
+- **Counters updated by the events** — avoid reading the database, but start from zero when the service restarts and diverge between replicas. A `COUNT` per status every 15 seconds is cheap and always gives the right value.
+- **Grafonnet or another JSON generator** — makes the dashboard more readable as code, but adds a tool and a generation step for a single dashboard.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Um deploy limpo já tem o painel, igual no compose e no k3d.
-- O painel mostra as filas sem consumidor e as mensagens nas DLQs, que de outra forma só se viam na consola do RabbitMQ.
-- Um circuit breaker ou uma fila nova aparecem no painel sem mudar o JSON.
-- O booking-service só tem de expor o gauge das reservas para o gráfico ficar com dados.
+- A clean deploy already has the dashboard, the same in compose and on k3d.
+- The dashboard shows the queues without a consumer and the messages in the DLQs, which otherwise could only be seen in the RabbitMQ console.
+- A new circuit breaker or queue shows up on the dashboard without changing the JSON.
+- The booking-service only has to expose the reservations gauge for the chart to have data.
 
-### Negativas
+### Negative
 
-- O JSON do painel é longo e mudá-lo à mão pede cuidado; a verificação apanha as consultas inválidas, não os gráficos feios.
-- Os histogramas multiplicam as séries do `http.server.requests` por cada intervalo de latência.
-- Cada leitura do Prometheus faz uma consulta à base de dados por estado, em cada réplica.
-- Até o booking-service expor as reservas, o gráfico delas fica sem dados.
+- The dashboard's JSON is long and changing it by hand takes care; the verification catches invalid queries, not ugly charts.
+- The histograms multiply the `http.server.requests` series by each latency bucket.
+- Each Prometheus read runs one database query per status, on each replica.
+- Until the booking-service exposes the reservations, their chart has no data.

@@ -1,129 +1,129 @@
-# ADR-30: Organização dos pacotes por tipo de ficheiro
+# ADR-30: Package organisation by kind of file
 
-- **Estado:** Aceite
-- **Data:** 2026-11-26
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** ADR-08, ADR-15; backlog RP-06
+- **Status:** Accepted
+- **Date:** 2026-11-26
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** ADR-08, ADR-15; backlog RP-06
 
-## Contexto
+## Context
 
-O ADR-15 divide cada serviço nas camadas `api`, `application`, `domain` e `infrastructure`. Até aqui, dentro de cada camada, tudo ficava numa só pasta:
+ADR-15 splits each service into the `api`, `application`, `domain` and `infrastructure` layers. Until now, inside each layer, everything was in a single folder:
 
-- **Tamanho:**
-  - o `domain` do fleet-service tinha 33 ficheiros, 15 deles exceções;
-  - o `domain` do rental-service tinha 22 e o do customer-service 13;
-  - o `api` do fleet-service tinha 23 e o do módulo `pricing` do booking-service 18.
-- **Mistura:**
-  - no `domain` estavam os agregados, os value objects, as portas dos repositórios e as exceções;
-  - na `application` estavam os casos de uso, as portas, as exceções e as tarefas de arranque;
-  - no `api` estavam o contrato da API, a sua implementação e os dados que entram e saem.
-- **Bibliotecas comuns:**
-  - a raiz da `common-web` juntava o formato dos erros, a configuração do OpenAPI e a das observações;
-  - a raiz da `common-events` juntava o envelope, os value objects partilhados e os nomes da topologia do RabbitMQ.
-- **Testes:** os containers, as anotações dos testes de integração e os dados de teste estavam na raiz, misturados com os testes.
-- **Repetição:**
-  - a classe que lê do JWT a conta do pedido (`AuthenticatedUser`) estava copiada, com pequenas diferenças, em três serviços;
-  - a configuração do relógio de Lisboa (`ClockConfiguration`) estava igual em quatro.
+- **Size:**
+  - the fleet-service `domain` had 33 files, 15 of them exceptions;
+  - the rental-service `domain` had 22 and the customer-service one 13;
+  - the fleet-service `api` had 23 and the one of the booking-service `pricing` module 18.
+- **Mixing:**
+  - `domain` held the aggregates, the value objects, the repository ports and the exceptions;
+  - `application` held the use cases, the ports, the exceptions and the startup tasks;
+  - `api` held the API contract, its implementation and the data that goes in and out.
+- **Shared libraries:**
+  - the root of `common-web` gathered the error format, the OpenAPI configuration and the observation configuration;
+  - the root of `common-events` gathered the envelope, the shared value objects and the names of the RabbitMQ topology.
+- **Tests:** the containers, the integration test annotations and the test data were at the root, mixed with the tests.
+- **Repetition:**
+  - the class that reads the request's account from the JWT (`AuthenticatedUser`) was copied, with small differences, in three services;
+  - the configuration of the Lisbon clock (`ClockConfiguration`) was identical in four.
 
-## Decisão
+## Decision
 
-### Serviços
+### Services
 
-- **Uma pasta por tipo de ficheiro em cada camada**, igual em todos os serviços e nos módulos do booking-service:
+- **One folder per kind of file in each layer**, the same in every service and in the modules of the booking-service:
 
   ```
-  pt/rentporto/{serviço ou módulo}/
+  pt/rentporto/{service or module}/
   ├── api/
-  │   ├── contract/      # XxxApi: interfaces com os paths, os papéis (@PreAuthorize) e o OpenAPI
-  │   ├── controller/    # XxxController e XxxAdvice, que implementam os contratos
-  │   ├── request/       # XxxRequest: corpos dos pedidos
-  │   ├── response/      # XxxResponse: corpos das respostas
-  │   └── model/         # enums e records usados dentro dos pedidos e das respostas
+  │   ├── contract/      # XxxApi: interfaces with the paths, the roles (@PreAuthorize) and the OpenAPI
+  │   ├── controller/    # XxxController and XxxAdvice, which implement the contracts
+  │   ├── request/       # XxxRequest: request bodies
+  │   ├── response/      # XxxResponse: response bodies
+  │   └── model/         # enums and records used inside the requests and the responses
   ├── application/
-  │   ├── service/       # casos de uso e tarefas de arranque
-  │   ├── port/          # interfaces que a aplicação usa e a infraestrutura implementa
-  │   ├── exception/     # exceções da aplicação
-  │   └── model/         # records que passam pelos casos de uso e pelas portas
+  │   ├── service/       # use cases and startup tasks
+  │   ├── port/          # interfaces that the application uses and the infrastructure implements
+  │   ├── exception/     # application exceptions
+  │   └── model/         # records that pass through the use cases and the ports
   ├── domain/
-  │   ├── model/         # agregados, entidades, value objects e enums
-  │   ├── repository/    # portas dos repositórios
-  │   ├── service/       # regras sem estado que não pertencem a um agregado
-  │   └── exception/     # exceções do domínio
-  └── infrastructure/    # uma pasta por tecnologia: persistence, messaging, security, client, mail, ...
+  │   ├── model/         # aggregates, entities, value objects and enums
+  │   ├── repository/    # repository ports
+  │   ├── service/       # stateless rules that do not belong to an aggregate
+  │   └── exception/     # domain exceptions
+  └── infrastructure/    # one folder per technology: persistence, messaging, security, client, mail, ...
   ```
 
-- **O que vai para cada pasta:**
-  - **`api`:** o sufixo diz a pasta. `Api` vai para `contract`, `Controller` e `Advice` para `controller`, `Request` para `request` e `Response` para `response`. O resto vai para `model`.
-  - **`application`:** as exceções vão para `exception`, as interfaces para `port` e os records que passam pelas portas para `model`. O resto vai para `service`.
-  - **`domain`:** as exceções vão para `exception`, as interfaces dos repositórios para `repository` e as regras sem estado, como o cálculo dos encargos da devolução (`ReturnCharges`), para `service`. O resto vai para `model`.
-  - **Pastas e tipos aninhados:**
-    - não há classes na raiz de uma camada;
-    - uma pasta só existe quando tem ficheiros;
-    - os tipos aninhados ficam com a sua classe, por exemplo o `Mailer.Email` fica com a porta `Mailer`.
-- **Visibilidade:**
-  - os controllers continuam visíveis só no seu pacote;
-  - os métodos `from(...)` das respostas passam a públicos, porque o controller está noutro pacote. O ADR-15 já impede as outras camadas de usar o `api`;
-  - nada mais muda de visibilidade. Os construtores dos casos de uso e as tarefas de arranque (`AdminBootstrap`, `ExampleCategories`) ficam visíveis só no pacote `service`, junto dos testes que os usam.
+- **What goes in each folder:**
+  - **`api`:** the suffix gives the folder. `Api` goes to `contract`, `Controller` and `Advice` to `controller`, `Request` to `request` and `Response` to `response`. The rest goes to `model`.
+  - **`application`:** exceptions go to `exception`, interfaces to `port` and the records that pass through the ports to `model`. The rest goes to `service`.
+  - **`domain`:** exceptions go to `exception`, repository interfaces to `repository` and stateless rules, such as the calculation of the return charges (`ReturnCharges`), to `service`. The rest goes to `model`.
+  - **Folders and nested types:**
+    - there are no classes at the root of a layer;
+    - a folder only exists when it has files;
+    - nested types stay with their class, for example `Mailer.Email` stays with the `Mailer` port.
+- **Visibility:**
+  - the controllers stay package-private;
+  - the `from(...)` methods of the responses become public, because the controller is in another package. ADR-15 already prevents the other layers from using `api`;
+  - nothing else changes visibility. The use case constructors and the startup tasks (`AdminBootstrap`, `ExampleCategories`) stay package-private in the `service` package, next to the tests that use them.
 
-### Bibliotecas comuns
+### Shared libraries
 
-- **`common-web` por área.** A raiz fica só com o `CommonWebAutoConfiguration`:
-  - `error`: `BusinessException`, `EndpointNotImplementedException` e `ProblemDetailsAdvice`;
-  - `openapi`: `OpenApiContract` e `WebDefaults`;
+- **`common-web` by area.** The root keeps only `CommonWebAutoConfiguration`:
+  - `error`: `BusinessException`, `EndpointNotImplementedException` and `ProblemDetailsAdvice`;
+  - `openapi`: `OpenApiContract` and `WebDefaults`;
   - `observation`: `NoActuatorObservations`;
-  - `security`: a configuração do resource server e o `AuthenticatedUser`;
-  - `time`: o `TimeAutoConfiguration`.
-- **`AuthenticatedUser`** em `pt.rentporto.web.security`: uma só classe, com `subject()`, `id()`, `email()` e `hasRole()`, lida do JWT (ADR-08). Substitui as três cópias.
-- **`TimeAutoConfiguration`:** dá a todos os serviços um `Clock` com a hora de Lisboa e substitui os quatro `ClockConfiguration`. Um serviço ou um teste pode declarar o seu próprio `Clock`.
+  - `security`: the resource server configuration and `AuthenticatedUser`;
+  - `time`: `TimeAutoConfiguration`.
+- **`AuthenticatedUser`** in `pt.rentporto.web.security`: a single class, with `subject()`, `id()`, `email()` and `hasRole()`, read from the JWT (ADR-08). It replaces the three copies.
+- **`TimeAutoConfiguration`:** gives every service a `Clock` with Lisbon time and replaces the four `ClockConfiguration` classes. A service or a test can declare its own `Clock`.
 - **`common-events`:**
-  - os nomes da topologia do RabbitMQ (`Exchanges`, `RoutingKeys`, `CommandQueues`) vão para `topology`;
-  - o `EventEnvelope`, o `Money` e o `RentalPeriod` ficam na raiz;
-  - os eventos continuam numa pasta por contexto;
-  - as mensagens e a topologia não mudam: mudam os pacotes das constantes, não os seus valores.
-- **Sem camadas:** a `common-messaging` (`consumer`, `lock`, `outbox`) e o gateway (`docs`, `ratelimit`, `routing`, `security`) continuam organizados por funcionalidade.
+  - the names of the RabbitMQ topology (`Exchanges`, `RoutingKeys`, `CommandQueues`) move to `topology`;
+  - `EventEnvelope`, `Money` and `RentalPeriod` stay at the root;
+  - the events stay in one folder per context;
+  - the messages and the topology do not change: the packages of the constants change, not their values.
+- **No layers:** `common-messaging` (`consumer`, `lock`, `outbox`) and the gateway (`docs`, `ratelimit`, `routing`, `security`) stay organised by feature.
 
-### Testes
+### Tests
 
-- **Cada teste fica no pacote da classe que testa**, para poder usar o que é visível só no pacote:
-  - os testes dos endpoints vão para `api/controller`;
-  - os testes dos casos de uso e as suas implementações falsas das portas vão para `application/service`;
-  - os testes do domínio vão para `domain/model` ou `domain/service`;
-  - os testes da infraestrutura ficam na pasta da tecnologia.
-- **O `OpenApiContractTest` fica na raiz do `api`**, porque cobre a API do serviço toda. No booking-service fica na raiz do serviço, porque cobre os três módulos.
-- **Os helpers partilhados pelos testes vão para `{serviço}/testing`**, como já faziam a `common-web` e a `common-messaging`. São os containers, as anotações `@XxxServiceTest` e os dados de teste.
-- **Na raiz ficam só os testes do serviço inteiro:** `ArchitectureTest`, `AuthorizationTest` e `XxxApplicationTests`.
+- **Each test stays in the package of the class it tests**, so it can use what is package-private:
+  - endpoint tests go to `api/controller`;
+  - use case tests and their fakes of the ports go to `application/service`;
+  - domain tests go to `domain/model` or `domain/service`;
+  - infrastructure tests stay in the folder of their technology.
+- **`OpenApiContractTest` stays at the root of `api`**, because it covers the whole API of the service. In the booking-service it stays at the root of the service, because it covers the three modules.
+- **The helpers shared by the tests go to `{service}/testing`**, as `common-web` and `common-messaging` already did. They are the containers, the `@XxxServiceTest` annotations and the test data.
+- **Only the whole-service tests stay at the root:** `ArchitectureTest`, `AuthorizationTest` and `XxxApplicationTests`.
 
-### Verificação automática
+### Automatic verification
 
-As `ArchitectureRules` da `common-web`, que todos os serviços já correm, verificam que:
+The `ArchitectureRules` of `common-web`, which every service already runs, check that:
 
-- no `api`, na `application` e no `domain` não há classes fora das pastas acima, e na raiz da `infrastructure` não há classes;
-- no `api`, cada classe está na pasta do seu sufixo, e só os controllers dependem dos controllers;
-- as exceções estão só nas pastas `exception`, e nessas pastas só há exceções;
-- as pastas `port` e `repository` só têm interfaces, e a `application/service` não tem nenhuma.
+- in `api`, `application` and `domain` there are no classes outside the folders above, and there are no classes at the root of `infrastructure`;
+- in `api`, each class is in the folder of its suffix, and only controllers depend on controllers;
+- exceptions are only in the `exception` folders, and those folders hold only exceptions;
+- the `port` and `repository` folders hold only interfaces, and `application/service` holds none.
 
-O resto do ADR-15 mantém-se.
+The rest of ADR-15 still applies.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Uma pasta por recurso ou agregado em cada camada** (por exemplo `vehicle`, `transfer` e `category`) — junta os ficheiros que mudam juntos e deixa mais classes visíveis só no pacote. Mas cada pasta volta a misturar tipos de ficheiro, e os tipos partilhados por vários recursos precisam de mais uma pasta. A equipa preferiu ver de relance o que é contrato, porta, caso de uso, entidade ou exceção.
-- **Manter uma pasta por camada** — não dá trabalho, mas as pastas maiores continuam a crescer com cada funcionalidade nova.
-- **Separar só as exceções** — é a pasta que mais cresce no fleet-service, mas as portas e os repositórios ficariam misturados com os casos de uso e as entidades.
-- **Mappers à parte** (por exemplo MapStruct) em vez dos `from(...)` nas respostas — mais uma dependência e mais uma pasta para conversões de uma linha.
+- **One folder per resource or aggregate in each layer** (for example `vehicle`, `transfer` and `category`) — groups the files that change together and leaves more classes package-private. But each folder mixes kinds of file again, and the types shared by several resources need one more folder. The team preferred to see at a glance what is a contract, a port, a use case, an entity or an exception.
+- **Keeping one folder per layer** — takes no work, but the largest folders keep growing with each new feature.
+- **Separating only the exceptions** — it is the folder that grows the most in the fleet-service, but the ports and the repositories would stay mixed with the use cases and the entities.
+- **Separate mappers** (for example MapStruct) instead of the `from(...)` methods in the responses — one more dependency and one more folder for one-line conversions.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Cada pasta tem um só tipo de ficheiro e o mesmo nome em todos os serviços. As portas, os repositórios, as exceções ou o contrato de qualquer serviço encontram-se no mesmo sítio.
-- O contrato da API fica separado da sua implementação, e as portas da aplicação ficam separadas dos casos de uso.
-- A organização é verificada nos testes de cada serviço, por isso não se perde com o tempo.
-- O `AuthenticatedUser` e o relógio de Lisboa têm uma só versão, testada uma vez.
-- Os helpers dos testes ficam separados dos testes.
+- Each folder holds a single kind of file and has the same name in every service. The ports, the repositories, the exceptions or the contract of any service are found in the same place.
+- The API contract is separate from its implementation, and the application's ports are separate from the use cases.
+- The organisation is checked in each service's tests, so it does not erode over time.
+- `AuthenticatedUser` and the Lisbon clock have a single version, tested once.
+- The test helpers are kept apart from the tests.
 
-### Negativas
+### Negative
 
-- Uma funcionalidade mexe em várias pastas: por exemplo, uma regra nova pode tocar no agregado, na exceção e no caso de uso.
-- Há mais imports entre as pastas da mesma camada.
-- Os `from(...)` das respostas ficam públicos.
-- Um teste muda de pasta quando a classe que testa muda, para continuar no mesmo pacote.
+- A feature touches several folders: for example, a new rule can touch the aggregate, the exception and the use case.
+- There are more imports between folders of the same layer.
+- The responses' `from(...)` methods are public.
+- A test moves folder when the class it tests moves, to stay in the same package.

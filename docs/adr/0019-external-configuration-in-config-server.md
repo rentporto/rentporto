@@ -1,38 +1,38 @@
-# ADR-19: Configuração externa no Config Server
+# ADR-19: External configuration in the Config Server
 
-- **Estado:** Aceite
-- **Data:** 2026-11-17
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** ADR-04, ADR-11, ADR-16, ADR-17; backlog RP-07, RP-08
+- **Status:** Accepted
+- **Date:** 2026-11-17
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** ADR-04, ADR-11, ADR-16, ADR-17; backlog RP-07, RP-08
 
-## Contexto
+## Context
 
-Os serviços precisam de endereços, bases de dados e parâmetros diferentes no desenvolvimento e no k3d, e esses valores têm de mudar sem reconstruir as imagens. No desenvolvimento, o docker-compose só sobe a infraestrutura e os serviços correm no IDE, em `localhost` com portas fixas (RP-07); no k3d, chamam-se pelos nomes dos Services (ADR-04). O repositório é público (ADR-17).
+The services need different addresses, databases and parameters in development and in k3d, and those values must change without rebuilding the images. In development, docker-compose only starts the infrastructure, and the services run in the IDE, on `localhost` with fixed ports (RP-07); in k3d, they call each other by the names of the Services (ADR-04). The repository is public (ADR-17).
 
-## Decisão
+## Decision
 
-- A configuração vive na pasta `config/` do monorepo (ADR-11): ficheiros comuns (`application.yml`, `application-dev.yml`, `application-k8s.yml`) e um `{serviço}.yml` por serviço. Muda por pull request, como o código.
-- O Config Server serve essa pasta com dois backends, escolhidos pelo perfil:
-  - `dev`: backend `native`, sobre a pasta local, para uma alteração se aplicar ao reiniciar o serviço, sem push;
-  - `k8s`: backend `git`, sobre o ramo `main` do repositório no GitHub.
-- O gateway e os seis serviços importam a configuração do Config Server com fail-fast e algumas tentativas: sem Config Server, não arrancam e, no k3d, o pod não fica ready.
-- Os endereços dependem do perfil: `localhost` e as portas fixas no `dev`, os nomes dos Services no `k8s`. Isto substitui a frase do ADR-04 segundo a qual o docker-compose usa os nomes dos Services.
-- O repositório não guarda segredos: as passwords do perfil `k8s` são placeholders preenchidos por Secrets.
+- The configuration lives in the `config/` folder of the monorepo (ADR-11): common files (`application.yml`, `application-dev.yml`, `application-k8s.yml`) and one `{service}.yml` per service. It changes through pull requests, like the code.
+- The Config Server serves that folder with two backends, chosen by profile:
+  - `dev`: the `native` backend, on the local folder, so that a change applies when the service restarts, without a push;
+  - `k8s`: the `git` backend, on the `main` branch of the repository on GitHub.
+- The gateway and the six services import their configuration from the Config Server with fail-fast and a few retries: without the Config Server, they do not start and, in k3d, the pod does not become ready.
+- The addresses depend on the profile: `localhost` and the fixed ports in `dev`, the names of the Services in `k8s`. This replaces the sentence in ADR-04 that says docker-compose uses the names of the Services.
+- The repository holds no secrets: the passwords of the `k8s` profile are placeholders filled in by Secrets.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Repositório Git só para a configuração** — separa a configuração do código, mas obriga a dois repositórios e a dois fluxos de revisão.
-- **Backend `git` também no desenvolvimento** — obriga a fazer push para testar uma alteração de configuração.
-- **ConfigMaps do Kubernetes em vez do Config Server** — dispensa um componente, mas não serve o desenvolvimento local com a mesma configuração.
+- **A Git repository only for the configuration** — separates the configuration from the code, but requires two repositories and two review flows.
+- **The `git` backend in development too** — requires a push to test a configuration change.
+- **Kubernetes ConfigMaps instead of the Config Server** — saves one component, but does not serve local development with the same configuration.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- A mesma configuração, versionada, serve os dois ambientes; só mudam os endereços.
-- Mudar um parâmetro no k3d é um commit no `main` e o reinício do serviço, sem nova imagem.
+- The same versioned configuration serves both environments; only the addresses change.
+- Changing a parameter in k3d takes a commit on `main` and a restart of the service, with no new image.
 
-### Negativas
+### Negative
 
-- No k3d, o Config Server precisa de acesso à internet para ler o GitHub; sem rede, os serviços não arrancam.
-- No desenvolvimento, o Config Server tem de estar a correr antes dos serviços.
+- In k3d, the Config Server needs internet access to read GitHub; without a network, the services do not start.
+- In development, the Config Server must be running before the services.

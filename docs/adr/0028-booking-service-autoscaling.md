@@ -1,49 +1,49 @@
-# ADR-28: Escala automática do booking-service
+# ADR-28: Autoscaling of the booking-service
 
-- **Estado:** Aceite
-- **Data:** 2026-11-23
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** ADR-15, ADR-16, ADR-18, ADR-21, ADR-23; backlog RP-54
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** ADR-15, ADR-16, ADR-18, ADR-21, ADR-23; backlog RP-54
 
-## Contexto
+## Context
 
-Queremos mostrar que um serviço escala sem os outros. O booking-service é o que recebe a pesquisa, as cotações e as reservas, por isso é o que mais carga terá; já corre com 2 réplicas, com os schedulers num lock partilhado (ADR-18).
+We want to show that one service scales without the others. The booking-service receives the search, the quotes and the reservations, so it is the one that will have the most load; it already runs with 2 replicas, with the schedulers on a shared lock (ADR-18).
 
-- **Métricas:** o k3s, por baixo do k3d, já traz o metrics-server (ADR-16), por isso o Kubernetes conhece a CPU de cada pod sem instalar nada.
-- **Arranque da JVM:** um serviço Spring gasta perto de um CPU durante os primeiros segundos, o que não é carga.
-- **Orçamento:** o cluster local tem cerca de 10 GB de memória para tudo (ADR-16); cada réplica do booking-service pede 384 MiB e pode chegar a 768 MiB.
-- **Gateway:** limita os pedidos de cada cliente (ADR-21), por isso não serve para gerar carga.
+- **Metrics:** k3s, underneath k3d, already ships the metrics-server (ADR-16), so Kubernetes knows the CPU of each pod without installing anything.
+- **JVM startup:** a Spring service uses close to one CPU during its first seconds, which is not load.
+- **Budget:** the local cluster has about 10 GB of memory for everything (ADR-16); each booking-service replica requests 384 MiB and can reach 768 MiB.
+- **Gateway:** it limits each client's requests (ADR-21), so it is no good for generating load.
 
-## Decisão
+## Decision
 
-- **HorizontalPodAutoscaler pela CPU:** entre 2 e 3 réplicas do booking-service, para manter a CPU média abaixo de 70 % do que cada pod pede (100m).
-- **Estabilização:**
-  - sobe uma réplica de cada vez, só se a CPU ficar acima do alvo durante 60 segundos;
-  - desce ao fim de 5 minutos sem carga.
-  - O Kubernetes ignora a CPU dos pods que ainda não estão prontos, e a janela de 60 segundos cobre o resto do arranque da JVM.
-- **O manifest mantém 2 réplicas**, igual ao mínimo do HPA, para um deploy nunca contrariar o HPA em repouso. O `check-manifests.sh` confirma que cada HPA escala um Deployment que pede CPU e que começa no mínimo.
-- **Verificação:**
-  - o `deploy.sh` confirma que o HPA mede a CPU e que, sem carga, fica no mínimo;
-  - o `infra/k8s/load-booking.sh` põe carga num pod busybox dentro do cluster, direto ao Service do booking-service, e mostra o HPA a chegar às 3 réplicas.
+- **HorizontalPodAutoscaler on CPU:** between 2 and 3 booking-service replicas, to keep the average CPU below 70 % of what each pod requests (100m).
+- **Stabilisation:**
+  - it scales up one replica at a time, only if the CPU stays above the target for 60 seconds;
+  - it scales down after 5 minutes without load.
+  - Kubernetes ignores the CPU of pods that are not ready yet, and the 60-second window covers the rest of the JVM startup.
+- **The manifest keeps 2 replicas**, the same as the HPA minimum, so that a deploy never works against the HPA at rest. `check-manifests.sh` confirms that each HPA scales a Deployment that requests CPU and that starts at the minimum.
+- **Verification:**
+  - `deploy.sh` confirms that the HPA measures the CPU and that, without load, it stays at the minimum;
+  - `infra/k8s/load-booking.sh` generates load from a busybox pod inside the cluster, straight at the booking-service Service, and shows the HPA reaching 3 replicas.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Escalar pela memória** — a JVM não devolve a memória quando a carga baixa, por isso o serviço nunca voltaria a descer.
-- **Métricas personalizadas** (pedidos por segundo, pelo Prometheus Adapter) — medem melhor a procura, mas acrescentam mais um componente ao cluster para um HPA só.
-- **KEDA ou o tamanho das filas do RabbitMQ** — servem a quem consome mensagens, não a um serviço que responde a pedidos HTTP.
-- **Carga através do gateway** — é o caminho real dos clientes, mas o rate limiting responderia 429 antes de o booking-service aquecer.
-- **Mais réplicas no máximo** — mostraria mais escala, mas cada réplica tira até 768 MiB ao orçamento do cluster.
+- **Scaling on memory** — the JVM does not give memory back when the load drops, so the service would never scale down again.
+- **Custom metrics** (requests per second, through the Prometheus Adapter) — measure demand better, but add one more component to the cluster for a single HPA.
+- **KEDA or the length of the RabbitMQ queues** — suit message consumers, not a service that answers HTTP requests.
+- **Load through the gateway** — it is the clients' real path, but rate limiting would answer 429 before the booking-service warmed up.
+- **More replicas at the maximum** — would show more scaling, but each replica takes up to 768 MiB of the cluster's budget.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- O booking-service escala sozinho com a carga e volta a 2 réplicas quando ela passa, sem mexer nos outros serviços.
-- Os deploys e os reinícios não fazem o HPA escalar.
-- A demonstração corre com um só script, sem ferramentas fora do cluster.
+- The booking-service scales by itself with the load and goes back to 2 replicas when the load passes, without touching the other services.
+- Deploys and restarts do not make the HPA scale.
+- The demonstration runs with a single script, with no tools outside the cluster.
 
-### Negativas
+### Negative
 
-- O alvo de 70 % de 100m é baixo para um serviço Java: escala depressa, o que serve a demonstração, mas com tráfego real o pedido de CPU teria de subir.
-- Enquanto os endpoints do booking-service respondem "não implementado", a carga é sobre o `/v3/api-docs`; quando houver cotações, a carga deve passar a ser sobre elas.
-- Um `kubectl apply` com o HPA acima do mínimo repõe 2 réplicas até o HPA voltar a decidir.
+- The 70 % target of 100m is low for a Java service: it scales quickly, which suits the demonstration, but with real traffic the CPU request would have to go up.
+- While the booking-service endpoints answer "not implemented", the load is on `/v3/api-docs`; once there are quotes, the load should be on them.
+- A `kubectl apply` with the HPA above the minimum resets the service to 2 replicas until the HPA decides again.

@@ -1,37 +1,37 @@
-# ADR-08: auth-service próprio com Spring Security
+# ADR-08: Own auth-service with Spring Security
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §8.3, §10.1
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §8.3, §10.1
 
-## Contexto
+## Context
 
-O sistema precisa de registo de contas, login, papéis e JWT para clientes, agentes, gestores e administradores. A stack é só Spring e os recursos do cluster local são limitados.
+The system needs account registration, login, roles and JWTs for customers, agents, managers and administrators. The stack is Spring only, and the local cluster has limited resources.
 
-## Decisão
+## Decision
 
-Um `auth-service` fino, construído com Spring Security:
+A thin `auth-service`, built with Spring Security:
 
-- regista contas, autentica e emite JWT assinados com RS256;
-- guarda as palavras-passe com BCrypt;
-- publica a chave pública em `/auth/jwks`;
-- não tem regras de negócio.
+- registers accounts, authenticates and issues JWTs signed with RS256;
+- stores the passwords with BCrypt;
+- publishes the public key at `/auth/jwks`;
+- has no business rules.
 
-O gateway e cada serviço validam o JWT como OAuth2 Resource Server e leem os papéis das claims. O `customerId` é o `sub` do JWT.
+The gateway and each service validate the JWT as an OAuth2 Resource Server and read the roles from the claims. The `customerId` is the `sub` of the JWT.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Keycloak** — é um fornecedor de identidade completo, mas é pesado para o k3d e acrescenta mais um produto para configurar.
+- **Keycloak** — is a complete identity provider, but it is heavy for k3d and adds one more product to configure.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Stack só Spring e fluxo de login simples.
-- Defesa em profundidade: o token é validado no gateway e em cada serviço.
+- A Spring-only stack and a simple login flow.
+- Defence in depth: the token is validated at the gateway and in each service.
 
-### Negativas
+### Negative
 
-- Mantemos o código de autenticação.
-- Sem SSO, MFA nem recuperação de palavra-passe de origem.
+- We maintain the authentication code.
+- No SSO, MFA or password recovery out of the box.

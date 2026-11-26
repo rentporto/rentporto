@@ -1,30 +1,30 @@
-# ADR-10: Reservar por categoria e atribuir a viatura no levantamento
+# ADR-10: Reserve by category and assign the vehicle at pick-up
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §1.5, §9.5
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §1.5, §9.5
 
-## Contexto
+## Context
 
-As empresas de aluguer vendem uma categoria de viatura (ex.: Grupo B – Económico), não uma matrícula. O principal problema atual é o overbooking no aeroporto no verão.
+Rental companies sell a vehicle category (e.g. Group B – Economy), not a licence plate. The main current problem is overbooking at the airport in summer.
 
-## Decisão
+## Decision
 
-Uma reserva ocupa uma `VehicleCategory` numa estação durante um período de aluguer. A disponibilidade é uma contagem por estação, categoria e dia: a capacidade menos as reservas ativas que ocupam a estação. O `fleet-service` atribui uma viatura concreta, de forma atómica, no levantamento.
+A reservation takes up a `VehicleCategory` at a station for a rental period. Availability is a count per station, category and day: the capacity minus the active reservations that take up the station. The `fleet-service` assigns a specific vehicle, atomically, at pick-up.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Reservar uma matrícula específica** — faz a disponibilidade depender de viaturas individuais e falha quando uma viatura vai para manutenção.
+- **Reserving a specific licence plate** — makes availability depend on individual vehicles, and fails when a vehicle goes to maintenance.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- A disponibilidade é uma contagem simples, verificada com lock pessimista.
-- A frota pode ser reorganizada sem mexer nas reservas.
+- Availability is a simple count, checked with a pessimistic lock.
+- The fleet can be reorganised without touching the reservations.
 
-### Negativas
+### Negative
 
-- A atribuição da viatura na Frota tem de ser atómica e idempotente.
-- A vista de capacidade pode atrasar-se brevemente; a regra one-way faz com que erre para uma viatura a menos, nunca a mais.
+- Assigning the vehicle in Fleet must be atomic and idempotent.
+- The capacity view can lag briefly; the one-way rule makes it err towards one vehicle too few, never one too many.

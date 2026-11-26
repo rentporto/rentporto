@@ -1,42 +1,42 @@
-# ADR-06: Saga orquestrada na reserva, coreografia nas reações
+# ADR-06: Orchestrated saga for the reservation, choreography for the reactions
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §9.2, §9.3
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §9.2, §9.3
 
-## Contexto
+## Context
 
-Criar uma reserva envolve a capacidade, a cotação e um pagamento num fornecedor externo. O processo precisa de compensações: pagamento recusado, fornecedor indisponível, pagamento não concluído em 15 minutos ou pagamento que chega depois de a reserva expirar. A chamada ao Stripe não pode ficar dentro da transação que bloqueia a capacidade, senão as linhas ficam presas enquanto se espera pelo fornecedor. Outros fluxos, como enviar notificações ou atualizar a frota depois de uma devolução, são reações simples, sem decisões a tomar.
+Creating a reservation involves the capacity, the quote and a payment with an external provider. The process needs compensations: a declined payment, an unavailable provider, a payment not completed within 15 minutes, or a payment that arrives after the reservation has expired. The call to Stripe cannot sit inside the transaction that locks the capacity, or the rows stay locked while waiting for the provider. Other flows, such as sending notifications or updating the fleet after a return, are simple reactions, with no decisions to make.
 
-## Decisão
+## Decision
 
-O módulo `reservation` do `booking-service` orquestra as sagas de reserva e de cancelamento. O estado da saga é o estado da `Reservation` (`PENDING_PAYMENT`, `CONFIRMED`, `PAYMENT_FAILED`, `EXPIRED`, `CANCELLED`…).
+The `reservation` module of the `booking-service` orchestrates the reservation and cancellation sagas. The state of the saga is the state of the `Reservation` (`PENDING_PAYMENT`, `CONFIRMED`, `PAYMENT_FAILED`, `EXPIRED`, `CANCELLED`…).
 
-Fluxo de criação:
+Creation flow:
 
-1. Numa só transação: bloqueia a capacidade, valida e marca a cotação como usada, cria a reserva em `PENDING_PAYMENT` e regista o evento interno `ReservationPaymentRequested`.
-2. Depois do commit, o módulo `payment` trata o evento e cria o pagamento no Stripe, num thread pool próprio (ADR-12).
-3. O webhook do Stripe gera o evento interno `PaymentCompleted` ou `PaymentFailed`.
-4. A reserva passa a `CONFIRMED` e o `ReservationConfirmed` é publicado no RabbitMQ pela outbox, ou passa a `PAYMENT_FAILED` e liberta a capacidade.
+1. In a single transaction: it locks the capacity, validates the quote and marks it as used, creates the reservation as `PENDING_PAYMENT` and records the internal event `ReservationPaymentRequested`.
+2. After the commit, the `payment` module handles the event and creates the payment in Stripe, in its own thread pool (ADR-12).
+3. The Stripe webhook produces the internal event `PaymentCompleted` or `PaymentFailed`.
+4. The reservation becomes `CONFIRMED` and the outbox publishes `ReservationConfirmed` to RabbitMQ, or it becomes `PAYMENT_FAILED` and releases the capacity.
 
-Um scheduler trata da expiração, do no-show e de mensagens perdidas. Com várias réplicas, os schedulers usam um lock partilhado (ShedLock sobre o PostgreSQL), para correrem numa só réplica. As reações simples (notificações, atualização da frota, criação do contrato) são coreografadas por eventos.
+A scheduler handles expiry, no-shows and lost messages. With several replicas, the schedulers use a shared lock (ShedLock on PostgreSQL), so they run on one replica only. The simple reactions (notifications, updating the fleet, creating the rental agreement) are choreographed by events.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Só coreografia** — espalha o estado da saga e torna as compensações mais difíceis de seguir e de testar.
-- **Chamar o Stripe dentro do pedido de reserva** — segura os locks de capacidade enquanto espera pelo fornecedor e liga a latência da reserva à do Stripe.
-- **Two-phase commit (2PC)** — não é suportado pelo broker nem pelo Stripe e bloqueia recursos enquanto espera.
+- **Choreography only** — spreads the state of the saga and makes the compensations harder to follow and to test.
+- **Calling Stripe inside the reservation request** — holds the capacity locks while waiting for the provider and ties the latency of the reservation to that of Stripe.
+- **Two-phase commit (2PC)** — neither the broker nor Stripe supports it, and it locks resources while waiting.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Estado da saga num só sítio, com compensações explícitas e testáveis.
-- Como a saga é interna ao `booking-service`, as compensações não dependem do broker.
-- As reações continuam desacopladas.
+- The state of the saga is in one place, with explicit, testable compensations.
+- Because the saga is internal to the `booking-service`, the compensations do not depend on the broker.
+- The reactions stay decoupled.
 
-### Negativas
+### Negative
 
-- O módulo `reservation` conhece os passos da saga.
-- Exige schedulers com lock partilhado e cuidado com eventos que chegam tarde.
+- The `reservation` module knows the steps of the saga.
+- Requires schedulers with a shared lock, and care with events that arrive late.

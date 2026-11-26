@@ -1,55 +1,55 @@
-# ADR-25: Rastreio distribuído com Zipkin
+# ADR-25: Distributed tracing with Zipkin
 
-- **Estado:** Aceite
-- **Data:** 2026-11-22
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** ADR-07, ADR-16, ADR-19, ADR-22, ADR-24; backlog RP-50
+- **Status:** Accepted
+- **Date:** 2026-11-22
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** ADR-07, ADR-16, ADR-19, ADR-22, ADR-24; backlog RP-50
 
-## Contexto
+## Context
 
-Um pedido atravessa o gateway, um ou mais serviços por REST e, pelo RabbitMQ, os consumidores dos eventos. Para diagnosticar latências e falhas, queremos ver esse percurso como um só rasto, com o mesmo traceId do princípio ao fim.
+A request crosses the gateway, one or more services over REST and, through RabbitMQ, the event consumers. To diagnose latency and failures, we want to see that path as a single trace, with the same traceId from start to finish.
 
-- **Publicação assíncrona:** com o outbox (ADR-07), a mensagem é gravada na transação do pedido e enviada mais tarde pelo publisher, noutra thread e sem o contexto do pedido. Sem cuidado, cada mensagem começa um rasto novo.
-- **Chamadas entre serviços:** o gateway encaminha os pedidos e o rental-service chama o fleet-service e os pagamentos por Feign (ADR-22).
-- **Orçamento:** o cluster local tem cerca de 10 GB de memória para tudo (ADR-16).
+- **Asynchronous publishing:** with the outbox (ADR-07), the message is written in the request's transaction and sent later by the publisher, on another thread and without the request's context. Without care, each message starts a new trace.
+- **Calls between services:** the gateway routes the requests, and the rental-service calls the fleet-service and payments through Feign (ADR-22).
+- **Budget:** the local cluster has about 10 GB of memory for everything (ADR-16).
 
-## Decisão
+## Decision
 
-- **Brave e Zipkin:** cada aplicação usa o `spring-boot-starter-zipkin`, que no Spring Boot 4 traz o Micrometer Tracing com o Brave e o envio dos spans para o Zipkin. O nome de cada serviço no Zipkin é o `spring.application.name`.
-- **Propagação W3C:** o contexto viaja no header `traceparent`, nos pedidos HTTP e nas mensagens AMQP. Os logs levam o traceId e o spanId.
-- **Amostragem de 100 %:** `management.tracing.sampling.probability: 1.0` no `config/application.yml`, para todos os perfis. Com o valor por omissão, 10 %, a maior parte dos pedidos não ficava registada.
-- **O outbox guarda o contexto do pedido:**
-  - o OutboxWriter grava o `traceparent` do span corrente na coluna `headers` do outbox, que já existia;
-  - o OutboxPublisher publica cada mensagem dentro de um span `outbox publish`, filho desse contexto;
-  - a observação do RabbitTemplate põe o `traceparent` na mensagem, e a dos listeners continua o rasto no consumidor. As duas ficam ligadas pelos defaults da `common-messaging`.
-- **Feign:** um serviço que chame outro por Feign junta o `feign-micrometer`, que passa o rasto na chamada.
-- **Actuator fora dos rastos:** a `common-web` não observa os pedidos ao `/actuator` nem o que acontece enquanto os serve. As probes do Kubernetes e o Prometheus chamam o actuator de cada pod a cada 10 a 15 segundos, e os seus rastos esconderiam os pedidos dos utilizadores e encheriam a memória do Zipkin.
-- **Zipkin em memória:**
-  - no compose e no k3d, o Zipkin guarda os rastos em memória; no k3d, até 50 000 spans;
-  - no k3d abre-se por `kubectl port-forward`, como o Grafana (ADR-24);
-  - o `deploy.sh` confirma que o Zipkin tem o rasto do login através do gateway e do auth-service.
-- **Testes como em produção:** as anotações de teste dos serviços ligam o tracing com `@AutoConfigureTracing` e amostragem de 100 %, sem o envio para o Zipkin. Sem a anotação, o Spring Boot desliga nos testes o envio e, com ele, a propagação.
+- **Brave and Zipkin:** each application uses `spring-boot-starter-zipkin`, which in Spring Boot 4 brings Micrometer Tracing with Brave and sends the spans to Zipkin. Each service's name in Zipkin is its `spring.application.name`.
+- **W3C propagation:** the context travels in the `traceparent` header, in HTTP requests and in AMQP messages. The logs carry the traceId and the spanId.
+- **100 % sampling:** `management.tracing.sampling.probability: 1.0` in `config/application.yml`, for every profile. With the default value, 10 %, most requests were not recorded.
+- **The outbox keeps the request's context:**
+  - the OutboxWriter writes the `traceparent` of the current span to the outbox's `headers` column, which already existed;
+  - the OutboxPublisher publishes each message inside an `outbox publish` span, a child of that context;
+  - the RabbitTemplate's observation puts the `traceparent` on the message, and the listeners' observation continues the trace in the consumer. The `common-messaging` defaults turn both on.
+- **Feign:** a service that calls another through Feign adds `feign-micrometer`, which passes the trace on in the call.
+- **Actuator kept out of the traces:** `common-web` does not observe requests to `/actuator` or what happens while it serves them. The Kubernetes probes and Prometheus call each pod's actuator every 10 to 15 seconds, and their traces would hide the users' requests and fill Zipkin's memory.
+- **Zipkin in memory:**
+  - in compose and on k3d, Zipkin keeps the traces in memory; on k3d, up to 50 000 spans;
+  - on k3d it is opened through `kubectl port-forward`, like Grafana (ADR-24);
+  - `deploy.sh` confirms that Zipkin has the trace of the login through the gateway and the auth-service.
+- **Tests as in production:** the services' test annotations turn tracing on with `@AutoConfigureTracing` and 100 % sampling, without sending to Zipkin. Without the annotation, Spring Boot turns off the sending in tests and, with it, the propagation.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **OpenTelemetry com o exportador para o Zipkin** — permite trocar de backend sem mudar as aplicações, mas traz o SDK do OpenTelemetry e mais configuração, para o mesmo resultado com um só backend.
-- **TraceId no envelope dos eventos** — dispensa o header, mas mistura a observabilidade com o contrato dos eventos e obriga cada listener a continuar o rasto à mão. O envelope mantém o `correlationId`, que liga as mensagens do mesmo fluxo de negócio (ADR-07).
-- **Publicar sem guardar o contexto** — é o mais simples, mas cada mensagem começa um rasto novo e perde-se a ligação entre o pedido e as reações aos seus eventos.
-- **Zipkin com armazenamento persistente** (Elasticsearch, Cassandra ou MySQL) — guarda os rastos entre reinícios, mas mais um servidor não cabe no orçamento do cluster local.
+- **OpenTelemetry with the Zipkin exporter** — makes it possible to switch backend without changing the applications, but brings the OpenTelemetry SDK and more configuration, for the same result with a single backend.
+- **TraceId in the event envelope** — avoids the header, but mixes observability with the event contract and forces each listener to continue the trace by hand. The envelope keeps the `correlationId`, which links the messages of the same business flow (ADR-07).
+- **Publishing without keeping the context** — it is the simplest, but each message starts a new trace and the link between the request and the reactions to its events is lost.
+- **Zipkin with persistent storage** (Elasticsearch, Cassandra or MySQL) — keeps the traces across restarts, but one more server does not fit the local cluster's budget.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Um pedido vê-se no Zipkin com o mesmo traceId desde o gateway até aos consumidores das mensagens, com a espera no outbox à vista.
-- Os logs de todos os serviços levam o traceId, por isso juntam-se os logs de um pedido.
-- Um serviço novo só precisa da dependência: o outbox e o RabbitMQ já levam o rasto.
+- A request shows up in Zipkin with the same traceId from the gateway to the message consumers, with the wait in the outbox in plain view.
+- The logs of every service carry the traceId, so the logs of a request can be put together.
+- A new service only needs the dependency: the outbox and RabbitMQ already carry the trace.
 
-### Negativas
+### Negative
 
-- Com 100 % de amostragem, cada pedido gera spans; com tráfego real, a amostragem teria de baixar.
-- Os rastos perdem-se quando o Zipkin reinicia.
-- Uma mensagem gravada fora de um pedido, por exemplo por um scheduler, começa um rasto próprio.
-- Uma chamada Feign sem o `feign-micrometer` fica num rasto à parte.
-- As métricas `http.server.requests` deixam de contar os pedidos ao actuator.
-- No k3d, o endpoint do Zipkin e a amostragem vêm do `config/` no `main` (ADR-19); antes do merge, o cluster não os tem.
+- With 100 % sampling, every request produces spans; with real traffic, the sampling would have to go down.
+- The traces are lost when Zipkin restarts.
+- A message written outside a request, for example by a scheduler, starts a trace of its own.
+- A Feign call without `feign-micrometer` ends up in a separate trace.
+- The `http.server.requests` metrics no longer count the requests to the actuator.
+- On k3d, the Zipkin endpoint and the sampling come from `config/` on `main` (ADR-19); before the merge, the cluster does not have them.

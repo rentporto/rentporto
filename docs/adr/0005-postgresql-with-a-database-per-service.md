@@ -1,34 +1,34 @@
-# ADR-05: Uma instância PostgreSQL com uma base lógica e um utilizador por serviço
+# ADR-05: One PostgreSQL instance with one logical database and one user per service
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §8.3, §13.1
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §8.3, §13.1
 
-## Contexto
+## Context
 
-É obrigatório ter uma base de dados por serviço, para que nenhum serviço leia os dados de outro. Correr seis instâncias PostgreSQL no k3d gastaria uma grande parte do orçamento de memória.
+A database per service is mandatory, so that no service reads another service's data. Running six PostgreSQL instances in k3d would use a large part of the memory budget.
 
-## Decisão
+## Decision
 
-Correr um único StatefulSet de PostgreSQL. Um script de arranque cria seis bases de dados e seis utilizadores, um por serviço, e cada utilizador só tem privilégios sobre a sua base. Cada serviço gere o seu esquema com Flyway.
+Run a single PostgreSQL StatefulSet. A startup script creates six databases and six users, one per service, and each user only has privileges on its own database. Each service manages its schema with Flyway.
 
-A base `booking` tem um esquema por módulo (`reservation`, `pricing`, `payment`), sem chaves estrangeiras nem joins entre esquemas (ADR-15).
+The `booking` database has one schema per module (`reservation`, `pricing`, `payment`), with no foreign keys or joins between schemas (ADR-15).
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Uma instância PostgreSQL por serviço** — dá isolamento físico, mas custa demasiada memória no k3d.
-- **Esquema partilhado** — traz de volta o acoplamento do monolítico.
+- **One PostgreSQL instance per service** — gives physical isolation, but costs too much memory in k3d.
+- **Shared schema** — brings back the coupling of the monolith.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Isolamento dos dados garantido pelos privilégios da base de dados.
-- Pouco consumo de memória.
-- Os esquemas por módulo permitem separar o `booking-service` mais tarde mudando apenas a ligação.
+- Data isolation enforced by the database privileges.
+- Low memory use.
+- The per-module schemas let the `booking-service` be split later by changing only the connection.
 
-### Negativas
+### Negative
 
-- O isolamento é lógico, não físico; a instância é um ponto único de falha.
-- Em produção, cada serviço teria a sua própria instância.
+- The isolation is logical, not physical; the instance is a single point of failure.
+- In production, each service would have its own instance.

@@ -1,33 +1,33 @@
-# ADR-14: Montantes e arredondamento
+# ADR-14: Amounts and rounding
 
-- **Estado:** Proposta
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §1.5, §10.1; backlog RP-24
+- **Status:** Proposed
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §1.5, §10.1; backlog RP-24
 
-## Contexto
+## Context
 
-Os preços combinam tarifa diária, multiplicadores de época, desconto de duração, extras com teto, cobertura, taxas e IVA de 23%. Sem uma regra de arredondamento única, a mesma cotação pode dar totais que diferem num cêntimo entre a cotação, a reserva e o recibo.
+Prices combine a daily rate, season multipliers, a duration discount, capped extras, coverage, fees and 23% VAT. Without a single rounding rule, the same quote can give totals that differ by one cent between the quote, the reservation and the receipt.
 
-## Decisão
+## Decision
 
-- Todos os montantes são guardados e trocados como `Money` em cêntimos (`long amountCents`, moeda `EUR`).
-- Os cálculos intermédios usam `BigDecimal`.
-- Cada linha de preço (aluguer, cada extra, cobertura, cada taxa) é arredondada uma única vez ao cêntimo com `RoundingMode.HALF_UP`.
-- O IVA é calculado sobre a soma das linhas arredondadas e arredondado uma única vez com `HALF_UP`.
-- A cotação guarda todas as linhas, por isso a reserva e o recibo nunca recalculam.
+- All amounts are stored and exchanged as `Money` in cents (`long amountCents`, currency `EUR`).
+- Intermediate calculations use `BigDecimal`.
+- Each price line (rental, each extra, coverage, each fee) is rounded once, to the cent, with `RoundingMode.HALF_UP`.
+- VAT is computed on the sum of the rounded lines and rounded once with `HALF_UP`.
+- The quote stores every line, so the reservation and the receipt never recalculate.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Arredondar apenas o total** — faz com que as linhas mostradas ao cliente não somem o total.
-- **Arredondamento bancário (`HALF_EVEN`)** — é menos intuitivo para os clientes e para os casos de teste calculados à mão.
+- **Round only the total** — the lines shown to the customer would not add up to the total.
+- **Banker's rounding (`HALF_EVEN`)** — less intuitive for customers and for hand-calculated test cases.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Totais reproduzíveis, que coincidem ao cêntimo com os casos de teste calculados à mão.
+- Reproducible totals that match the hand-calculated test cases to the cent.
 
-### Negativas
+### Negative
 
-- Todas as linhas têm de ser arredondadas no mesmo sítio, no módulo `pricing` do `booking-service`.
+- Every line must be rounded in the same place, in the `pricing` module of the `booking-service`.

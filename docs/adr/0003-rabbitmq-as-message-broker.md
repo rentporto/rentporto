@@ -1,35 +1,35 @@
-# ADR-03: RabbitMQ como broker de mensagens
+# ADR-03: RabbitMQ as the message broker
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §9.6, §11
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §9.6, §11
 
-## Contexto
+## Context
 
-O sistema precisa de comandos com um único consumidor, eventos com vários consumidores, retries e dead-letter queues. Tudo corre num cluster k3d local, com um orçamento de cerca de 10 GB de memória. Reproduzir o histórico de eventos não é um requisito.
+The system needs commands with a single consumer, events with several consumers, retries and dead-letter queues. Everything runs in a local k3d cluster, with a memory budget of about 10 GB. Replaying the event history is not a requirement.
 
-## Decisão
+## Decision
 
-Usar RabbitMQ com Spring AMQP:
+Use RabbitMQ with Spring AMQP:
 
-- um topic exchange `rentporto.events`, com routing key `{contexto}.{evento}` (ex.: `reservation.confirmed`);
-- uma fila e uma DLQ por consumidor; no `booking-service`, cada módulo tem as suas próprias filas;
-- uma fila dedicada por comando;
-- 3 tentativas com backoff antes de a mensagem ir para a DLQ.
+- a topic exchange `rentporto.events`, with the routing key `{context}.{event}` (e.g. `reservation.confirmed`);
+- one queue and one DLQ per consumer; in the `booking-service`, each module has its own queues;
+- a dedicated queue per command;
+- 3 attempts with backoff before the message goes to the DLQ.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Apache Kafka** — oferece replay e débito elevado, mas usa mais memória, não tem DLQ por mensagem nem semântica de comandos nativas e acrescenta trabalho operacional de que o projeto não precisa.
+- **Apache Kafka** — offers replay and high throughput, but uses more memory, has no native per-message DLQ or command semantics, and adds operational work the project does not need.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Filas de comandos e DLQ nativas.
-- Consola de gestão que mostra as filas e as DLQ durante a defesa.
-- Pouca memória no k3d.
+- Native command queues and DLQs.
+- A management console that shows the queues and the DLQs while the system runs.
+- Low memory use in k3d.
 
-### Negativas
+### Negative
 
-- Sem histórico de eventos reproduzível: reconstruir um read model obriga o serviço de origem a republicar o seu estado.
+- No replayable event history: rebuilding a read model requires the source service to republish its state.

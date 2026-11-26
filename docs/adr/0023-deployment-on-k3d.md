@@ -1,56 +1,56 @@
-# ADR-23: Disponibilização no k3d
+# ADR-23: Deployment on k3d
 
-- **Estado:** Aceite
-- **Data:** 2026-11-17
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** ADR-04, ADR-16, ADR-17, ADR-19, ADR-20; backlog RP-07, RP-12
+- **Status:** Accepted
+- **Date:** 2026-11-17
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** ADR-04, ADR-16, ADR-17, ADR-19, ADR-20; backlog RP-07, RP-12
 
-## Contexto
+## Context
 
-O sistema tem de arrancar no k3d com um só comando (ADR-16), a partir de uma máquina com Docker e k3d. Para isso, é preciso decidir quatro coisas:
+The system has to start on k3d with a single command (ADR-16), from a machine with Docker and k3d. For that, four things have to be decided:
 
-- **Segredos:** os serviços precisam de passwords, de uma chave de assinatura (ADR-20) e de um administrador, e o repositório é público (ADR-17).
-- **Imagens:** as do CI ficam no GHCR, mas no k3d também se quer correr o código que ainda não foi publicado.
-- **Ordem de arranque:** sem o Config Server, os serviços não arrancam (ADR-19), e o Kubernetes reinicia-os com esperas cada vez maiores.
-- **RabbitMQ:** o ficheiro de definições do RP-07 trazia o utilizador e o hash da sua password.
+- **Secrets:** the services need passwords, a signing key (ADR-20) and an administrator, and the repository is public (ADR-17).
+- **Images:** the CI images live in GHCR, but on k3d we also want to run code that has not been published yet.
+- **Startup order:** without the Config Server, the services do not start (ADR-19), and Kubernetes restarts them with ever longer waits.
+- **RabbitMQ:** the definitions file from RP-07 carried the user and the hash of its password.
 
-## Decisão
+## Decision
 
-- **Segredos gerados no deploy.**
-  - O `deploy.sh` cria os Secrets `auth-service`, `postgres` e `rabbitmq` só se ainda não existirem, com passwords aleatórias e a chave gerada com `openssl`.
-  - Nenhum segredo entra no repositório.
-  - Voltar a correr o `deploy.sh` não os muda, por isso continuam a coincidir com os dados guardados nos volumes.
-- **Imagens por overlay.**
-  - Os manifestos ficam em `infra/k8s`, com Kustomize.
-  - A base aponta para as imagens do GHCR. O overlay `k3d` troca-as pelas imagens construídas localmente, que o `deploy.sh` importa com `k3d image import`.
-- **Uma fonte para a configuração do RP-07:** a topologia do RabbitMQ e o `init.sh` do PostgreSQL entram no cluster por ConfigMaps gerados a partir dos ficheiros do compose.
-- **Utilizadores do RabbitMQ fora das definições.**
-  - O RabbitMQ carrega uma pasta com dois ficheiros: a topologia, em comum, e os utilizadores.
-  - No compose, os utilizadores vêm do `users.json` do repositório; no k3d, vêm do Secret `rabbitmq`.
-- **Ordem de arranque explícita.**
-  - Os serviços têm um initContainer que espera pelo Config Server, pelo PostgreSQL e pelo RabbitMQ.
-  - Uma startupProbe dá margem ao arranque da JVM.
-  - As probes de readiness e de liveness usam o Actuator, e todos os contentores têm limites de CPU e memória.
-- **Portas:** cada Service expõe a porta fixa do desenvolvimento, por isso só os nomes mudam entre perfis (ADR-19).
+- **Secrets generated at deploy time.**
+  - `deploy.sh` creates the `auth-service`, `postgres` and `rabbitmq` Secrets only if they do not exist yet, with random passwords and a key generated with `openssl`.
+  - No secret goes into the repository.
+  - Running `deploy.sh` again does not change them, so they keep matching the data stored in the volumes.
+- **Images by overlay.**
+  - The manifests live in `infra/k8s`, with Kustomize.
+  - The base points to the GHCR images. The `k3d` overlay replaces them with the locally built images, which `deploy.sh` imports with `k3d image import`.
+- **One source for the RP-07 configuration:** the RabbitMQ topology and the PostgreSQL `init.sh` enter the cluster through ConfigMaps generated from the compose files.
+- **RabbitMQ users outside the definitions.**
+  - RabbitMQ loads a folder with two files: the topology, which is shared, and the users.
+  - In compose, the users come from the repository's `users.json`; on k3d, they come from the `rabbitmq` Secret.
+- **Explicit startup order.**
+  - The services have an initContainer that waits for the Config Server, PostgreSQL and RabbitMQ.
+  - A startupProbe gives the JVM time to start.
+  - The readiness and liveness probes use the Actuator, and every container has CPU and memory limits.
+- **Ports:** each Service exposes the fixed development port, so only the names change between profiles (ADR-19).
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Secrets no repositório, cifrados com SOPS ou Sealed Secrets** — dá segredos estáveis entre máquinas, mas obriga a gerir chaves de cifra para um cluster que se cria e destrói localmente.
-- **Helm** — dá templates e valores por ambiente, mas acrescenta uma ferramenta e uma linguagem de templates para manifestos que o Kustomize já cobre.
-- **Imagens sempre do GHCR** — dispensa a compilação local, mas só testa o código que já está no `main`.
-- **Deixar o Kubernetes reiniciar os serviços até o Config Server arrancar** — funciona, mas o backoff atrasa o arranque em minutos e enche os eventos de falsos erros.
+- **Secrets in the repository, encrypted with SOPS or Sealed Secrets** — gives stable secrets across machines, but requires managing encryption keys for a cluster that is created and destroyed locally.
+- **Helm** — gives templates and values per environment, but adds a tool and a templating language for manifests that Kustomize already covers.
+- **Images always from GHCR** — avoids the local build, but only tests the code that is already on `main`.
+- **Letting Kubernetes restart the services until the Config Server starts** — it works, but the backoff delays startup by minutes and fills the events with false errors.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- `./deploy.sh` cria tudo de raiz e termina com um login pelo Ingress.
-- O repositório não tem nenhuma password nem chave do cluster.
-- O compose e o k3d partilham a topologia do RabbitMQ e a criação das bases.
-- O CI valida os manifestos e verifica as probes e os limites.
+- `./deploy.sh` creates everything from scratch and ends with a login through the Ingress.
+- The repository holds no password or key of the cluster.
+- Compose and k3d share the RabbitMQ topology and the creation of the databases.
+- The CI validates the manifests and checks the probes and the limits.
 
-### Negativas
+### Negative
 
-- Os segredos vivem só no cluster: apagar o cluster apaga-os, e os dados com eles.
-- O Config Server do k3d lê o `main` do GitHub; para testar a configuração de um branch, é preciso enviá-lo e usar `CONFIG_LABEL`.
-- Uma alteração ao ConfigMap da topologia só chega ao RabbitMQ quando o pod reinicia.
+- The secrets live only in the cluster: deleting the cluster deletes them, and the data with them.
+- The k3d Config Server reads `main` from GitHub; to test the configuration of a branch, you have to push it and use `CONFIG_LABEL`.
+- A change to the topology ConfigMap only reaches RabbitMQ when the pod restarts.

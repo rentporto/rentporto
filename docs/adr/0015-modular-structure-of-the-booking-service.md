@@ -1,48 +1,48 @@
-# ADR-15: Arquitetura hexagonal nos serviços e módulos do booking-service
+# ADR-15: Hexagonal architecture in the services and in the modules of the booking-service
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** ADR-01, ADR-06, ADR-07, ADR-12; backlog RP-09, RP-22
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** ADR-01, ADR-06, ADR-07, ADR-12; backlog RP-09, RP-22
 
-## Contexto
+## Context
 
-Cada serviço é um bounded context, exceto o `booking-service`, que junta três (ADR-01). Sem uma estrutura comum, cada serviço acabaria organizado à sua maneira, com as regras de negócio misturadas com o Spring, a base de dados e as chamadas a outros serviços. No `booking-service`, os três contextos acabariam a ler as tabelas uns dos outros e a partilhar entidades, que é exatamente o acoplamento do monolítico que a migração quer eliminar. O `booking-service` também tem de poder ser dividido mais tarde se a escala ou a equipa o justificarem.
+Each service is one bounded context, except the `booking-service`, which combines three (ADR-01). Without a common structure, each service would end up organised in its own way, with the business rules mixed with Spring, the database and the calls to other services. In the `booking-service`, the three contexts would end up reading each other's tables and sharing entities, which is exactly the coupling of the monolith that the migration aims to remove. It must also be possible to split the `booking-service` later, if the scale or the team justify it.
 
-## Decisão
+## Decision
 
-### Camadas e regra de dependências
+### Layers and dependency rule
 
-Cada serviço segue uma arquitetura hexagonal com quatro camadas:
+Each service follows a hexagonal architecture with four layers:
 
 ```
-pt/rentporto/{serviço}/
-├── api/             # adaptador de entrada: contrato XxxApi, controllers, records de request e response (RP-06)
-├── application/     # casos de uso transacionais e portas de saída (interfaces)
-├── domain/          # agregados, value objects, portas dos repositórios e exceções de negócio
-└── infrastructure/  # adaptadores de saída, um subpacote por tecnologia: persistence, security, messaging, client
+pt/rentporto/{service}/
+├── api/             # inbound adapter: XxxApi contract, controllers, request and response records (RP-06)
+├── application/     # transactional use cases and outbound ports (interfaces)
+├── domain/          # aggregates, value objects, repository ports and business exceptions
+└── infrastructure/  # outbound adapters, one subpackage per technology: persistence, security, messaging, client
 ```
 
-- **Domínio:** Java sem Spring. As anotações `jakarta.persistence` são permitidas, como metadados de mapeamento; não há um modelo de persistência separado.
-- **Aplicação:** orquestra o domínio e fala com o exterior só através de portas que ela própria define (por exemplo `PasswordHasher`, `DriverProfiles`, `CustomerEvents`). Pode usar `@Service` e `@Transactional`, mas não o Spring Data, o Spring Security, o Spring Web, o AMQP nem o Feign.
-- **API e infraestrutura:** implementam os adaptadores. Nenhuma camada depende delas.
-- **Dependências:** apontam para dentro: `api` e `infrastructure` → `application` → `domain`.
-- **Teste:** um teste ArchUnit em cada serviço verifica estas regras.
+- **Domain:** Java without Spring. The `jakarta.persistence` annotations are allowed, as mapping metadata; there is no separate persistence model.
+- **Application:** orchestrates the domain and talks to the outside only through ports it defines itself (for example `PasswordHasher`, `DriverProfiles`, `CustomerEvents`). It may use `@Service` and `@Transactional`, but not Spring Data, Spring Security, Spring Web, AMQP or Feign.
+- **API and infrastructure:** implement the adapters. No layer depends on them.
+- **Dependencies:** point inwards: `api` and `infrastructure` → `application` → `domain`.
+- **Test:** an ArchUnit test in each service checks these rules.
 
-### Convenções do domínio
+### Domain conventions
 
-- **Value objects** para os conceitos com regras (`Email`, `TaxNumber`, `Plate`, `Money`, `RentalPeriod`): validam e normalizam no construtor e são `@Embeddable` no JPA.
-- **Agregados com comportamento:**
-  - sem setters;
-  - nascem por fábricas que impedem um estado inválido;
-  - mudam de estado por métodos que validam a transição (por exemplo `vehicle.sendToMaintenance()`);
-  - referem outros agregados só pelo id.
-- **Outros serviços atrás de uma porta:** a aplicação define a interface, e um adaptador na infraestrutura (Feign com Resilience4j) traduz o DTO do outro serviço para o modelo próprio, como a Anti-Corruption Layer da ADR-12.
-- **Eventos de integração só nos adaptadores:** o domínio não usa o `common-events`. Um adaptador traduz o estado do agregado para o contrato e escreve-o no outbox, na mesma transação (ADR-07).
+- **Value objects** for the concepts that have rules (`Email`, `TaxNumber`, `Plate`, `Money`, `RentalPeriod`): they validate and normalise in the constructor and are `@Embeddable` in JPA.
+- **Aggregates with behaviour:**
+  - no setters;
+  - they are created by factories that prevent an invalid state;
+  - they change state through methods that validate the transition (for example `vehicle.sendToMaintenance()`);
+  - they refer to other aggregates only by id.
+- **Other services behind a port:** the application defines the interface, and an adapter in the infrastructure (Feign with Resilience4j) translates the other service's DTO into its own model, like the Anti-Corruption Layer of ADR-12.
+- **Integration events only in the adapters:** the domain does not use `common-events`. An adapter translates the state of the aggregate into the contract and writes it to the outbox, in the same transaction (ADR-07).
 
-### Módulos do booking-service
+### Modules of the booking-service
 
-- O código está dividido em três pacotes de topo, um por contexto, cada um com as mesmas quatro camadas:
+- The code is split into three top-level packages, one per context, each with the same four layers:
 
 ```
 booking-service/src/main/java/pt/rentporto/booking/
@@ -52,36 +52,36 @@ booking-service/src/main/java/pt/rentporto/booking/
 └── shared/        # outbox, messaging config
 ```
 
-- Um módulo só usa outro através da interface pública da camada `application` (`PricingApi`, `PaymentApi`). Nunca acede a repositórios, entidades ou controllers de outro módulo.
-- Cada módulo tem o seu esquema na base `booking`, com as suas migrações Flyway, sem chaves estrangeiras nem joins entre esquemas. Uma operação pode abranger dois módulos na mesma transação apenas através dessas interfaces (ex.: `PricingApi.markQuoteUsed` dentro da criação da reserva).
-- Os módulos reagem uns aos outros por eventos internos (`ReservationPaymentRequested`, `PaymentCompleted`, `PaymentFailed`), tratados depois do commit com `@ApplicationModuleListener` e persistidos pelo registo de eventos do Spring Modulith.
-- Um teste com `ApplicationModules.of(BookingApplication.class).verify()` falha se alguma regra entre módulos for violada; o teste ArchUnit verifica as camadas dentro de cada módulo.
-- Cada módulo tem as suas próprias filas no RabbitMQ.
+- A module uses another only through the public interface of its `application` layer (`PricingApi`, `PaymentApi`). It never accesses the repositories, entities or controllers of another module.
+- Each module has its own schema in the `booking` database, with its own Flyway migrations, and no foreign keys or joins between schemas. An operation can span two modules in the same transaction only through those interfaces (e.g. `PricingApi.markQuoteUsed` inside the creation of the reservation).
+- The modules react to each other through internal events (`ReservationPaymentRequested`, `PaymentCompleted`, `PaymentFailed`), handled after the commit with `@ApplicationModuleListener` and persisted by the Spring Modulith event publication registry.
+- A test with `ApplicationModules.of(BookingApplication.class).verify()` fails if any rule between modules is broken; the ArchUnit test checks the layers inside each module.
+- Each module has its own queues in RabbitMQ.
 
-O Spring Modulith usado é o 2.1.x, a linha compatível com o Spring Boot 4.1. Foi verificado com Java 25: o Spring Modulith 2.1.2 usa o ArchUnit 1.4.2, que lê classes de Java 25, e o `ApplicationModules.verify()` deteta violações entre módulos compilados com `--release 25`.
+The Spring Modulith version is 2.1.x, the line compatible with Spring Boot 4.1. It was checked with Java 25: Spring Modulith 2.1.2 uses ArchUnit 1.4.2, which reads Java 25 classes, and `ApplicationModules.verify()` detects violations between modules compiled with `--release 25`.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Pastas por tipo (`controller`, `service`, `entity`, `repository`, `dto`)** — é a estrutura mais conhecida, mas tende a pôr as regras de negócio nos serviços, a deixar as entidades sem comportamento e a misturar o domínio com o Spring.
-- **Pacotes por funcionalidade** (ex.: `account`, `token`, `security`) — agrupa o que muda junto e permite classes package-private, mas não separa o domínio da infraestrutura.
-- **Arquitetura hexagonal pura, com modelo de persistência separado** — o domínio fica também livre do JPA, mas obriga a uma entidade JPA e a mappers nos dois sentidos por cada agregado, com pouco ganho enquanto os dois modelos forem iguais.
-- **Pacotes sem regras verificadas** — as fronteiras degradam-se à primeira pressão de prazo.
-- **Um submódulo Maven por contexto dentro do booking-service** — dá um isolamento mais forte em tempo de compilação, mas complica o build e o pipeline para pouco ganho com duas pessoas.
+- **Folders by type (`controller`, `service`, `entity`, `repository`, `dto`)** — the best-known structure, but it tends to put the business rules in the services, leave the entities without behaviour and mix the domain with Spring.
+- **Packages by feature** (e.g. `account`, `token`, `security`) — groups what changes together and allows package-private classes, but does not separate the domain from the infrastructure.
+- **Pure hexagonal architecture, with a separate persistence model** — the domain is also free of JPA, but it requires a JPA entity and mappers in both directions for each aggregate, with little gain while the two models are the same.
+- **Packages without checked rules** — the boundaries erode under the first deadline pressure.
+- **One Maven submodule per context inside the booking-service** — gives stronger compile-time isolation, but complicates the build and the pipeline for little gain with two people.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- As regras de negócio testam-se sem Spring, sem base de dados e sem os outros serviços; nos testes da aplicação, uma porta troca-se por uma implementação falsa.
-- Trocar uma tecnologia (o Feign, o Stripe, o algoritmo das palavras-passe) só mexe num adaptador.
-- Uma só estrutura em todo o repositório, verificada no CI e não só na revisão.
-- Separar um módulo do booking-service num serviço próprio é trocar a interface `application` por um cliente remoto e os eventos internos por mensagens, sem reescrever o domínio.
-- O registo de eventos garante que um evento interno não se perde se o serviço cair.
+- The business rules are tested without Spring, without a database and without the other services; in the application tests, a port is replaced by a fake implementation.
+- Replacing a technology (Feign, Stripe, the password algorithm) only touches one adapter.
+- One structure across the whole repository, checked in the CI and not only in review.
+- Splitting a module of the booking-service into its own service means replacing the `application` interface with a remote client and the internal events with messages, without rewriting the domain.
+- The event publication registry ensures that an internal event is not lost if the service goes down.
 
-### Negativas
+### Negative
 
-- Mais interfaces e adaptadores: uma porta por cada dependência externa.
-- As classes usadas entre camadas têm de ser públicas.
-- O domínio continua a ter as anotações do JPA, por isso uma mudança no mapeamento pode tocar nas classes do domínio.
-- Mais uma dependência (Spring Modulith) e uma tabela de registo de eventos no booking-service.
-- Exige disciplina na revisão dos pull requests, além dos testes de verificação.
+- More interfaces and adapters: one port for each external dependency.
+- The classes used across layers must be public.
+- The domain still has the JPA annotations, so a mapping change can touch the domain classes.
+- One more dependency (Spring Modulith) and an event publication registry table in the booking-service.
+- It takes discipline in pull request reviews, on top of the verification tests.

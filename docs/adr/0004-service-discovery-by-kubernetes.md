@@ -1,30 +1,30 @@
-# ADR-04: Descoberta e balanceamento pelo Kubernetes, sem Eureka
+# ADR-04: Discovery and load balancing by Kubernetes, without Eureka
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §8.3, §13; ADR-16
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §8.3, §13; ADR-16
 
-## Contexto
+## Context
 
-O ambiente de destino é um cluster k3s, criado com o k3d, que já fornece Services com nomes DNS e balanceamento entre réplicas pelo kube-proxy. Cada JVM a mais consome parte do orçamento de memória. Os mesmos nomes de serviço também resolvem no docker-compose.
+The target environment is a k3s cluster, created with k3d, which already provides Services with DNS names and load balancing between replicas through kube-proxy. Each extra JVM uses part of the memory budget. The same service names also resolve in docker-compose.
 
-## Decisão
+## Decision
 
-Os clientes OpenFeign chamam os outros serviços pelo nome do Service do Kubernetes (ex.: `http://booking-service:8084`). O docker-compose usa os mesmos nomes. Não há servidor Eureka nem Spring Cloud LoadBalancer. O Config Server mantém-se para a configuração externa.
+The OpenFeign clients call the other services by the name of their Kubernetes Service (e.g. `http://booking-service:8084`). The docker-compose setup uses the same names. There is no Eureka server and no Spring Cloud LoadBalancer. The Config Server stays, for the external configuration.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Eureka com Spring Cloud LoadBalancer** — duplica o que o cluster já faz e acrescenta mais uma JVM a correr.
+- **Eureka with Spring Cloud LoadBalancer** — duplicates what the cluster already does and adds one more JVM to run.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Menos um componente para correr e configurar.
-- Os mesmos nomes de serviço no docker-compose e no k3d.
+- One less component to run and configure.
+- The same service names in docker-compose and in k3d.
 
-### Negativas
+### Negative
 
-- O balanceamento é feito no servidor (kube-proxy), não no cliente.
-- Correr um serviço fora do compose ou do cluster obriga a configurar os URL explicitamente.
+- Load balancing happens on the server side (kube-proxy), not in the client.
+- Running a service outside compose or the cluster requires setting the URLs explicitly.
