@@ -5,7 +5,7 @@ spring:
     password: ${NOTIFICATION_DB_PASSWORD:notification}
   mail:
     host: ${rentporto.mailpit.host}
-    port: 1025
+    port: ${rentporto.mailpit.port}
 
 rentporto:
   notification:

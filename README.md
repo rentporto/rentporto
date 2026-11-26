@@ -228,32 +228,36 @@ the wrong layer or folder fails the build.
 
 Always use the Maven wrapper (`./mvnw`).
 
-**1. Start the infrastructure:** PostgreSQL, RabbitMQ, Mailpit, Prometheus, Grafana, Zipkin and WireMock.
+**Start everything** with the development script:
+
+```bash
+./dev.sh                  # every service, in the background
+./dev.sh fleet-service    # one service in this terminal, with the others as they are; Ctrl+C stops it
+./dev.sh stop             # stop the services and the infrastructure, keeping the data
+```
+
+- **`./dev.sh`:**
+  - starts the infrastructure in Docker Compose (PostgreSQL, RabbitMQ, Mailpit, Prometheus, Grafana, Zipkin,
+    WireMock);
+  - builds every service;
+  - starts the Config Server first, then the other services and the gateway in the background, and waits until they
+    are up;
+  - each service writes its log to `<service>/target/<service>.log`.
+- **`./dev.sh <service>`:**
+  - stops the copy of that service running in the background, rebuilds it and runs it in the terminal;
+  - extra arguments go to the service, e.g. `./dev.sh fleet-service --logging.level.pt.rentporto=debug`.
+- **Passwords:** the infrastructure passwords default to the values in [`.env.example`](.env.example). To change
+  them, copy it to `.env`.
+
+Without the script, start the infrastructure, build once and start the Config Server before the other services, each
+in its own terminal:
 
 ```bash
 docker compose up -d --wait
 ./infra/verify.sh
-```
-
-The passwords default to the values in [`.env.example`](.env.example). To change them, copy it to `.env`.
-
-**2. Build once**, so that each service finds the shared modules:
-
-```bash
 ./mvnw -DskipTests clean install
-```
-
-**3. Start the Config Server first**, then the services and the gateway, each in its own terminal:
-
-```bash
 ./mvnw -pl config-server spring-boot:run
-./mvnw -pl auth-service spring-boot:run
-./mvnw -pl customer-service spring-boot:run
-./mvnw -pl fleet-service spring-boot:run
-./mvnw -pl booking-service spring-boot:run
-./mvnw -pl rental-service spring-boot:run
-./mvnw -pl notification-service spring-boot:run
-./mvnw -pl gateway spring-boot:run
+./mvnw -pl auth-service spring-boot:run      # and the same for the other services and the gateway
 ```
 
 **The `dev` profile** is the default:
@@ -285,7 +289,8 @@ npx @usebruno/cli@4.3.0 run --env compose
 [infrastructure README](infra/README.md).
 
 **Stopping:**
-- `docker compose stop` stops the infrastructure and keeps the data.
+- `./dev.sh stop` stops the services and the infrastructure, and keeps the data. `docker compose stop` does the same
+  for the infrastructure only.
 - `docker compose down -v` also deletes the volumes, and with them **all the local data**.
 
 ## Developing
@@ -334,6 +339,7 @@ Server):
 ├── infra              compose infrastructure, Kubernetes manifests, Prometheus, Grafana, RabbitMQ
 ├── docs               ADRs, OpenAPI, AsyncAPI, Bruno collection
 ├── compose.yaml       local infrastructure
+├── dev.sh             running the services locally
 └── deploy.sh          deployment to k3d
 ```
 
