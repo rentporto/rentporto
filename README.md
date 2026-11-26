@@ -4,7 +4,7 @@
 
 RentPorto is the platform of a car-rental company in Porto, migrated from a modular monolith with a single shared
 database to six Spring Boot microservices, one per bounded context or group of contexts. There is no frontend: every
-interaction goes through the REST API ([ADR-13](docs/adr/0013-sem-frontend.md)).
+interaction goes through the REST API ([ADR-13](docs/adr/0013-no-frontend.md)).
 
 > **Status:** the auth, customer, fleet, rental and notification services are implemented. The booking-service
 > (reservations, pricing and payments) publishes its complete API contract, but its endpoints still answer
@@ -41,7 +41,7 @@ The life of a rental:
 | Administrator | Creates the staff accounts, sees the notification history, looks up customers and payments |
 
 Customers sign up themselves; the administrator creates the staff accounts. The first administrator is created when
-the auth-service starts ([ADR-20](docs/adr/0020-chave-dos-jwt-e-primeiro-administrador.md)).
+the auth-service starts ([ADR-20](docs/adr/0020-jwt-key-and-first-administrator.md)).
 
 ## Architecture
 
@@ -65,19 +65,19 @@ flowchart LR
 ```
 
 - **Gateway:** the only entry point, at `/api/v1`. It validates the JWT, routes each resource to the service that owns
-  it and limits the logins per IP ([ADR-21](docs/adr/0021-entrada-pelo-api-gateway.md)).
+  it and limits the logins per IP ([ADR-21](docs/adr/0021-entry-through-the-api-gateway.md)).
 - **Data:** each service owns its database: one PostgreSQL instance, with one logical database and one user per
-  service ([ADR-05](docs/adr/0005-postgresql-com-uma-base-por-servico.md)).
+  service ([ADR-05](docs/adr/0005-postgresql-with-a-database-per-service.md)).
 - **Communication:**
   - REST when the caller needs an immediate answer, messages on RabbitMQ when state changes
-    ([ADR-02](docs/adr/0002-comunicacao-hibrida.md), [ADR-03](docs/adr/0003-rabbitmq-como-broker-de-mensagens.md));
-  - calls between services carry the user's JWT ([ADR-22](docs/adr/0022-chamadas-entre-servicos-com-o-jwt-do-utilizador.md)).
+    ([ADR-02](docs/adr/0002-hybrid-communication.md), [ADR-03](docs/adr/0003-rabbitmq-as-message-broker.md));
+  - calls between services carry the user's JWT ([ADR-22](docs/adr/0022-calls-between-services-with-the-user-jwt.md)).
 - **Configuration:** a Spring Cloud Config Server serves the `config/` folder
-  ([ADR-19](docs/adr/0019-configuracao-externa-no-config-server.md)).
+  ([ADR-19](docs/adr/0019-external-configuration-in-config-server.md)).
 - **Observability:**
-  - metrics in Prometheus and Grafana ([ADR-24](docs/adr/0024-metricas-com-prometheus-e-grafana.md),
-    [ADR-26](docs/adr/0026-painel-do-grafana.md));
-  - traces in Zipkin ([ADR-25](docs/adr/0025-rastreio-distribuido-com-zipkin.md)).
+  - metrics in Prometheus and Grafana ([ADR-24](docs/adr/0024-metrics-with-prometheus-and-grafana.md),
+    [ADR-26](docs/adr/0026-grafana-dashboard.md));
+  - traces in Zipkin ([ADR-25](docs/adr/0025-distributed-tracing-with-zipkin.md)).
 
 | Service | Port | Bounded contexts | Status |
 |---|---|---|---|
@@ -112,7 +112,7 @@ into six services:
 
 - **The booking-service holds three contexts** (Reservations, Pricing, Payments) as separate modules, each with its own
   database schema. Quote, reservation and prepayment happen in the same flow
-  ([ADR-01](docs/adr/0001-decomposicao-em-microsservicos.md), [ADR-15](docs/adr/0015-estrutura-modular-do-booking-service.md)).
+  ([ADR-01](docs/adr/0001-decomposition-into-microservices.md), [ADR-15](docs/adr/0015-modular-structure-of-the-booking-service.md)).
 - **Certified invoicing is out of scope:** it stays in the remaining monolith.
 
 | Context | Owner | Main model | Responsibility |
@@ -122,7 +122,7 @@ into six services:
 | Fleet | fleet-service | `Vehicle`, `VehicleCategory`, `Station`, `Transfer`, `VehicleAssignment`, `AcrissCode`, `LicensePlate` | Categories, vehicles and their status, station capacity, transfers, assigning a vehicle at pick-up |
 | Reservations | booking-service `reservation` | Reservation (planned) | Availability, the reservation saga, expiry and no-shows |
 | Pricing | booking-service `pricing` | Rate cards, seasons, fees, extras, coverages | Quotes |
-| Payments | booking-service `payment` | Payments, deposits, refunds, receipts | Charging a simulated payment provider ([ADR-29](docs/adr/0029-pagamentos-simulados.md)) |
+| Payments | booking-service `payment` | Payments, deposits, refunds, receipts | Charging a simulated payment provider ([ADR-29](docs/adr/0029-simulated-payments.md)) |
 | Rental | rental-service | `RentalAgreement`, `ContractTerms`, `ReturnInspection`, `Settlement`, `Money` | Pick-up, return inspection, extra charges, settlement |
 | Notifications | notification-service | `Notification`, `Recipient`, `PickupReminder` | Customer emails and pick-up reminders |
 
@@ -130,9 +130,9 @@ into six services:
 
 | Term | Meaning |
 |---|---|
-| Category | An ACRISS code (e.g. `CDMR`). Customers reserve a category, not a vehicle; a vehicle of that category is assigned at pick-up ([ADR-10](docs/adr/0010-reservar-por-categoria.md)). |
+| Category | An ACRISS code (e.g. `CDMR`). Customers reserve a category, not a vehicle; a vehicle of that category is assigned at pick-up ([ADR-10](docs/adr/0010-reserve-by-category.md)). |
 | Station capacity | How many vehicles of a category a station can deliver. It limits availability. |
-| Contract terms | Daily rate, extras, coverage, excess, deposit and fuel prices agreed at booking. They are frozen in the `ReservationConfirmed` event, so a later price change does not affect the rental ([ADR-09](docs/adr/0009-termos-contratuais-no-reservation-confirmed.md)). |
+| Contract terms | Daily rate, extras, coverage, excess, deposit and fuel prices agreed at booking. They are frozen in the `ReservationConfirmed` event, so a later price change does not affect the rental ([ADR-09](docs/adr/0009-contract-terms-in-reservation-confirmed.md)). |
 | Deposit | An amount held on the customer's card at pick-up. At return it is settled: the amount due is captured and the rest is released. |
 | Return inspection | Odometer, fuel level and damages recorded at return. They drive the extra charges (late return, fuel, damage). |
 | Settlement | The final account of a rental. |
@@ -169,7 +169,7 @@ Synchronous calls:
 ### Reservation saga
 
 The `reservation` module orchestrates the booking, and the state of the reservation is the state of the saga
-([ADR-06](docs/adr/0006-saga-orquestrada-na-reserva.md), [ADR-29](docs/adr/0029-pagamentos-simulados.md)):
+([ADR-06](docs/adr/0006-orchestrated-saga-for-reservations.md), [ADR-29](docs/adr/0029-simulated-payments.md)):
 
 1. In one transaction, it checks the capacity, uses the quote and creates the reservation as `PENDING_PAYMENT`.
 2. After the commit, the `payment` module charges the payment provider.
@@ -187,12 +187,12 @@ The reactions are choreographed by events:
 ### Reliability patterns
 
 - **Transactional outbox:** a message is written in the same transaction as the change and published afterwards
-  ([ADR-07](docs/adr/0007-outbox-e-consumidores-idempotentes.md)).
+  ([ADR-07](docs/adr/0007-outbox-and-idempotent-consumers.md)).
 - **Idempotent consumers:** each consumer records the events it has handled, so a message delivered twice is handled
   once.
 - **Retries and dead-letter queues:** three attempts with backoff, then the message goes to the queue's `.dlq`.
 - **Shared lock in JPA:** a scheduled task runs on one replica only
-  ([ADR-18](docs/adr/0018-lock-partilhado-em-jpa.md)).
+  ([ADR-18](docs/adr/0018-shared-lock-in-jpa.md)).
 - **`Idempotency-Key`:** creating a resource twice with the same key returns the same resource.
 - **Anti-corruption layers:**
   - each service translates the messages and responses of other services into its own model;
@@ -200,12 +200,12 @@ The reactions are choreographed by events:
 
 ### Code structure
 
-Each service follows a hexagonal architecture ([ADR-15](docs/adr/0015-estrutura-modular-do-booking-service.md)):
+Each service follows a hexagonal architecture ([ADR-15](docs/adr/0015-modular-structure-of-the-booking-service.md)):
 - **Dependencies point inwards:** `api` and `infrastructure` → `application` → `domain`.
 - **The domain does not use Spring.**
 - **The application reaches the outside only through its ports.**
 
-Inside each layer there is one folder per kind of file ([ADR-30](docs/adr/0030-organizacao-dos-pacotes.md)):
+Inside each layer there is one folder per kind of file ([ADR-30](docs/adr/0030-package-organisation.md)):
 
 ```
 pt/rentporto/{service}/
@@ -285,7 +285,7 @@ npx @usebruno/cli@4.3.0 run --env compose
 ```
 
 **Payments** are simulated: the test card of the reservation decides the answer (`card_ok`, `card_declined`,
-`card_no_extra`, `card_slow`). See [ADR-29](docs/adr/0029-pagamentos-simulados.md) and the
+`card_no_extra`, `card_slow`). See [ADR-29](docs/adr/0029-simulated-payments.md) and the
 [infrastructure README](infra/README.md).
 
 **Stopping:**
@@ -316,9 +316,9 @@ Server):
   - work happens on a branch per story, with commits like `feat(RP-54): …` or `refactor: …`;
   - pull requests follow the [template](.github/pull_request_template.md);
   - `main` only accepts pull requests whose `CI result` check passes
-    ([ADR-17](docs/adr/0017-repositorio-publico.md)).
-- **Architecture decisions:** each one is an ADR in [`docs/adr`](docs/adr/README.md), written in Portuguese. To add
-  one, copy `0000-modelo.md` to the next number. An accepted ADR is not edited; a new one replaces it.
+    ([ADR-17](docs/adr/0017-public-repository.md)).
+- **Architecture decisions:** each one is an ADR in [`docs/adr`](docs/adr/README.md). To add one, copy
+  `0000-template.md` to the next number. An accepted ADR is not edited; a new one supersedes it.
 - **Shared files:**
   - configuration changes go through pull requests to [`config/`](config);
   - the Grafana dashboard is code: change [`infra/grafana/dashboards/rentporto.json`](infra/grafana/dashboards/rentporto.json),
@@ -347,7 +347,7 @@ Server):
 
 There is no cloud environment. The production-like deployment is a local Kubernetes cluster in k3d, with the same
 images, probes, resource limits, secrets and autoscaling a real cluster would use
-([ADR-16](docs/adr/0016-k3d-como-cluster-local.md), [ADR-23](docs/adr/0023-disponibilizacao-no-k3d.md)).
+([ADR-16](docs/adr/0016-k3d-as-local-cluster.md), [ADR-23](docs/adr/0023-deployment-on-k3d.md)).
 
 **Prerequisites:** Docker with about 10 GB of memory, `k3d`, `kubectl`, `openssl`, `curl` and `python3`.
 
@@ -390,7 +390,7 @@ To reach the system, add these two lines to `/etc/hosts`:
   `kubectl --context k3d-rentporto -n rentporto port-forward svc/grafana 3000`. The services are `rabbitmq` 15672,
   `mailpit` 8025, `prometheus` 9090, `grafana` 3000 and `zipkin` 9411.
 - **Autoscaling:** the booking-service scales between 2 and 3 replicas with its CPU
-  ([ADR-28](docs/adr/0028-escala-automatica-do-booking-service.md)). `./infra/k8s/load-booking.sh` puts load on it, so
+  ([ADR-28](docs/adr/0028-booking-service-autoscaling.md)). `./infra/k8s/load-booking.sh` puts load on it, so
   you can watch it scale.
 - **Removing everything:** `k3d cluster delete rentporto` deletes the cluster, its secrets and its data.
 
@@ -406,11 +406,11 @@ To reach the system, add these two lines to `/etc/hosts`:
 
 | Document | Content |
 |---|---|
-| [`docs/adr`](docs/adr/README.md) | Architecture decision records (in Portuguese) |
+| [`docs/adr`](docs/adr/README.md) | Architecture decision records |
 | [`docs/openapi`](docs/openapi) | OpenAPI contract of each service, also browsable in the Swagger UI |
 | [`docs/asyncapi/asyncapi.yaml`](docs/asyncapi/asyncapi.yaml) | Contract of the messages |
 | [`docs/bruno`](docs/bruno/README.md) | Bruno collection, one folder per role |
-| [`infra/README.md`](infra/README.md) | Local infrastructure and the k3d cluster in detail (in Portuguese) |
+| [`infra/README.md`](infra/README.md) | Local infrastructure and the k3d cluster in detail |
 
 ## Team
 

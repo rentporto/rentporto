@@ -1,43 +1,43 @@
-# ADR-11: Monorepo com um módulo, uma imagem e um pipeline por serviço
+# ADR-11: Monorepo with one module, one image and one pipeline per service
 
-- **Estado:** Aceite
-- **Data:** 2026-11-14
-- **Decisores:** Nuno Soares, Vitor Sousa
-- **Referências:** Proposta §12.1, §14.3; backlog RP-01
+- **Status:** Accepted
+- **Date:** 2026-11-14
+- **Deciders:** Nuno Soares, Vitor Sousa
+- **References:** Proposal §12.1, §14.3; backlog RP-01
 
-## Contexto
+## Context
 
-A equipa tem duas pessoas e os docentes precisam de um acesso simples para a avaliação. Mesmo assim, os serviços têm de ser construídos e instalados de forma independente. Como todos os módulos herdam do mesmo POM pai, as versões do Java e do Spring são as mesmas em todo o sistema, e o Spring Cloud só é compatível com algumas linhas do Spring Boot.
+The team has two people, and anyone who clones the repository needs a simple way to build and run the system. Even so, the services must be built and deployed independently. Since every module inherits from the same parent POM, the Java and Spring versions are the same across the whole system, and Spring Cloud is only compatible with some Spring Boot lines.
 
-## Decisão
+## Decision
 
-Um repositório privado no GitHub com um build Maven multi-módulo: um POM pai, um módulo por serviço, o gateway, o Config Server e o `common-events`.
+A private GitHub repository with a multi-module Maven build: a parent POM, one module per service, the gateway, the Config Server and `common-events`.
 
-- Cada serviço gera a sua própria imagem e é instalado de forma independente.
-- Um único workflow do GitHub Actions deteta os módulos alterados e constrói apenas esses, com `mvn -pl <service> -am verify`.
-- O único código partilhado é o `common-events` (contratos das mensagens e constantes). Não se partilha código de domínio.
-- O POM pai fixa Java 25, Spring Boot 4.1.x e Spring Cloud 2025.1.x, uma combinação da matriz oficial (`start.spring.io`). O Java 25 serve para compilar (`--release 25`) e para correr: as imagens usam um JRE 25.
-- O build só aceita o JDK 25: o `maven-enforcer-plugin` exige `[25,26)`. O `.sdkmanrc` na raiz fixa o JDK local e o CI usa `actions/setup-java` com a versão 25.
-- O Maven Wrapper (`mvnw`) fixa a versão do Maven, por isso quem clona o repositório, incluindo os docentes, só precisa do JDK 25.
+- Each service builds its own image and is deployed independently.
+- A single GitHub Actions workflow detects the changed modules and builds only those, with `mvn -pl <service> -am verify`.
+- The only shared code is `common-events` (message contracts and constants). No domain code is shared.
+- The parent POM pins Java 25, Spring Boot 4.1.x and Spring Cloud 2025.1.x, a combination from the official matrix (`start.spring.io`). Java 25 is used both to compile (`--release 25`) and to run: the images use a JRE 25.
+- The build only accepts JDK 25: the `maven-enforcer-plugin` requires `[25,26)`. The `.sdkmanrc` at the root pins the local JDK, and the CI uses `actions/setup-java` with version 25.
+- The Maven Wrapper (`mvnw`) pins the Maven version, so anyone who clones the repository only needs JDK 25.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Um repositório por serviço** — acrescenta trabalho para uma equipa de dois e para a avaliação, e torna mais difíceis as alterações de contratos entre serviços.
-- **Java 21** — é a LTS anterior e também é suportada, mas obrigava a instalar outro JDK e perdia as melhorias do Java 25.
-- **Aceitar qualquer JDK a partir do 25 (`[25,)`)** — um JDK 26 entrava no build sem uma decisão explícita, e o código podia comportar-se de forma diferente em cada máquina.
-- **Spring Boot 4.0.x** — também é compatível com o Spring Cloud 2025.1, mas é a linha mais antiga e deixa de ter suporte mais cedo.
+- **One repository per service** — adds work for a team of two and for anyone who builds the whole system, and makes contract changes between services harder.
+- **Java 21** — the previous LTS, and also supported, but it would require installing another JDK and would lose the improvements of Java 25.
+- **Accept any JDK from 25 onwards (`[25,)`)** — a JDK 26 would enter the build without an explicit decision, and the code could behave differently on each machine.
+- **Spring Boot 4.0.x** — also compatible with Spring Cloud 2025.1, but it is the older line and loses support sooner.
 
-## Consequências
+## Consequences
 
-### Positivas
+### Positive
 
-- Um só sítio para o código, os ADR, as especificações da API e os manifestos Kubernetes.
-- Alterações de contratos ficam atómicas num único pull request.
-- O mesmo JDK no desenvolvimento, no CI e nas imagens. O Java 25 traz compact object headers (opcionais) e melhorias no arranque com AOT, que ajudam no orçamento de memória do k3d (ADR-16).
+- One place for the code, the ADRs, the API specifications and the Kubernetes manifests.
+- Contract changes are atomic, in a single pull request.
+- The same JDK in development, in the CI and in the images. Java 25 brings (optional) compact object headers and AOT startup improvements, which help with the k3d memory budget (ADR-16).
 
-### Negativas
+### Negative
 
-- Exige disciplina para não partilhar código de domínio.
-- Uma alteração no `common-events` ou no POM pai reconstrói todos os serviços.
-- Quem não tiver o JDK 25 tem de o instalar antes de construir.
-- Mudar de JDK obriga a uma nova ADR e a atualizar o enforcer, o `.sdkmanrc`, o CI e as imagens.
+- It takes discipline not to share domain code.
+- A change to `common-events` or to the parent POM rebuilds every service.
+- Anyone without JDK 25 has to install it before building.
+- Changing the JDK requires a new ADR and an update of the enforcer, the `.sdkmanrc`, the CI and the images.

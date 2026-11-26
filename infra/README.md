@@ -1,93 +1,93 @@
-# Infraestrutura local
+# Local infrastructure
 
 ```
 docker compose up -d --wait
 ./infra/verify.sh
 ```
 
-Sem `.env`, usam-se as passwords por omissão do `.env.example`.
+Without a `.env`, the default passwords of `.env.example` are used.
 
-| Componente | Endereço | Credenciais |
+| Component | Address | Credentials |
 |---|---|---|
-| PostgreSQL | `localhost:5432` | uma base e um utilizador por serviço (`auth`, `customer`, `fleet`, `booking`, `rental`, `notification`); a password por omissão é o nome |
-| RabbitMQ | `localhost:5672`, consola em http://localhost:15672 | `rentporto` / `rentporto` |
-| Mailpit | SMTP em `localhost:1026`, caixa em http://localhost:8025; o SMTP não usa o 1025 de origem para não ir parar a outro Mailpit instalado na máquina | — |
-| Prometheus | http://localhost:9090, raspa as aplicações que correm no host e as filas do RabbitMQ | — |
-| Grafana | http://localhost:3000, com a datasource Prometheus e o painel RentPorto (http://localhost:3000/d/rentporto) provisionados | `admin` / `rentporto` |
-| Zipkin | http://localhost:9411, recebe todos os rastos das aplicações que correm no host | — |
-| WireMock | http://localhost:8089, faz de outro serviço nas execuções manuais (por exemplo, a caução do booking-service enquanto não existe); mapeamentos em `infra/wiremock/mappings` | — |
+| PostgreSQL | `localhost:5432` | one database and one user per service (`auth`, `customer`, `fleet`, `booking`, `rental`, `notification`); the default password is the name |
+| RabbitMQ | `localhost:5672`, console at http://localhost:15672 | `rentporto` / `rentporto` |
+| Mailpit | SMTP at `localhost:1026`, inbox at http://localhost:8025; the SMTP does not use the default 1025, so that the emails do not end up in another Mailpit installed on the machine | — |
+| Prometheus | http://localhost:9090, scrapes the applications running on the host and the RabbitMQ queues | — |
+| Grafana | http://localhost:3000, with the Prometheus datasource and the RentPorto dashboard (http://localhost:3000/d/rentporto) provisioned | `admin` / `rentporto` |
+| Zipkin | http://localhost:9411, receives every trace of the applications running on the host | — |
+| WireMock | http://localhost:8089, stands in for another service in manual runs (for example, the deposit of the booking-service while it does not exist); mappings in `infra/wiremock/mappings` | — |
 
-Portas dos serviços: gateway 8080, auth 8081, customer 8082, fleet 8083, booking 8084, rental 8085, notification 8086, config-server 8888.
+Ports of the services: gateway 8080, auth 8081, customer 8082, fleet 8083, booking 8084, rental 8085, notification 8086, config-server 8888.
 
 ## Config Server
 
-Os serviços leem a configuração do Config Server e não arrancam sem ele, por isso arranca-se primeiro:
+The services read their configuration from the Config Server and do not start without it, so it starts first:
 
 ```
 ./mvnw -pl config-server spring-boot:run
 ```
 
-No perfil `dev` (por omissão), o Config Server lê a pasta `config/` local: uma alteração aplica-se ao reiniciar o serviço, sem commit. No perfil `k8s`, lê o ramo `main` do GitHub (ADR-19).
+In the `dev` profile (the default), the Config Server reads the local `config/` folder: a change applies when the service restarts, without a commit. In the `k8s` profile, it reads the `main` branch from GitHub (ADR-19).
 
 ## Gateway
 
-A API pública fica em `http://localhost:8080/api/v1`: o gateway remove o `/api/v1` e encaminha cada recurso para o serviço dono (ADR-21). Arranca depois do Config Server, como os serviços; um serviço parado responde 503.
+The public API is at `http://localhost:8080/api/v1`: the gateway removes the `/api/v1` and routes each resource to the service that owns it (ADR-21). It starts after the Config Server, like the services; a stopped service answers 503.
 
-A documentação de todos os serviços fica numa só página, o Swagger UI do gateway: http://localhost:8080/api/docs (no k3d, http://rentporto.local/api/docs). Escolhe-se o serviço no topo; os endpoints internos não aparecem, e o "Try it out" envia os pedidos pelo gateway, com o token do "Authorize" (ADR-27).
+The documentation of every service is on a single page, the Swagger UI of the gateway: http://localhost:8080/api/docs (on k3d, http://rentporto.local/api/docs). The service is chosen at the top; the internal endpoints do not appear, and "Try it out" sends the requests through the gateway, with the token from "Authorize" (ADR-27).
 
 ## auth-service
 
-No perfil `dev`, o auth-service cria no arranque o administrador `admin@rentporto.pt` com a password `rentporto-admin`, e assina os JWT com uma chave gerada nesse arranque: depois de o reiniciar, é preciso fazer login de novo. No `k8s`, a chave e o administrador vêm de um Secret (ADR-20).
+In the `dev` profile, the auth-service creates the administrator `admin@rentporto.pt` with the password `rentporto-admin` at startup, and signs the JWT with a key generated at that startup: after restarting it, you have to log in again. In `k8s`, the key and the administrator come from a Secret (ADR-20).
 
-## Pagamentos
+## Payments
 
-Não há fornecedor de pagamentos externo: o módulo `payment` do booking-service simula-o (ADR-29). O cartão de teste que o cliente indica no `paymentMethodId` da reserva decide a resposta em todas as operações dessa reserva:
+There is no external payment provider: the `payment` module of the booking-service simulates it (ADR-29). The test card that the customer gives in the `paymentMethodId` of the reservation decides the answer to every operation of that reservation:
 
-| Cartão | Resposta |
+| Card | Answer |
 |---|---|
-| `card_ok` | aprova tudo |
-| `card_declined` | recusa tudo (`CARD_DECLINED`) |
-| `card_no_extra` | aprova a cobrança e a caução; recusa a cobrança acima da caução, que fica em dívida |
-| `card_slow` | não responde dentro do timeout (`PROVIDER_UNAVAILABLE`); faz abrir o circuit breaker `payment-provider` |
-| outro qualquer | recusa (`UNKNOWN_CARD`) |
+| `card_ok` | approves everything |
+| `card_declined` | declines everything (`CARD_DECLINED`) |
+| `card_no_extra` | approves the charge and the deposit; declines the charge above the deposit, which stays outstanding |
+| `card_slow` | does not answer within the timeout (`PROVIDER_UNAVAILABLE`); opens the `payment-provider` circuit breaker |
+| any other | declines (`UNKNOWN_CARD`) |
 
 ## RabbitMQ
 
-A topologia (exchange, filas, DLQ e bindings) está em `rabbitmq/definitions.json` e é carregada no arranque; os serviços não declaram filas. O `RabbitTopologyTest` do `common-events` confirma que cada routing key tem fila e que cada fila tem a sua DLQ. O utilizador está à parte, em `rabbitmq/users.json`, que só o compose usa; no k3d vem de um Secret (ADR-23).
+The topology (exchange, queues, DLQs and bindings) is in `rabbitmq/definitions.json` and is loaded at startup; the services do not declare queues. The `RabbitTopologyTest` of `common-events` checks that every routing key has a queue and that every queue has its DLQ. The user is separate, in `rabbitmq/users.json`, which only compose uses; on k3d it comes from a Secret (ADR-23).
 
 ## Kubernetes (k3d)
 
-Com Docker e k3d instalados:
+With Docker and k3d installed:
 
 ```
-./deploy.sh                 # cria o cluster, constrói e importa as imagens e espera que tudo fique ready
-./deploy.sh --skip-build    # importa as imagens já construídas, sem compilar
+./deploy.sh                 # creates the cluster, builds and imports the images and waits until everything is ready
+./deploy.sh --skip-build    # imports the images already built, without compiling
 k3d cluster delete rentporto
 ```
 
-O `deploy.sh` cria os Secrets que ainda não existem, com passwords aleatórias e a chave dos JWT, termina com um login do administrador pelo Ingress e escreve a password do administrador em `docs/bruno/.env`, para o ambiente `k3d` da coleção Bruno (`docs/bruno/README.md`). A password do administrador:
+`deploy.sh` creates the Secrets that do not exist yet, with random passwords and the JWT key, finishes with a login of the administrator through the Ingress and writes the administrator password to `docs/bruno/.env`, for the `k3d` environment of the Bruno collection (`docs/bruno/README.md`). The administrator password:
 
 ```
 kubectl --context k3d-rentporto -n rentporto get secret auth-service -o jsonpath='{.data.AUTH_ADMIN_PASSWORD}' | base64 --decode
 ```
 
-Para abrir `http://rentporto.local` no browser, acrescentar ao `/etc/hosts` as duas linhas `127.0.0.1 rentporto.local` e `::1 rentporto.local`; sem a segunda, o macOS procura o nome `.local` por mDNS e cada pedido demora alguns segundos.
+To open `http://rentporto.local` in the browser, add the two lines `127.0.0.1 rentporto.local` and `::1 rentporto.local` to `/etc/hosts`; without the second, macOS looks the `.local` name up by mDNS and every request takes a few seconds.
 
-O Config Server do cluster lê o ramo `main` do GitHub (ADR-19). Para testar a configuração de um ramo já enviado para o GitHub: `CONFIG_LABEL=<ramo> ./deploy.sh`. A consola do RabbitMQ e a caixa do Mailpit abrem-se com `kubectl --context k3d-rentporto -n rentporto port-forward svc/rabbitmq 15672` e `port-forward svc/mailpit 8025`; a password do RabbitMQ está no Secret `rabbitmq`.
+The Config Server of the cluster reads the `main` branch from GitHub (ADR-19). To test the configuration of a branch already pushed to GitHub: `CONFIG_LABEL=<branch> ./deploy.sh`. The RabbitMQ console and the Mailpit inbox open with `kubectl --context k3d-rentporto -n rentporto port-forward svc/rabbitmq 15672` and `port-forward svc/mailpit 8025`; the RabbitMQ password is in the `rabbitmq` Secret.
 
-O Prometheus raspa cada pod das aplicações e as filas do RabbitMQ, e o Grafana já tem a datasource Prometheus e o painel RentPorto (ADR-24, ADR-26). Abrem-se com `port-forward svc/prometheus 9090` e `port-forward svc/grafana 3000`; o painel fica em http://localhost:3000/d/rentporto, o utilizador do Grafana é `admin` e a password está no Secret `grafana`. O Ingress só encaminha `/api`, por isso as métricas não saem do cluster.
+Prometheus scrapes every application pod and the RabbitMQ queues, and Grafana already has the Prometheus datasource and the RentPorto dashboard (ADR-24, ADR-26). They open with `port-forward svc/prometheus 9090` and `port-forward svc/grafana 3000`; the dashboard is at http://localhost:3000/d/rentporto, the Grafana user is `admin` and the password is in the `grafana` Secret. The Ingress only routes `/api`, so the metrics do not leave the cluster.
 
-O painel RentPorto está em `infra/grafana/dashboards/rentporto.json` e não se edita no Grafana: muda-se o ficheiro, por pull request. O `infra/verify.sh` e o `deploy.sh` confirmam que está provisionado e que o Prometheus aceita todas as suas consultas.
+The RentPorto dashboard is in `infra/grafana/dashboards/rentporto.json` and is not edited in Grafana: the file is changed, by pull request. `infra/verify.sh` and `deploy.sh` check that it is provisioned and that Prometheus accepts all its queries.
 
-As aplicações enviam todos os rastos para o Zipkin do cluster, que os guarda em memória (ADR-25): perdem-se quando o pod reinicia. Abre-se com `port-forward svc/zipkin 9411`.
+The applications send every trace to the Zipkin of the cluster, which keeps them in memory (ADR-25): they are lost when the pod restarts. It opens with `port-forward svc/zipkin 9411`.
 
-O booking-service escala sozinho entre 2 e 3 réplicas pela CPU (ADR-28); `kubectl --context k3d-rentporto -n rentporto get hpa` mostra a CPU e as réplicas. `./infra/k8s/load-booking.sh` põe carga no booking-service, de dentro do cluster, e mostra-o a chegar às 3 réplicas; com `--scale-down`, espera também que volte a 2, uns 5 minutos depois de a carga parar.
+The booking-service scales by itself between 2 and 3 replicas with its CPU (ADR-28); `kubectl --context k3d-rentporto -n rentporto get hpa` shows the CPU and the replicas. `./infra/k8s/load-booking.sh` puts load on the booking-service, from inside the cluster, and shows it reaching 3 replicas; with `--scale-down`, it also waits until it goes back to 2, about 5 minutes after the load stops.
 
-Os manifestos estão em `infra/k8s`: a base usa as imagens do GHCR e o overlay `k3d` as imagens locais (ADR-23). `./infra/k8s/check-manifests.sh` confirma que todos os contentores têm probes e limites.
+The manifests are in `infra/k8s`: the base uses the GHCR images and the `k3d` overlay the local images (ADR-23). `./infra/k8s/check-manifests.sh` checks that every container has probes and limits.
 
-## Recomeçar do zero
+## Starting from scratch
 
-O `postgres/init.sh` só corre com o volume vazio. Depois de o alterar:
+`postgres/init.sh` only runs with an empty volume. After changing it:
 
 ```
 docker compose down -v

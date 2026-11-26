@@ -1,38 +1,38 @@
-# Registos de decisões de arquitetura (ADR)
+# Architecture decision records (ADR)
 
-Decisões de arquitetura da RentPorto. Cada registo explica o contexto, a decisão, as alternativas e as consequências.
+Architecture decisions of RentPorto. Each record explains the context, the decision, the alternatives and the consequences.
 
-Para registar uma nova decisão, copiar `0000-modelo.md` para o número seguinte e abrir um pull request. Uma decisão aceite não se edita: é substituída por uma nova ADR.
+To record a new decision, copy `0000-template.md` to the next number and open a pull request. An accepted decision is not edited: a new ADR supersedes it.
 
-| ADR | Decisão | Estado |
+| ADR | Decision | Status |
 |---|---|---|
-| [ADR-01](0001-decomposicao-em-microsservicos.md) | Decomposição em microsserviços por bounded context | Aceite |
-| [ADR-02](0002-comunicacao-hibrida.md) | Comunicação híbrida: REST para decisões imediatas, mensagens para mudanças de estado | Aceite |
-| [ADR-03](0003-rabbitmq-como-broker-de-mensagens.md) | RabbitMQ como broker de mensagens | Aceite |
-| [ADR-04](0004-descoberta-de-servicos-pelo-kubernetes.md) | Descoberta e balanceamento pelo Kubernetes, sem Eureka | Aceite |
-| [ADR-05](0005-postgresql-com-uma-base-por-servico.md) | Uma instância PostgreSQL com uma base lógica e um utilizador por serviço | Aceite |
-| [ADR-06](0006-saga-orquestrada-na-reserva.md) | Saga orquestrada na reserva, coreografia nas reações | Aceite |
-| [ADR-07](0007-outbox-e-consumidores-idempotentes.md) | Transactional outbox e consumidores idempotentes | Aceite |
-| [ADR-08](0008-auth-service-com-spring-security.md) | auth-service próprio com Spring Security | Aceite |
-| [ADR-09](0009-termos-contratuais-no-reservation-confirmed.md) | Termos contratuais congelados no ReservationConfirmed | Aceite |
-| [ADR-10](0010-reservar-por-categoria.md) | Reservar por categoria e atribuir a viatura no levantamento | Aceite |
-| [ADR-11](0011-monorepo.md) | Monorepo com um módulo, uma imagem e um pipeline por serviço | Aceite |
-| [ADR-12](0012-stripe-com-anti-corruption-layer.md) | Stripe em modo de teste atrás de uma Anti-Corruption Layer, com um adaptador WireMock | Substituída pela ADR-29 |
-| [ADR-13](0013-sem-frontend.md) | Sem frontend: interação pela API | Aceite |
-| [ADR-14](0014-montantes-e-arredondamento.md) | Montantes e arredondamento | Proposta |
-| [ADR-15](0015-estrutura-modular-do-booking-service.md) | Arquitetura hexagonal nos serviços e módulos do booking-service | Aceite |
-| [ADR-16](0016-k3d-como-cluster-local.md) | k3d como cluster Kubernetes local | Aceite |
-| [ADR-17](0017-repositorio-publico.md) | Repositório público no GitHub | Aceite |
-| [ADR-18](0018-lock-partilhado-em-jpa.md) | Lock partilhado em JPA em vez do ShedLock | Aceite |
-| [ADR-19](0019-configuracao-externa-no-config-server.md) | Configuração externa no Config Server | Aceite |
-| [ADR-20](0020-chave-dos-jwt-e-primeiro-administrador.md) | Chave de assinatura dos JWT e primeiro administrador | Aceite |
-| [ADR-21](0021-entrada-pelo-api-gateway.md) | Entrada pelo API Gateway: rotas por recurso, autenticação à entrada e rate limiting | Aceite |
-| [ADR-22](0022-chamadas-entre-servicos-com-o-jwt-do-utilizador.md) | Chamadas entre serviços com o JWT do utilizador | Aceite |
-| [ADR-23](0023-disponibilizacao-no-k3d.md) | Disponibilização no k3d: segredos gerados no deploy, imagens por overlay e ordem de arranque | Aceite |
-| [ADR-24](0024-metricas-com-prometheus-e-grafana.md) | Métricas com Prometheus e Grafana: descoberta de pods e métricas só dentro do cluster | Aceite |
-| [ADR-25](0025-rastreio-distribuido-com-zipkin.md) | Rastreio distribuído com Zipkin: propagação W3C e contexto guardado no outbox | Aceite |
-| [ADR-26](0026-painel-do-grafana.md) | Painel do Grafana como código: histogramas, filas do RabbitMQ e estados do negócio | Aceite |
-| [ADR-27](0027-swagger-ui-agregado-no-gateway.md) | Swagger UI agregado no gateway, sem os endpoints internos e com os pedidos pelo gateway | Aceite |
-| [ADR-28](0028-escala-automatica-do-booking-service.md) | Escala automática do booking-service pela CPU, entre 2 e 3 réplicas | Aceite |
-| [ADR-29](0029-pagamentos-simulados.md) | Pagamentos com um fornecedor simulado e cartões de teste, em vez do Stripe | Aceite |
-| [ADR-30](0030-organizacao-dos-pacotes.md) | Organização dos pacotes por tipo de ficheiro em todas as camadas, nas bibliotecas comuns e nos testes | Aceite |
+| [ADR-01](0001-decomposition-into-microservices.md) | Decomposition into microservices by bounded context | Accepted |
+| [ADR-02](0002-hybrid-communication.md) | Hybrid communication: REST for immediate decisions, messages for state changes | Accepted |
+| [ADR-03](0003-rabbitmq-as-message-broker.md) | RabbitMQ as the message broker | Accepted |
+| [ADR-04](0004-service-discovery-by-kubernetes.md) | Discovery and load balancing by Kubernetes, without Eureka | Accepted |
+| [ADR-05](0005-postgresql-with-a-database-per-service.md) | One PostgreSQL instance with one logical database and one user per service | Accepted |
+| [ADR-06](0006-orchestrated-saga-for-reservations.md) | Orchestrated saga for the reservation, choreography for the reactions | Accepted |
+| [ADR-07](0007-outbox-and-idempotent-consumers.md) | Transactional outbox and idempotent consumers | Accepted |
+| [ADR-08](0008-auth-service-with-spring-security.md) | Own auth-service with Spring Security | Accepted |
+| [ADR-09](0009-contract-terms-in-reservation-confirmed.md) | Contract terms frozen in ReservationConfirmed | Accepted |
+| [ADR-10](0010-reserve-by-category.md) | Reserve by category and assign the vehicle at pick-up | Accepted |
+| [ADR-11](0011-monorepo.md) | Monorepo with one module, one image and one pipeline per service | Accepted |
+| [ADR-12](0012-stripe-behind-an-anti-corruption-layer.md) | Stripe in test mode behind an Anti-Corruption Layer, with a WireMock adapter | Superseded by ADR-29 |
+| [ADR-13](0013-no-frontend.md) | No frontend: interaction through the API | Accepted |
+| [ADR-14](0014-amounts-and-rounding.md) | Amounts and rounding | Proposed |
+| [ADR-15](0015-modular-structure-of-the-booking-service.md) | Hexagonal architecture in the services and in the modules of the booking-service | Accepted |
+| [ADR-16](0016-k3d-as-local-cluster.md) | k3d as the local Kubernetes cluster | Accepted |
+| [ADR-17](0017-public-repository.md) | Public repository on GitHub | Accepted |
+| [ADR-18](0018-shared-lock-in-jpa.md) | Shared lock in JPA instead of ShedLock | Accepted |
+| [ADR-19](0019-external-configuration-in-config-server.md) | External configuration in the Config Server | Accepted |
+| [ADR-20](0020-jwt-key-and-first-administrator.md) | JWT signing key and first administrator | Accepted |
+| [ADR-21](0021-entry-through-the-api-gateway.md) | Entry through the API Gateway: routes by resource, authentication at the entrance and rate limiting | Accepted |
+| [ADR-22](0022-calls-between-services-with-the-user-jwt.md) | Calls between services with the user's JWT | Accepted |
+| [ADR-23](0023-deployment-on-k3d.md) | Deployment on k3d: secrets generated at deploy time, images by overlay and startup order | Accepted |
+| [ADR-24](0024-metrics-with-prometheus-and-grafana.md) | Metrics with Prometheus and Grafana: pod discovery and metrics only inside the cluster | Accepted |
+| [ADR-25](0025-distributed-tracing-with-zipkin.md) | Distributed tracing with Zipkin: W3C propagation and context stored in the outbox | Accepted |
+| [ADR-26](0026-grafana-dashboard.md) | Grafana dashboard as code: histograms, RabbitMQ queues and business states | Accepted |
+| [ADR-27](0027-swagger-ui-aggregated-in-the-gateway.md) | Swagger UI aggregated in the gateway, without the internal endpoints and with the requests through the gateway | Accepted |
+| [ADR-28](0028-booking-service-autoscaling.md) | Autoscaling of the booking-service by CPU, between 2 and 3 replicas | Accepted |
+| [ADR-29](0029-simulated-payments.md) | Payments with a simulated provider and test cards, instead of Stripe | Accepted |
+| [ADR-30](0030-package-organisation.md) | Package organisation by kind of file in every layer, in the shared libraries and in the tests | Accepted |
