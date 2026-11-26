@@ -3,6 +3,7 @@ rentporto:
     host: localhost
   mailpit:
     host: localhost
+    port: 1026
   zipkin:
     host: localhost
   services:

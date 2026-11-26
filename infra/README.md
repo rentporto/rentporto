@@ -11,7 +11,7 @@ Sem `.env`, usam-se as passwords por omissão do `.env.example`.
 |---|---|---|
 | PostgreSQL | `localhost:5432` | uma base e um utilizador por serviço (`auth`, `customer`, `fleet`, `booking`, `rental`, `notification`); a password por omissão é o nome |
 | RabbitMQ | `localhost:5672`, consola em http://localhost:15672 | `rentporto` / `rentporto` |
-| Mailpit | SMTP em `localhost:1025`, caixa em http://localhost:8025 | — |
+| Mailpit | SMTP em `localhost:1026`, caixa em http://localhost:8025; o SMTP não usa o 1025 de origem para não ir parar a outro Mailpit instalado na máquina | — |
 | Prometheus | http://localhost:9090, raspa as aplicações que correm no host e as filas do RabbitMQ | — |
 | Grafana | http://localhost:3000, com a datasource Prometheus e o painel RentPorto (http://localhost:3000/d/rentporto) provisionados | `admin` / `rentporto` |
 | Zipkin | http://localhost:9411, recebe todos os rastos das aplicações que correm no host | — |

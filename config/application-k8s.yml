@@ -3,6 +3,7 @@ rentporto:
     host: postgres
   mailpit:
     host: mailpit
+    port: 1025
   zipkin:
     host: zipkin
   services:
