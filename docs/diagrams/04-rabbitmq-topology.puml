@@ -1,0 +1,74 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+left to right direction
+title RabbitMQ topology
+
+rectangle "customer-service" as pcus
+rectangle "fleet-service" as pfle
+rectangle "booking-service" as pboo
+rectangle "rental-service" as pren
+rectangle "**rentporto.events**\ntopic exchange" as ex
+rectangle "default exchange" as dx
+
+package "notification-service" {
+  queue "notification.customer-registered" as n1
+  queue "notification.reservation-confirmed" as n2
+  queue "notification.reservation-cancelled" as n3
+  queue "notification.reservation-expired" as n4
+  queue "notification.reservation-no-show" as n5
+  queue "notification.payment-failed" as n6
+  queue "notification.payment-refunded" as n7
+  queue "notification.rental-started" as n8
+  queue "notification.rental-closed" as n9
+}
+package "rental-service " {
+  queue "rental.reservation-confirmed" as r1
+  queue "rental.reservation-cancelled" as r2
+  queue "rental.reservation-no-show" as r3
+  queue "rental.deposit-settled" as r4
+}
+package "fleet-service " {
+  queue "fleet.vehicle-returned" as f1
+}
+package "booking-service " {
+  queue "booking.reservation.station-capacity-changed" as b1
+  queue "booking.reservation.vehicle-category-changed" as b2
+  queue "booking.pricing.vehicle-category-changed" as b3
+  queue "booking.reservation.rental-started" as b4
+  queue "booking.reservation.vehicle-returned" as b5
+  queue "payment.settle-deposit\n(command)" as c1
+}
+
+pcus --> ex : customer.*
+pfle --> ex : fleet.*
+pboo --> ex : reservation.*, payment.*
+pren --> ex : rental.*
+pren --> dx : SettleDeposit
+
+ex --> n1 : customer.registered
+ex --> n2 : reservation.confirmed
+ex --> r1 : reservation.confirmed
+ex --> n3 : reservation.cancelled
+ex --> r2 : reservation.cancelled
+ex --> n4 : reservation.expired
+ex --> n5 : reservation.no-show
+ex --> r3 : reservation.no-show
+ex --> n6 : payment.failed
+ex --> n7 : payment.refunded
+ex --> r4 : payment.deposit-settled
+ex --> n8 : rental.started
+ex --> b4 : rental.started
+ex --> f1 : rental.vehicle-returned
+ex --> b5 : rental.vehicle-returned
+ex --> n9 : rental.closed
+ex --> b1 : fleet.station-capacity-changed
+ex --> b2 : fleet.vehicle-category-changed
+ex --> b3 : fleet.vehicle-category-changed
+dx --> c1 : payment.settle-deposit
+
+legend bottom
+  every queue has its dead-letter queue <queue>.dlq; a message goes there after 3 failed deliveries
+  the booking-service queues are declared; their consumers are designed
+endlegend
+@enduml

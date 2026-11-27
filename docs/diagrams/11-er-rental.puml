@@ -1,0 +1,89 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+hide circle
+title rental-service database (rental)
+
+entity rental_agreements {
+  * id : UUID <<PK>>
+  --
+  * reservation_id : UUID <<unique>>
+  * customer_id : UUID
+  * pickup_station : VARCHAR(3)
+  * return_station : VARCHAR(3)
+  * category_code : VARCHAR(4)
+  * pickup_at : TIMESTAMPTZ
+  * return_at : TIMESTAMPTZ
+  .. contract terms ..
+  * daily_rate_cents : BIGINT
+  * coverage : VARCHAR(50)
+  * excess_cents : BIGINT
+  * deposit_cents : BIGINT
+  * fuel_price_per_litre_cents : BIGINT
+  * refuelling_fee_cents : BIGINT
+  * total_cents : BIGINT
+  .. state ..
+  * status : VARCHAR(20)
+  discard_reason : VARCHAR(20)
+  * created_at : TIMESTAMPTZ
+  * updated_at : TIMESTAMPTZ
+  .. pick-up ..
+  deposit_id : UUID
+  license_plate : VARCHAR(8)
+  picked_up_at : TIMESTAMPTZ
+  pickup_odometer_km : BIGINT
+  pickup_fuel_level_eighths : INTEGER
+  pickup_notes : TEXT
+  .. return ..
+  returned_at : TIMESTAMPTZ
+  return_odometer_km : BIGINT
+  return_fuel_level_eighths : INTEGER
+  return_litres_to_fill : NUMERIC(5,2)
+  return_notes : TEXT
+  .. settlement ..
+  settlement_captured_cents : BIGINT
+  settlement_released_cents : BIGINT
+  settlement_outstanding_cents : BIGINT
+  closed_at : TIMESTAMPTZ
+}
+entity rental_agreement_extras {
+  * rental_id : UUID <<PK, FK>>
+  * extra_order : INTEGER <<PK>>
+  --
+  * code : VARCHAR(50)
+  * price_per_day_cents : BIGINT
+  * cap_cents : BIGINT
+}
+entity rental_agreement_drivers {
+  * rental_id : UUID <<PK, FK>>
+  * driver_order : INTEGER <<PK>>
+  --
+  * full_name : TEXT
+  * license_number : VARCHAR(20)
+  * license_category : VARCHAR(3)
+  * license_country : VARCHAR(2)
+  * license_issue_date : DATE
+  * license_expiry_date : DATE
+}
+entity rental_agreement_damages {
+  * rental_id : UUID <<PK, FK>>
+  * damage_order : INTEGER <<PK>>
+  --
+  * location : TEXT
+  * description : TEXT
+  * amount_cents : BIGINT
+}
+entity rental_agreement_charges {
+  * rental_id : UUID <<PK, FK>>
+  * charge_order : INTEGER <<PK>>
+  --
+  * type : VARCHAR(20)
+  * description : TEXT
+  * amount_cents : BIGINT
+}
+
+rental_agreements ||--o{ rental_agreement_extras
+rental_agreements ||--o{ rental_agreement_drivers
+rental_agreements ||--o{ rental_agreement_damages
+rental_agreements ||--o{ rental_agreement_charges
+@enduml

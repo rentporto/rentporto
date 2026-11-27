@@ -1,0 +1,53 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+title Layers and folders of a service (ADR-15, ADR-30)
+
+package "api (inbound adapter)" as api #E8F0FE {
+  rectangle "contract\n~*Api" as a1
+  rectangle "controller\n~*Controller, ~*Advice" as a2
+  rectangle "request, response\n~*Request, ~*Response" as a3
+  rectangle "model\nenums, records" as a4
+}
+package "application" as app #FFF2CC {
+  rectangle "service\nuse cases" as p1
+  rectangle "port\ninterfaces to the outside" as p2
+  rectangle "exception" as p3
+  rectangle "model" as p4
+}
+package "domain (no Spring)" as dom #E2F0D9 {
+  rectangle "model\naggregates, value objects" as d1
+  rectangle "repository\nrepository ports" as d2
+  rectangle "service\nstateless rules" as d3
+  rectangle "exception" as d4
+}
+package "infrastructure (outbound adapters)" as inf #F2F2F2 {
+  rectangle "persistence\nJPA" as i1
+  rectangle "messaging\noutbox, listeners" as i2
+  rectangle "client\nFeign, Resilience4j" as i3
+  rectangle "security, mail, ..." as i4
+}
+
+a1 -[hidden]right- a2
+a2 -[hidden]right- a3
+a3 -[hidden]right- a4
+p1 -[hidden]right- p2
+p2 -[hidden]right- p3
+p3 -[hidden]right- p4
+d1 -[hidden]right- d2
+d2 -[hidden]right- d3
+d3 -[hidden]right- d4
+i1 -[hidden]down- i2
+i2 -[hidden]down- i3
+i3 -[hidden]down- i4
+
+api -down-> app : calls the use cases
+app -down-> dom : uses the domain
+inf -left-> app : implements the ports
+inf -left-> dom : implements the repositories
+
+legend bottom
+  dependencies point inwards; ArchUnit checks the layers,
+  the folders and that every endpoint declares its roles
+endlegend
+@enduml

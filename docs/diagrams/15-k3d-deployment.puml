@@ -1,0 +1,44 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+title Deployment on k3d (ADR-16, ADR-23)
+
+actor "Developer" as dev
+node "GitHub" as gh {
+  artifact "config/ on main" as cfgrepo
+  artifact "ghcr.io/rentporto/<service>" as ghcr
+}
+node "k3d cluster rentporto" as k3d {
+  node "namespace rentporto" as ns {
+    rectangle "Ingress (Traefik)\n/api → gateway" as ing
+    rectangle "Deployment gateway" as dgw
+    rectangle "Deployments\nauth · customer · fleet\nrental · notification" as dsvc
+    rectangle "Deployment booking-service\nHPA 2–3 replicas (CPU 70%)" as dboo
+    rectangle "Deployment config-server" as dcfg
+    database "StatefulSet postgres" as spg
+    queue "StatefulSet rabbitmq" as smq
+    rectangle "Deployments\nprometheus · grafana\nzipkin · mailpit" as dobs
+    rectangle "Secrets\npostgres · rabbitmq\nauth-service · grafana" as sec
+    rectangle "ConfigMap config-server\n(branch to read)" as cm
+  }
+}
+
+dev --> k3d : ./deploy.sh\nbuild, import images, apply overlay k3d
+ing --> dgw
+dgw --> dsvc
+dgw --> dboo
+dsvc --> spg
+dboo --> spg
+dsvc --> smq
+dboo --> smq
+dcfg --> cfgrepo : reads the configuration
+dcfg ..> cm
+dsvc ..> sec
+dobs --> dsvc : scrape metrics,\nreceive traces
+k3d ..> ghcr : base images\n(the overlay uses local images)
+
+note right of ing
+  only /api leaves the cluster;
+  the tools open with kubectl port-forward
+end note
+@enduml

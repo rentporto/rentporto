@@ -1,0 +1,51 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+title Context map (arrows go from upstream to downstream)
+
+rectangle "auth-service" {
+  component "Identity and Access" as IAM
+}
+rectangle "customer-service" {
+  component "Customers" as CUS
+}
+rectangle "fleet-service" {
+  component "Fleet" as FLE
+}
+cloud "Payment provider\n(simulated)" as PROV
+rectangle "booking-service" {
+  component "Pricing" as PRI #FFF2CC
+  component "Reservations" as RES #FFF2CC
+  component "Payments" as PAY
+}
+rectangle "rental-service" {
+  component "Rental" as REN
+}
+rectangle "notification-service" {
+  component "Notifications" as NOTI
+}
+
+CUS --> RES : C/S, OHS\nREST
+FLE --> PRI : PL\nevents
+FLE --> RES : PL + ACL\nevents
+PRI --> RES : C/S, OHS + PL\nin-process
+PROV --> PAY : ACL
+PAY --> RES : OHS\ninternal events
+PAY --> REN : OHS\nREST + messages
+RES <--> REN : C/S: reservation events →\n← PL: RentalStarted, VehicleReturned
+FLE <--> REN : OHS: vehicle assignment (REST) →\n← PL: VehicleReturned (Fleet conformist)
+
+note right of NOTI
+  Conformist: consumes the events of
+  Customers, Reservations, Payments and Rental
+end note
+note right of IAM
+  OHS: every service validates the JWT with
+  the JWKS of the auth-service (conformist)
+end note
+
+legend bottom
+  C/S Customer/Supplier · OHS Open Host Service · PL Published Language · ACL Anti-Corruption Layer
+  core subdomains in yellow; the integration of each relation is in the report's table
+endlegend
+@enduml

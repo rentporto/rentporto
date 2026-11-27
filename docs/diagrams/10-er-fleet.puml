@@ -1,0 +1,85 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+hide circle
+title fleet-service database (fleet)
+
+entity stations {
+  * code : VARCHAR(3) <<PK>>
+  --
+  * name : TEXT
+}
+entity vehicle_categories {
+  * code : VARCHAR(4) <<PK>>
+  --
+  * name : TEXT
+  * minimum_age : INTEGER
+  * minimum_license_years : INTEGER
+  idempotency_key : VARCHAR(255)
+  * created_at : TIMESTAMPTZ
+  * updated_at : TIMESTAMPTZ
+}
+entity vehicles {
+  * license_plate : VARCHAR(8) <<PK>>
+  --
+  * category_code : VARCHAR(4) <<FK>>
+  * station_code : VARCHAR(3) <<FK>>
+  * status : VARCHAR(20)
+  * odometer_km : BIGINT
+  * fuel_level_eighths : INTEGER
+  idempotency_key : VARCHAR(255)
+  * created_at : TIMESTAMPTZ
+  * updated_at : TIMESTAMPTZ
+  * status_changed_at : TIMESTAMPTZ
+}
+entity vehicle_status_changes {
+  * id : BIGINT <<PK, identity>>
+  --
+  * license_plate : VARCHAR(8) <<FK>>
+  from_status : VARCHAR(20)
+  * to_status : VARCHAR(20)
+  reason : TEXT
+  * changed_by : VARCHAR(255)
+  * changed_at : TIMESTAMPTZ
+}
+entity transfers {
+  * id : UUID <<PK>>
+  --
+  * license_plate : VARCHAR(8) <<FK>>
+  * from_station : VARCHAR(3) <<FK>>
+  * to_station : VARCHAR(3) <<FK>>
+  * status : VARCHAR(20)
+  idempotency_key : VARCHAR(255)
+  * started_at : TIMESTAMPTZ
+  completed_at : TIMESTAMPTZ
+}
+entity vehicle_assignments {
+  * rental_id : UUID <<PK>>
+  --
+  * license_plate : VARCHAR(8) <<FK>>
+  * station_code : VARCHAR(3) <<FK>>
+  * category_code : VARCHAR(4) <<FK>>
+  * odometer_km : BIGINT
+  * idempotency_key : VARCHAR(255)
+  * assigned_at : TIMESTAMPTZ
+  returned_at : TIMESTAMPTZ
+}
+
+vehicle_categories ||--o{ vehicles
+stations ||--o{ vehicles
+vehicles ||--o{ vehicle_status_changes
+vehicles ||--o{ transfers
+stations ||--o{ transfers : from / to
+vehicles ||--o{ vehicle_assignments
+stations ||--o{ vehicle_assignments
+vehicle_categories ||--o{ vehicle_assignments
+
+note bottom of transfers
+  unique (license_plate, idempotency_key);
+  at most one IN_TRANSFER per vehicle
+end note
+note bottom of vehicle_assignments
+  rental_id is the rental agreement of the
+  rental-service (no foreign key across services)
+end note
+@enduml

@@ -1,0 +1,20 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+hide circle
+title auth-service database (auth)
+
+entity accounts {
+  * id : UUID <<PK>>
+  --
+  * email : VARCHAR(254) <<unique>>
+  * password_hash : VARCHAR(100)
+  idempotency_key : VARCHAR(255)
+  * created_at : TIMESTAMPTZ
+}
+entity account_roles {
+  * account_id : UUID <<PK, FK>>
+  * role : VARCHAR(20) <<PK>>
+}
+accounts ||--o{ account_roles
+@enduml

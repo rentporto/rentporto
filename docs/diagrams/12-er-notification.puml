@@ -1,0 +1,45 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+hide circle
+title notification-service database (notification)
+
+entity recipients {
+  * id : UUID <<PK>>
+  --
+  * full_name : TEXT
+  * email : VARCHAR(254)
+  * updated_at : TIMESTAMPTZ
+}
+entity notifications {
+  * id : UUID <<PK>>
+  --
+  * event_id : UUID <<unique>>
+  * customer_id : UUID
+  * type : VARCHAR(50)
+  * subject : TEXT
+  * email : VARCHAR(254)
+  * status : VARCHAR(10)
+  * attempts : INTEGER
+  last_error : TEXT
+  * attempted_at : TIMESTAMPTZ
+}
+entity pickup_reminders {
+  * reservation_id : UUID <<PK>>
+  --
+  * customer_id : UUID
+  pickup_station : VARCHAR(3)
+  pickup_at : TIMESTAMPTZ
+  * status : VARCHAR(10)
+}
+recipients ||..o{ notifications : customer_id
+recipients ||..o{ pickup_reminders : customer_id
+note bottom of notifications
+  event_id is unique: an event already
+  notified is not sent twice
+end note
+note bottom of recipients
+  local copy of the customer,
+  kept from CustomerRegistered
+end note
+@enduml

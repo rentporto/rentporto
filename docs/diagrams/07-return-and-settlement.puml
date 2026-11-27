@@ -1,0 +1,35 @@
+@startuml
+!include style.iuml
+title Return and settlement (implemented in the rental-service)
+autonumber
+
+actor Agent as agent
+participant gateway as gw
+participant "rental-service" as ren
+queue RabbitMQ as mq
+participant "fleet-service" as fle
+participant "booking-service\npayment" as pay
+participant "notification-service" as noti
+
+agent -> gw : POST /api/v1/rentals/{id}/return\n(station, odometer, fuel, damages)
+gw -> ren : POST /rentals/{id}/return
+group one transaction
+  ren -> ren : ReturnCharges: late return,\nfuel and damages
+  ren -> ren : agreement RETURNED
+  ren -> ren : outbox VehicleReturned\n+ SettleDeposit (amount due)
+end
+ren --> gw : 202 Accepted
+gw --> agent : 202 Accepted
+ren ->> mq : VehicleReturned
+mq ->> fle : vehicle AVAILABLE at the return\nstation, odometer and fuel updated
+ren ->> mq : SettleDeposit\n(queue payment.settle-deposit)
+mq ->> pay : capture the amount due, release the rest,\ncharge any difference (designed)
+pay ->> mq : DepositSettled
+mq ->> ren : DepositSettled
+group one transaction
+  ren -> ren : agreement CLOSED with\nthe settlement
+  ren -> ren : outbox RentalClosed
+end
+ren ->> mq : RentalClosed
+mq ->> noti : closing email
+@enduml

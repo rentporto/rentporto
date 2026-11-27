@@ -1,0 +1,32 @@
+@startuml
+!include style.iuml
+title Pick-up of the vehicle (implemented)
+autonumber
+
+actor Agent as agent
+participant gateway as gw
+participant "rental-service" as ren
+participant "booking-service\npayment" as pay
+participant "fleet-service" as fle
+queue RabbitMQ as mq
+participant "notification-service" as noti
+participant "booking-service\nreservation" as res
+
+agent -> gw : POST /api/v1/rentals/{id}/pickup\n(additional drivers, notes)
+gw -> ren : POST /rentals/{id}/pickup\n(with the user's JWT)
+ren -> ren : licences valid today,\nagreement AWAITING_PICKUP
+ren -> pay : POST /internal/deposits\n(5 s timeout, circuit breaker)
+pay --> ren : deposit held
+ren -> ren : record the deposit\n(own transaction)
+ren -> fle : POST /internal/vehicles/assignments\n(Idempotency-Key, up to 3 attempts)
+fle -> fle : lock an AVAILABLE vehicle of the\ncategory at the station, now RENTED
+fle --> ren : licence plate, odometer
+group one transaction
+  ren -> ren : agreement ACTIVE\n+ outbox RentalStarted
+end
+ren --> gw : 200 OK
+gw --> agent : 200 OK
+ren ->> mq : RentalStarted\n(outbox publisher)
+mq ->> noti : cancel the pick-up reminder,\nsend the email
+mq ->> res : reservation FULFILLED\n(designed)
+@enduml
