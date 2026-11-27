@@ -1,0 +1,61 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+title Containers of RentPorto
+
+actor "Customer, agent,\nmanagers, administrator" as user
+rectangle "Ingress (Traefik)\nroutes only /api" as ingress
+rectangle "**gateway**\nSpring Cloud Gateway\nJWT check · routes · login rate limit\nSwagger UI of every service" as gw
+rectangle "**auth-service**\naccounts, login, JWT, JWKS" as auth
+rectangle "**customer-service**\nprofiles, driver profile" as cus
+rectangle "**fleet-service**\ncategories, vehicles, transfers,\nvehicle assignment" as fle
+rectangle "**booking-service**\nreservation · pricing · payment\n(API contract; designed)" as boo
+rectangle "**rental-service**\nrental agreements, pick-up,\nreturn, settlement" as ren
+rectangle "**notification-service**\nemails, pick-up reminders" as noti
+queue "**RabbitMQ**\ntopic exchange rentporto.events\none queue and DLQ per consumer" as mq
+database "**PostgreSQL**\none database and\none user per service" as pg
+rectangle "**config-server**\nSpring Cloud Config" as cfg
+rectangle "Mailpit (SMTP)" as mail
+rectangle "Prometheus · Grafana" as prom
+rectangle "Zipkin" as zip
+
+user --> ingress : HTTPS /api/v1
+ingress --> gw
+gw --> auth
+gw --> cus
+gw --> fle
+gw --> boo
+gw --> ren
+gw --> noti
+ren --> fle : REST /internal
+ren --> boo : REST /internal
+boo ..> cus : REST /internal
+cus --> mq : events
+fle <--> mq : events
+boo <--> mq : events, commands
+ren <--> mq : events, commands
+mq --> noti : events
+auth --> pg
+cus --> pg
+fle --> pg
+boo --> pg
+ren --> pg
+noti --> pg
+noti --> mail : SMTP
+
+note right of cfg
+  every service reads its
+  configuration at startup
+end note
+note right of prom
+  Prometheus scrapes /actuator/prometheus
+  of every pod; Grafana shows the
+  RentPorto dashboard
+end note
+note right of zip
+  every service sends its traces
+  (W3C context, also through the outbox)
+end note
+cfg -[hidden]down- prom
+prom -[hidden]down- zip
+@enduml

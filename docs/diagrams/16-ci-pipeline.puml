@@ -1,0 +1,34 @@
+@startuml
+!include style.iuml
+title Continuous integration (.github/workflows/ci.yml)
+
+start
+:pull request or push to main;
+:**changes**
+detect the affected modules (paths-filter);
+fork
+  :**build** (one job per affected service)
+  ./mvnw -pl <service> -am verify
+  docker build;
+  if (push to main?) then (yes)
+    :push ghcr.io/rentporto/<service>
+    tagged with the commit;
+  else (no)
+  endif
+fork again
+  :**contracts**
+  AsyncAPI lint
+  common-events and common-messaging tests;
+fork again
+  :**compose**
+  docker compose up --wait
+  ./infra/verify.sh;
+fork again
+  :**kubernetes**
+  kubeconform (Kubernetes 1.33)
+  check-manifests.sh (probes, limits);
+end fork
+:**CI result**
+the only required check on main;
+stop
+@enduml

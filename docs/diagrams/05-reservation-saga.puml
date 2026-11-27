@@ -1,0 +1,53 @@
+@startuml
+!include style.iuml
+title Reservation saga (designed; ADR-06, ADR-29)
+autonumber
+
+actor Customer as cust
+participant gateway as gw
+box "booking-service" #F5F5F5
+  participant "reservation" as res
+  participant "pricing" as pri
+  participant "payment" as pay
+  participant "PaymentProvider\n(simulated)" as prov
+end box
+participant "customer-service" as cus
+queue RabbitMQ as mq
+participant "rental-service" as ren
+participant "notification-service" as noti
+
+cust -> gw : POST /api/v1/reservations\n(quote, payment method)
+gw -> res : POST /reservations
+res -> cus : GET /internal/customers/{id}/driver-profile
+cus --> res : age and licence years
+group one transaction
+  res -> res : lock the capacity of the\nstation and category
+  res -> pri : mark the quote as used
+  res -> res : Reservation PENDING_PAYMENT\n+ ReservationPaymentRequested
+end
+res --> gw : 202 Accepted
+gw --> cust : 202 Accepted
+
+== after the commit ==
+res ->> pay : ReservationPaymentRequested\n(internal event)
+pay -> prov : charge the prepayment\n(timeout, bulkhead)
+alt card accepted
+  prov --> pay : approved
+  pay ->> res : PaymentCompleted
+  res -> res : CONFIRMED\n+ outbox ReservationConfirmed
+  res ->> mq : ReservationConfirmed\n(contract terms)
+  mq ->> ren : rental agreement\nAWAITING_PICKUP
+  mq ->> noti : confirmation email,\npick-up reminder
+else card declined or provider unavailable
+  prov --> pay : declined or timeout
+  pay ->> res : PaymentFailed
+  res -> res : PAYMENT_FAILED,\ncapacity released
+  pay ->> mq : PaymentFailed
+  mq ->> noti : payment failed email
+end
+
+note over res
+  A scheduler expires the reservations not paid within 15 minutes
+  (ReservationExpired); a payment that arrives later is refunded (PaymentRefunded).
+end note
+@enduml

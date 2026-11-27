@@ -1,0 +1,12 @@
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam roundCorner 8
+skinparam backgroundColor white
+skinparam arrowColor #444444
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #555555
+skinparam packageBorderColor #777777
+skinparam titleFontSize 15
+skinparam legendBackgroundColor #FAFAFA
+skinparam noteBackgroundColor #FFFDE7

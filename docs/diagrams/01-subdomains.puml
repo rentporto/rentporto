@@ -1,0 +1,28 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+title Subdomains of RentPorto
+
+package "Core" #FFF2CC {
+  rectangle "**Reservations and availability**\ncontext: Reservations\nbooking-service · reservation" as res
+  rectangle "**Pricing**\ncontext: Pricing\nbooking-service · pricing" as pri
+}
+package "Supporting" #DAE8FC {
+  rectangle "**Rental operation**\ncontext: Rental\nrental-service" as ren
+  rectangle "**Fleet management**\ncontext: Fleet\nfleet-service" as fle
+  rectangle "**Customer management**\ncontext: Customers\ncustomer-service" as cus
+}
+package "Generic" #EEEEEE {
+  rectangle "**Payments**\ncontext: Payments\nbooking-service · payment\n(simulated provider)" as pay
+  rectangle "**Notifications**\ncontext: Notifications\nnotification-service" as noti
+  rectangle "**Identity and access**\ncontext: Identity and Access\nauth-service" as iam
+}
+
+res -[hidden]right- pri
+ren -[hidden]right- fle
+fle -[hidden]right- cus
+pay -[hidden]right- noti
+noti -[hidden]right- iam
+res -[hidden]down- ren
+ren -[hidden]down- pay
+@enduml

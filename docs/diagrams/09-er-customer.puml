@@ -1,0 +1,27 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+hide circle
+title customer-service database (customer)
+
+entity customers {
+  * id : UUID <<PK>>
+  --
+  * email : VARCHAR(254)
+  * full_name : TEXT
+  * tax_number : VARCHAR(9) <<unique>>
+  * birth_date : DATE
+  * phone : TEXT
+  * license_number : VARCHAR(20)
+  * license_category : VARCHAR(3)
+  * license_country : VARCHAR(2)
+  * license_issue_date : DATE
+  * license_expiry_date : DATE
+  * created_at : TIMESTAMPTZ
+  * updated_at : TIMESTAMPTZ
+}
+note right of customers
+  id is the account id issued by the auth-service;
+  there is no foreign key across services
+end note
+@enduml

@@ -1,0 +1,45 @@
+@startuml
+!include style.iuml
+!pragma layout smetana
+hide circle
+title Messaging tables in the database of every service (common-messaging)
+
+entity outbox {
+  * id : BIGINT <<PK, identity>>
+  --
+  * event_id : UUID <<unique>>
+  * exchange : VARCHAR(255)
+  * routing_key : VARCHAR(255)
+  * message_type : VARCHAR(255)
+  * payload : JSONB
+  * headers : JSONB
+  * created_at : TIMESTAMPTZ
+  published_at : TIMESTAMPTZ
+}
+entity processed_events {
+  * consumer : VARCHAR(255) <<PK>>
+  * event_id : UUID <<PK>>
+  --
+  * processed_at : TIMESTAMPTZ
+}
+entity scheduler_lock {
+  * name : VARCHAR(64) <<PK>>
+  --
+  * locked_until : TIMESTAMPTZ
+  * locked_at : TIMESTAMPTZ
+  * locked_by : VARCHAR(255)
+}
+note bottom of outbox
+  written in the same transaction as the change;
+  a publisher on one replica sends the pending rows
+  (index on id where published_at is null)
+end note
+note bottom of processed_events
+  the idempotent consumer records each
+  event it handled, per queue
+end note
+note bottom of scheduler_lock
+  a scheduled task runs on one
+  replica at a time (ADR-18)
+end note
+@enduml
